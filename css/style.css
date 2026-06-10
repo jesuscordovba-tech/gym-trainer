@@ -558,6 +558,26 @@ body {
   height: 100%;
 }
 
+/* Play all button */
+.play-all-btn {
+  display: block;
+  width: 100%;
+  background: rgba(233,69,96,0.15);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  transition: all 0.2s;
+}
+.play-all-btn:hover {
+  background: var(--primary);
+  color: white;
+}
+
 /* Reset button */
 .reset-btn {
   background: rgba(233,69,96,0.1);

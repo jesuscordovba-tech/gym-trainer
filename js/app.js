@@ -199,19 +199,12 @@
     const container = document.getElementById('workoutContent')
     const dayProgress = progress[dayIndex] || {}
 
-    const ids = d.exercises.map(ex => ex.video).filter(Boolean)
-    const playlistSrc = ids.length ? 'https://www.youtube.com/embed/' + ids[0] + '?playlist=' + ids.slice(1).join(',') + '&loop=1&mute=1&autoplay=1&controls=1&rel=0' : ''
     let html = [
-      '<div class="workout-top">',
-      '<div class="workout-info">',
       '<div class="workout-header">',
       '<h2>' + esc(d.name) + '</h2>',
       '<div class="focus">' + esc(d.focus) + '</div>',
       '</div>',
       '<div class="warmup-box"><strong>🔥 Calentamiento:</strong> ' + esc(d.warmup) + '</div>',
-      '</div>',
-      playlistSrc ? '<div class="workout-video"><iframe src="' + playlistSrc + '" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe></div>' : '',
-      '</div>',
     ].join('')
 
     d.exercises.forEach((ex, exIdx) => {
@@ -224,7 +217,6 @@
       html += '<div class="exercise-info">'
       html += '<div class="exercise-name">' + esc(ex.name)
       if (ex.supersetWith) html += '<span class="superset-badge">SUPERSET</span>'
-      if (ex.video) html += '<button class="video-btn" data-video="' + esc(ex.video) + '" title="Ver video demostrativo">▶</button>'
       html += '</div>'
       html += '<div class="exercise-meta">'
       html += '<span>🔁 ' + ex.sets + '×' + esc(ex.reps) + '</span>'
@@ -249,7 +241,12 @@
       }
       html += '</div>'
       html += '<button class="rest-timer-btn" data-rest="' + ex.rest + '">⏱ ' + ex.rest + 's</button>'
-      html += '</div></div></div>'
+      html += '</div></div>'
+      if (ex.video) {
+        const src = 'https://www.youtube.com/embed/' + ex.video + '?mute=1&autoplay=1&controls=1&rel=0&loop=1'
+        html += '<div class="exercise-video"><iframe src="' + src + '" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe></div>'
+      }
+      html += '</div>'
     })
 
     html += [
@@ -277,11 +274,6 @@
     container.querySelectorAll('.rest-timer-btn').forEach(btn => {
       btn.addEventListener('click', startTimer)
     })
-    container.querySelectorAll('.video-btn').forEach(btn => {
-      btn.addEventListener('click', openVideo)
-    })
-
-
     const resetBtn = document.getElementById('resetDay')
     if (resetBtn) {
       resetBtn.addEventListener('click', () => {

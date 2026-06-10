@@ -17,7 +17,7 @@
     db.setWeights(weights)
   }
 
-  /* === LOCK SCREEN === */
+  /* === LOCK SCREEN (mismo PIN en todos los dispositivos) === */
   async function initLockScreen() {
     const screen = document.getElementById('lockScreen')
     const input = document.getElementById('lockInput')
@@ -26,14 +26,23 @@
     const subtitle = document.getElementById('lockSubtitle')
     const hint = document.getElementById('lockHint')
 
-    if (!auth.isLocked()) {
-      subtitle.textContent = 'Configura tu PIN de seguridad (4-6 dígitos)'
-      hint.innerHTML = ''
-      btn.textContent = 'Guardar PIN'
+    const firstTime = !auth.isLocked()
+    let attempts = 0
 
-      btn.onclick = async () => {
-        try {
-          const pin = input.value.trim()
+    if (firstTime) {
+      subtitle.textContent = 'Crea tu PIN (4-6 dígitos) — úsalo en todos tus dispositivos'
+      hint.textContent = 'Este PIN también encripta tus datos en la nube.'
+      btn.textContent = 'Listo'
+    } else {
+      subtitle.textContent = 'Ingresa tu PIN'
+      hint.innerHTML = '¿Olvidaste tu PIN? <button id="resetPinBtn">Restablecer</button>'
+      btn.textContent = 'Entrar'
+    }
+
+    btn.onclick = async () => {
+      try {
+        const pin = input.value.trim()
+        if (firstTime) {
           if (pin.length < 4) {
             error.textContent = 'Mínimo 4 dígitos'
             return
@@ -44,61 +53,45 @@
           db.setPin(pin)
           screen.classList.add('hidden')
           initApp()
-        } catch (e) {
-          error.textContent = 'Error: ' + e.message
-          btn.disabled = false
-          btn.textContent = 'Guardar PIN'
-        }
-      }
-
-      input.addEventListener('keydown', e => {
-        if (e.key === 'Enter') btn.click()
-      })
-
-      input.focus()
-      return
-    }
-
-    subtitle.textContent = 'Ingresa tu PIN para acceder'
-    hint.innerHTML = '¿Olvidaste tu PIN? <button id="resetPinBtn">Restablecer</button>'
-    btn.textContent = 'Entrar'
-
-    let attempts = 0
-
-    btn.onclick = async () => {
-      try {
-        const pin = input.value.trim()
-        if (!pin) return
-        btn.disabled = true
-        btn.textContent = 'Verificando...'
-        const ok = await auth.checkPin(pin)
-        if (ok) {
-          attempts = 0
-          db.setPin(pin)
-          screen.classList.add('hidden')
-          initApp()
         } else {
-          attempts++
-          error.textContent = 'PIN incorrecto (intento ' + attempts + '/5)'
-          input.value = ''
-          input.focus()
-          if (attempts >= 5) {
-            error.textContent = 'Demasiados intentos. Recarga la página.'
-            setTimeout(() => { btn.disabled = false; attempts = 0; error.textContent = '' }, 30000)
-            return
+          if (!pin) return
+          btn.disabled = true
+          btn.textContent = 'Verificando...'
+          const ok = await auth.checkPin(pin)
+          if (ok) {
+            attempts = 0
+            db.setPin(pin)
+            screen.classList.add('hidden')
+            initApp()
+          } else {
+            attempts++
+            error.textContent = 'PIN incorrecto (intento ' + attempts + '/5)'
+            input.value = ''
+            input.focus()
+            if (attempts >= 5) {
+              error.textContent = 'Demasiados intentos. Recarga la página.'
+              setTimeout(() => { btn.disabled = false; attempts = 0; error.textContent = '' }, 30000)
+              return
+            }
           }
+          btn.disabled = false
+          btn.textContent = 'Entrar'
         }
-        btn.disabled = false
-        btn.textContent = 'Entrar'
       } catch (e) {
         error.textContent = 'Error: ' + e.message
         btn.disabled = false
-        btn.textContent = 'Entrar'
+        btn.textContent = firstTime ? 'Listo' : 'Entrar'
       }
     }
 
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') btn.click()
+    })
+
+    input.focus()
+
     document.getElementById('resetPinBtn')?.addEventListener('click', () => {
-      if (confirm('¿Restablecer PIN? Se borrará todo el progreso LOCAL.')) {
+      if (confirm('¿Restablecer PIN? Se borrará todo el progreso de ESTE dispositivo.')) {
         auth.clearPin()
         db.resetAll()
         localStorage.clear()

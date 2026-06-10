@@ -399,8 +399,10 @@
   function openVideo(e) {
     const url = e.currentTarget.dataset.video
     const iframe = document.getElementById('videoIframe')
-    if (!url || !iframe) return
-    iframe.src = url.match(/^https?:\/\//) ? url : 'https://www.youtube.com/embed/' + url
+    if (!url || !iframe) { console.warn('Video error: no url or iframe', { url, iframe }); return }
+    const embedUrl = url.match(/^https?:\/\//) ? url : 'https://www.youtube.com/embed/' + url
+    console.log('Opening video:', embedUrl)
+    iframe.src = embedUrl
     document.getElementById('videoOverlay').classList.add('show')
   }
 

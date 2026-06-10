@@ -17,7 +17,86 @@
     db.setWeights(weights)
   }
 
-  function init() {
+  /* === LOCK SCREEN === */
+  async function initLockScreen() {
+    const screen = document.getElementById('lockScreen')
+    const input = document.getElementById('lockInput')
+    const btn = document.getElementById('lockBtn')
+    const error = document.getElementById('lockError')
+    const subtitle = document.getElementById('lockSubtitle')
+    const hint = document.getElementById('lockHint')
+
+    if (!auth.isLocked()) {
+      subtitle.textContent = 'Configura tu PIN de seguridad (4-6 dígitos)'
+      hint.innerHTML = ''
+      btn.textContent = 'Guardar PIN'
+
+      btn.onclick = async () => {
+        const pin = input.value.trim()
+        if (pin.length < 4) {
+          error.textContent = 'Mínimo 4 dígitos'
+          return
+        }
+        await auth.setPin(pin)
+        db.setPin(pin)
+        screen.classList.add('hidden')
+        initApp()
+      }
+
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') btn.click()
+      })
+
+      input.focus()
+      return
+    }
+
+    subtitle.textContent = 'Ingresa tu PIN para acceder'
+    hint.innerHTML = '¿Olvidaste tu PIN? <button id="resetPinBtn">Restablecer</button>'
+    btn.textContent = 'Entrar'
+
+    let attempts = 0
+
+    btn.onclick = async () => {
+      const pin = input.value.trim()
+      if (!pin) return
+      const ok = await auth.checkPin(pin)
+      if (ok) {
+        attempts = 0
+        db.setPin(pin)
+        screen.classList.add('hidden')
+        initApp()
+      } else {
+        attempts++
+        error.textContent = `PIN incorrecto (intento ${attempts}/5)`
+        input.value = ''
+        input.focus()
+        if (attempts >= 5) {
+          error.textContent = 'Demasiados intentos. Recarga la página.'
+          btn.disabled = true
+          setTimeout(() => { btn.disabled = false; attempts = 0; error.textContent = '' }, 30000)
+        }
+      }
+    }
+
+    document.getElementById('resetPinBtn')?.addEventListener('click', () => {
+      if (confirm('¿Restablecer PIN? Se borrará todo el progreso LOCAL.')) {
+        auth.clearPin()
+        db.resetAll()
+        localStorage.clear()
+        location.reload()
+      }
+    })
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') btn.click()
+    })
+
+    input.focus()
+  }
+
+  function initApp() {
+    cloudReady = db.connected
     renderNav()
     renderDaySelector()
     renderWorkout(currentDay)
@@ -25,9 +104,6 @@
     renderProgress()
     renderSettings()
     setupTimer()
-    renderCloudStatus()
-
-    cloudReady = db.connected
     renderCloudStatus()
 
     if (cloudReady) {
@@ -52,21 +128,19 @@
   }
 
   function renderCloudStatus() {
-    const header = document.querySelector('.header-inner')
     let el = document.getElementById('cloudBadge')
     if (!el) {
       el = document.createElement('div')
       el.id = 'cloudBadge'
       el.style.cssText = 'font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;'
-      header.appendChild(el)
+      document.querySelector('.header-inner').appendChild(el)
     }
-
     if (cloudReady) {
-      el.textContent = '☁️ Sincronizado'
+      el.textContent = '☁️ Seguro'
       el.style.background = 'rgba(46,204,113,0.15)'
       el.style.color = '#2ecc71'
     } else {
-      el.textContent = '💾 Local'
+      el.textContent = '🔒 Local'
       el.style.background = 'rgba(136,136,136,0.15)'
       el.style.color = '#888'
     }
@@ -94,7 +168,7 @@
       const card = document.createElement('div')
       card.className = `day-card ${i === currentDay ? 'active' : ''}`
       card.innerHTML = `
-        <div class="day-label">${DAY_LABELS[i] || `DÍA ${i + 1}`}</div>
+        <div class="day-label">${DAY_LABELS[i] || 'DÍA ' + (i + 1)}</div>
         <div class="day-name">${d.name.split(' — ')[0]}</div>
         <div class="day-focus">${completedSets}/${totalSets} series</div>
       `
@@ -113,76 +187,64 @@
     const container = document.getElementById('workoutContent')
     const dayProgress = progress[dayIndex] || {}
 
-    let html = `
-      <div class="workout-header">
-        <h2>${d.name}</h2>
-        <div class="focus">${d.focus}</div>
-      </div>
-      <div class="warmup-box"><strong>🔥 Calentamiento:</strong> ${d.warmup}</div>
-    `
+    let html = [
+      '<div class="workout-header">',
+      '<h2>' + esc(d.name) + '</h2>',
+      '<div class="focus">' + esc(d.focus) + '</div>',
+      '</div>',
+      '<div class="warmup-box"><strong>🔥 Calentamiento:</strong> ' + esc(d.warmup) + '</div>',
+    ].join('')
 
     d.exercises.forEach((ex, exIdx) => {
       const setsCompleted = dayProgress[exIdx] || 0
       const machine = gymData.getMachineById(ex.machine)
-      const weight = weights[`${dayIndex}-${exIdx}`] || ''
+      const weight = weights[dayIndex + '-' + exIdx] || ''
 
-      html += `
-        <div class="exercise-item" data-day="${dayIndex}" data-ex="${exIdx}">
-          <div class="exercise-top">
-            <div class="exercise-info">
-              <div class="exercise-name">
-                ${ex.name}
-                ${ex.supersetWith ? '<span class="superset-badge">SUPERSET</span>' : ''}
-              </div>
-              <div class="exercise-meta">
-                <span>🔁 ${ex.sets}×${ex.reps}</span>
-                <span>⏱ ${ex.rest}s</span>
-                <span>📌 RIR ${ex.rir}</span>
-              </div>
-              <div>
-                <span class="machine-badge">${machine ? machine.name : ex.machine}</span>
-                <span class="muscle-badge">${ex.muscle}</span>
-              </div>
-              <div class="weight-input-row">
-                <label style="font-size:0.8rem;color:var(--text-dim);">Carga (kg):</label>
-                <input type="number" class="weight-input" value="${weight}"
-                       data-day="${dayIndex}" data-ex="${exIdx}" placeholder="kg">
-              </div>
-            </div>
-            <div class="exercise-controls">
-              <div class="set-tracker">
-                ${Array.from({ length: ex.sets }, (_, s) => `
-                  <button class="set-dot ${s < setsCompleted ? 'completed' : s === setsCompleted ? 'current' : ''}"
-                          data-day="${dayIndex}" data-ex="${exIdx}" data-set="${s}">
-                    ${s + 1}
-                  </button>
-                `).join('')}
-              </div>
-              <button class="rest-timer-btn" data-rest="${ex.rest}">⏱ ${ex.rest}s</button>
-            </div>
-          </div>
-        </div>
-      `
+      html += '<div class="exercise-item" data-day="' + dayIndex + '" data-ex="' + exIdx + '">'
+      html += '<div class="exercise-top">'
+      html += '<div class="exercise-info">'
+      html += '<div class="exercise-name">' + esc(ex.name)
+      if (ex.supersetWith) html += '<span class="superset-badge">SUPERSET</span>'
+      html += '</div>'
+      html += '<div class="exercise-meta">'
+      html += '<span>🔁 ' + ex.sets + '×' + esc(ex.reps) + '</span>'
+      html += '<span>⏱ ' + ex.rest + 's</span>'
+      html += '<span>📌 RIR ' + ex.rir + '</span>'
+      html += '</div>'
+      html += '<div>'
+      html += '<span class="machine-badge">' + esc(machine ? machine.name : ex.machine) + '</span>'
+      html += '<span class="muscle-badge">' + esc(ex.muscle) + '</span>'
+      html += '</div>'
+      html += '<div class="weight-input-row">'
+      html += '<label style="font-size:0.8rem;color:var(--text-dim);">Carga (kg):</label>'
+      html += '<input type="number" class="weight-input" value="' + weight + '" data-day="' + dayIndex + '" data-ex="' + exIdx + '" placeholder="kg">'
+      html += '</div></div>'
+      html += '<div class="exercise-controls">'
+      html += '<div class="set-tracker">'
+      for (let s = 0; s < ex.sets; s++) {
+        html += '<button class="set-dot ' +
+          (s < setsCompleted ? 'completed' : s === setsCompleted ? 'current' : '') +
+          '" data-day="' + dayIndex + '" data-ex="' + exIdx + '" data-set="' + s + '">' +
+          (s + 1) + '</button>'
+      }
+      html += '</div>'
+      html += '<button class="rest-timer-btn" data-rest="' + ex.rest + '">⏱ ' + ex.rest + 's</button>'
+      html += '</div></div></div>'
     })
 
-    html += `
-      <div class="cardio-card">
-        <h3>🏃 Cardio — ${d.cardio.type}</h3>
-        <div class="cardio-detail">
-          <div class="cardio-item"><strong>Máquina</strong>${gymData.getMachineById(d.cardio.machine)?.name || d.cardio.machine}</div>
-          <div class="cardio-item"><strong>Duración</strong>${d.cardio.duration}</div>
-          <div class="cardio-item"><strong>Protocolo</strong>${d.cardio.protocol}</div>
-        </div>
-      </div>
-    `
-
-    html += `<div class="cooldown-box"><strong>🧘 Enfriamiento:</strong> ${d.cooldown}</div>`
-
-    html += `
-      <div style="margin-top:1.5rem;text-align:center;">
-        <button class="reset-btn" id="resetDay">Reiniciar progreso del día</button>
-      </div>
-    `
+    html += [
+      '<div class="cardio-card">',
+      '<h3>🏃 Cardio — ' + esc(d.cardio.type) + '</h3>',
+      '<div class="cardio-detail">',
+      '<div class="cardio-item"><strong>Máquina</strong>' + esc(gymData.getMachineById(d.cardio.machine)?.name || d.cardio.machine) + '</div>',
+      '<div class="cardio-item"><strong>Duración</strong>' + esc(d.cardio.duration) + '</div>',
+      '<div class="cardio-item"><strong>Protocolo</strong>' + esc(d.cardio.protocol) + '</div>',
+      '</div></div>',
+      '<div class="cooldown-box"><strong>🧘 Enfriamiento:</strong> ' + esc(d.cooldown) + '</div>',
+      '<div style="margin-top:1.5rem;text-align:center;">',
+      '<button class="reset-btn" id="resetDay">Reiniciar progreso del día</button>',
+      '</div>',
+    ].join('')
 
     container.innerHTML = html
 
@@ -233,7 +295,7 @@
     renderDaySelector()
     renderWorkout(day)
 
-    const restBtn = document.querySelector(`.exercise-item[data-day="${day}"][data-ex="${ex}"] .rest-timer-btn`)
+    const restBtn = document.querySelector('.exercise-item[data-day="' + day + '"][data-ex="' + ex + '"] .rest-timer-btn')
     if (restBtn && (progress[day][ex] || 0) > 0 && (progress[day][ex] || 0) < maxSets) {
       startTimer.call(restBtn)
     }
@@ -241,7 +303,7 @@
 
   function handleWeightChange(e) {
     const inp = e.currentTarget
-    const key = `${inp.dataset.day}-${inp.dataset.ex}`
+    const key = inp.dataset.day + '-' + inp.dataset.ex
     if (inp.value) {
       weights[key] = inp.value
     } else {
@@ -259,8 +321,7 @@
   }
 
   function startTimer() {
-    const seconds = parseInt(this.dataset.rest) || 60
-    showTimer(seconds)
+    showTimer(parseInt(this.dataset.rest) || 60)
   }
 
   function showTimer(seconds) {
@@ -299,13 +360,20 @@
   function updateDisplay(seconds) {
     const m = Math.floor(seconds / 60)
     const s = seconds % 60
-    document.getElementById('timerDisplay').textContent = `${m}:${s.toString().padStart(2, '0')}`
+    document.getElementById('timerDisplay').textContent = m + ':' + (s < 10 ? '0' : '') + s
   }
 
   function hideTimer() {
     clearInterval(timerInterval)
     document.getElementById('timerOverlay').classList.remove('show')
     document.getElementById('timerDisplay').style.color = ''
+  }
+
+  function esc(s) {
+    if (!s) return ''
+    const d = document.createElement('div')
+    d.textContent = s
+    return d.innerHTML
   }
 
   function renderMachines() {
@@ -327,16 +395,13 @@
     categories.forEach(cat => {
       const machines = gymData.machines[cat.key]
       if (!machines || !machines.length) return
-      html += `
-        <div class="category-section">
-          <div class="category-title">${cat.icon} ${cat.label}</div>
-          <div class="machine-grid">
-            ${machines.map(m => `
-              <div class="machine-item">${m.name}</div>
-            `).join('')}
-          </div>
-        </div>
-      `
+      html += '<div class="category-section">'
+      html += '<div class="category-title">' + cat.icon + ' ' + esc(cat.label) + '</div>'
+      html += '<div class="machine-grid">'
+      machines.forEach(m => {
+        html += '<div class="machine-item">' + esc(m.name) + '</div>'
+      })
+      html += '</div></div>'
     })
     container.innerHTML = html
   }
@@ -363,29 +428,17 @@
 
     const pct = totalSets > 0 ? Math.round((totalSetsDone / totalSets) * 100) : 0
 
-    let html = `
-      <h2 style="margin-bottom:1.5rem;">📊 Tu Progreso</h2>
-      <div class="progress-stats">
-        <div class="stat-card">
-          <div class="stat-value">${pct}%</div>
-          <div class="stat-label">Progreso global</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${totalSetsDone}</div>
-          <div class="stat-label">Series completadas</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${totalWorkouts}/${workoutPlan.days.length}</div>
-          <div class="stat-label">Entrenos iniciados</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${daysCompleted}</div>
-          <div class="stat-label">Días completados</div>
-        </div>
-      </div>
-    `
+    let html = [
+      '<h2 style="margin-bottom:1.5rem;">📊 Tu Progreso</h2>',
+      '<div class="progress-stats">',
+      '<div class="stat-card"><div class="stat-value">' + pct + '%</div><div class="stat-label">Progreso global</div></div>',
+      '<div class="stat-card"><div class="stat-value">' + totalSetsDone + '</div><div class="stat-label">Series completadas</div></div>',
+      '<div class="stat-card"><div class="stat-value">' + totalWorkouts + '/' + workoutPlan.days.length + '</div><div class="stat-label">Entrenos iniciados</div></div>',
+      '<div class="stat-card"><div class="stat-value">' + daysCompleted + '</div><div class="stat-label">Días completados</div></div>',
+      '</div>',
+      '<h3 style="margin-bottom:0.75rem;">Detalle por día</h3>',
+    ].join('')
 
-    html += '<h3 style="margin-bottom:0.75rem;">Detalle por día</h3>'
     workoutPlan.days.forEach((d, i) => {
       const p = progress[i] || {}
       const daySets = d.exercises.reduce((a, ex) => a + ex.sets, 0)
@@ -393,93 +446,96 @@
       d.exercises.forEach((ex, exIdx) => {
         dayDone += p[exIdx] || 0
       })
-      html += `
-        <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border);font-size:0.9rem;">
-          <span>${DAY_LABELS[i]} — ${d.name.split(' — ')[0]}</span>
-          <span style="color:${dayDone >= daySets ? 'var(--green)' : 'var(--text-dim)'}">
-            ${dayDone}/${daySets} series
-          </span>
-        </div>
-      `
+      html += '<div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border);font-size:0.9rem;">'
+      html += '<span>' + DAY_LABELS[i] + ' — ' + esc(d.name.split(' — ')[0]) + '</span>'
+      html += '<span style="color:' + (dayDone >= daySets ? 'var(--green)' : 'var(--text-dim)') + '">'
+      html += dayDone + '/' + daySets + ' series</span></div>'
     })
 
-    html += `
-      <div style="margin-top:1.5rem;text-align:center;">
-        <button class="reset-btn" id="resetAll" style="background:rgba(233,69,96,0.2);border-color:var(--primary);">
-          Reiniciar todo el progreso
-        </button>
-      </div>
-    `
+    html += [
+      '<div style="margin-top:1.5rem;text-align:center;">',
+      '<button class="reset-btn" id="resetAll" style="background:rgba(233,69,96,0.2);border-color:var(--primary);">Reiniciar todo el progreso</button>',
+      '</div>',
+    ].join('')
 
     container.innerHTML = html
 
-    const resetAll = document.getElementById('resetAll')
-    if (resetAll) {
-      resetAll.addEventListener('click', () => {
-        if (confirm('¿Reiniciar TODO el progreso? Esta acción no se puede deshacer.')) {
-          db.resetAll()
-          refreshData()
-          renderDaySelector()
-          renderWorkout(currentDay)
-          renderProgress()
-        }
-      })
-    }
+    document.getElementById('resetAll')?.addEventListener('click', () => {
+      if (confirm('¿Reiniciar TODO el progreso? Esta acción no se puede deshacer.')) {
+        db.resetAll()
+        refreshData()
+        renderDaySelector()
+        renderWorkout(currentDay)
+        renderProgress()
+      }
+    })
   }
 
-  /* Settings tab */
+  /* Settings */
   function renderSettings() {
     const container = document.getElementById('settingsContent')
     const token = db.getToken()
     const hasToken = !!token
 
-    container.innerHTML = `
-      <h2 style="margin-bottom:1.5rem;">⚙️ Sincronización</h2>
-      <div class="card">
-        <p style="margin-bottom:1rem;color:var(--text-dim);">
-          Tu progreso se guarda localmente en el navegador.
-          Para sincronizar entre dispositivos, conecta un token de GitHub.
-        </p>
-        <div style="margin-bottom:1rem;">
-          <label style="display:block;font-size:0.85rem;margin-bottom:0.4rem;color:var(--text-dim);">
-            Token de GitHub (solo permiso <code>gist</code>):
-          </label>
-          <div style="display:flex;gap:0.5rem;">
-            <input type="password" id="tokenInput" value="${token}"
-                   placeholder="ghp_..."
-                   style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);
-                          padding:0.5rem 0.75rem;border-radius:var(--radius-sm);font-size:0.9rem;">
-            <button id="saveTokenBtn" class="rest-timer-btn"
-                    style="background:rgba(46,204,113,0.15);border-color:var(--green);color:var(--green);">
-              ${hasToken ? 'Actualizar' : 'Conectar'}
-            </button>
-          </div>
-        </div>
-        <div id="syncStatus" style="font-size:0.85rem;margin-top:0.5rem;"></div>
-        <div style="margin-top:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
-          <button id="syncPullBtn" class="reset-btn" style="border-color:var(--green);color:var(--green);" ${hasToken ? '' : 'disabled'}>
-            📥 Descargar de GitHub
-          </button>
-          <button id="syncPushBtn" class="reset-btn" style="border-color:var(--orange);color:var(--orange);" ${hasToken ? '' : 'disabled'}>
-            📤 Subir a GitHub
-          </button>
-        </div>
-        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
-          <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.5rem;">
-            <strong>ID del Gist:</strong> <code>${db.gistId}</code>
-          </p>
-          <details style="font-size:0.8rem;color:var(--text-dim);">
-            <summary style="cursor:pointer;color:var(--primary);">¿Cómo obtener un token?</summary>
-            <ol style="margin-top:0.5rem;padding-left:1.2rem;line-height:1.8;">
-              <li>Ve a <a href="https://github.com/settings/tokens" target="_blank" style="color:var(--primary);">github.com/settings/tokens</a></li>
-              <li>Clic en <strong>Generate new token (classic)</strong></li>
-              <li>Selecciona solo el scope <strong>gist</strong></li>
-              <li>Genera el token y cópialo aquí</li>
-            </ol>
-          </details>
-        </div>
-      </div>
-    `
+    container.innerHTML = [
+      '<h2 style="margin-bottom:1.5rem;">⚙️ Seguridad y Sincronización</h2>',
+
+      /* PIN section */
+      '<div class="card">',
+      '<div class="card-title" style="margin-bottom:0.75rem;">🔐 PIN de acceso</div>',
+      '<p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.75rem;">',
+      'La app está protegida con PIN. Los datos se encriptan con AES-256 antes de subirse a GitHub.</p>',
+      '<button class="reset-btn" id="changePinBtn" style="border-color:var(--orange);color:var(--orange);">Cambiar PIN</button>',
+      '</div>',
+
+      /* Sync section */
+      '<div class="card" style="margin-top:1rem;">',
+      '<div class="card-title" style="margin-bottom:0.75rem;">☁️ Sincronización en la nube</div>',
+      '<p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1rem;">',
+      'Los datos se encriptan localmente con tu PIN antes de enviarse a un Gist privado de GitHub.',
+      ' Nadie puede leerlos sin tu PIN.</p>',
+      '<div style="margin-bottom:1rem;">',
+      '<label style="display:block;font-size:0.85rem;margin-bottom:0.4rem;color:var(--text-dim);">Token de GitHub (scope: gist):</label>',
+      '<div style="display:flex;gap:0.5rem;">',
+      '<input type="password" id="tokenInput" value="' + esc(token) + '" placeholder="ghp_..."',
+      ' style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.5rem 0.75rem;border-radius:var(--radius-sm);font-size:0.9rem;">',
+      '<button id="saveTokenBtn" class="rest-timer-btn"',
+      ' style="background:rgba(46,204,113,0.15);border-color:var(--green);color:var(--green);min-width:90px;">',
+      hasToken ? 'Actualizar' : 'Conectar', '</button>',
+      '</div></div>',
+      '<div id="syncStatus" style="font-size:0.85rem;min-height:1.2rem;"></div>',
+      '<div style="margin-top:0.75rem;display:flex;gap:0.75rem;flex-wrap:wrap;">',
+      '<button id="syncPullBtn" class="reset-btn" style="border-color:var(--green);color:var(--green);"',
+      hasToken ? '' : 'disabled', '>📥 Descargar de GitHub</button>',
+      '<button id="syncPushBtn" class="reset-btn" style="border-color:var(--orange);color:var(--orange);"',
+      hasToken ? '' : 'disabled', '>📤 Subir a GitHub</button>',
+      '</div>',
+      '<p style="margin-top:0.75rem;font-size:0.75rem;color:var(--text-dim);">',
+      'Gist ID: <code>' + db.gistId + '</code></p>',
+      '</div>',
+
+      /* Info */
+      '<div class="card" style="margin-top:1rem;">',
+      '<div class="card-title" style="margin-bottom:0.75rem;">🛡️ Seguridad</div>',
+      '<ul style="font-size:0.85rem;color:var(--text-dim);padding-left:1.2rem;line-height:1.8;">',
+      '<li>🔒 Acceso protegido con PIN (hash PBKDF2)</li>',
+      '<li>🔐 Datos encriptados con AES-256-GCM antes de subir</li>',
+      '<li>📡 Comunicación HTTPS con GitHub API</li>',
+      '<li>🚫 Bloqueo tras 5 intentos fallidos</li>',
+      '<li>🛡️ Content Security Policy activa</li>',
+      '<li>💾 Token guardado solo en tu navegador</li>',
+      '</ul>',
+      '</div>',
+    ].join('')
+
+    /* Event listeners */
+    document.getElementById('changePinBtn')?.addEventListener('click', () => {
+      if (confirm('¿Cambiar PIN? Se borrará el PIN actual.')) {
+        auth.clearPin()
+        localStorage.clear()
+        location.reload()
+      }
+    })
 
     const tokenInput = document.getElementById('tokenInput')
     const saveBtn = document.getElementById('saveTokenBtn')
@@ -487,7 +543,7 @@
     const pushBtn = document.getElementById('syncPushBtn')
     const syncStatus = document.getElementById('syncStatus')
 
-    saveBtn.addEventListener('click', async () => {
+    saveBtn?.addEventListener('click', async () => {
       const newToken = tokenInput.value.trim()
       if (!newToken) return
 
@@ -504,16 +560,16 @@
         renderWorkout(currentDay)
         renderProgress()
         renderSettings()
-        syncStatus.textContent = '✅ Token conectado y datos sincronizados'
+        syncStatus.textContent = '✅ Conectado. Datos sincronizados y encriptados.'
         syncStatus.style.color = 'var(--green)'
       } else {
-        syncStatus.textContent = '❌ Token inválido o sin acceso al Gist. Verifica que tenga scope "gist".'
+        syncStatus.textContent = '❌ Token inválido o sin acceso. Verifica que tenga scope "gist".'
         syncStatus.style.color = 'var(--primary)'
       }
     })
 
-    pullBtn.addEventListener('click', async () => {
-      syncStatus.textContent = '🔄 Descargando...'
+    pullBtn?.addEventListener('click', async () => {
+      syncStatus.textContent = '🔄 Descargando datos encriptados...'
       syncStatus.style.color = 'var(--orange)'
       const ok = await db.pullFromGist()
       if (ok) {
@@ -521,22 +577,23 @@
         renderDaySelector()
         renderWorkout(currentDay)
         renderProgress()
-        syncStatus.textContent = '✅ Datos descargados de GitHub'
+        syncStatus.textContent = '✅ Datos descargados y desencriptados'
         syncStatus.style.color = 'var(--green)'
       } else {
-        syncStatus.textContent = '❌ Error al descargar'
+        syncStatus.textContent = '❌ Error. ¿El PIN es el mismo que cuando se subió?'
         syncStatus.style.color = 'var(--primary)'
       }
     })
 
-    pushBtn.addEventListener('click', async () => {
-      syncStatus.textContent = '🔄 Subiendo...'
+    pushBtn?.addEventListener('click', async () => {
+      syncStatus.textContent = '🔄 Encriptando y subiendo...'
       syncStatus.style.color = 'var(--orange)'
       await db.syncToGist()
-      syncStatus.textContent = '✅ Datos subidos a GitHub'
+      syncStatus.textContent = '✅ Datos encriptados y subidos a GitHub'
       syncStatus.style.color = 'var(--green)'
     })
   }
 
-  init()
+  /* Start with lock screen */
+  initLockScreen()
 })()

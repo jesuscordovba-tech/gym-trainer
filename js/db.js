@@ -2,13 +2,15 @@
   window.db = (function() {
     const DAYS_KEY = 'gymapp_progress'
     const WEIGHTS_KEY = 'gymapp_weights'
-    const GIST_ID = 'a2e0cc16311b5589246aa6215e5a7250'
     const TOKEN_KEY = 'gymapp_github_token'
+    const GIST_ID = 'a2e0cc16311b5589246aa6215e5a7250'
 
     let progress = JSON.parse(localStorage.getItem(DAYS_KEY) || '{}')
     let weights = JSON.parse(localStorage.getItem(WEIGHTS_KEY) || '{}')
     let listeners = []
-    let syncing = false
+    let _pin = ''
+
+    function setPin(pin) { _pin = pin }
 
     function saveLocal() {
       localStorage.setItem(DAYS_KEY, JSON.stringify(progress))
@@ -37,62 +39,40 @@
       syncToGist()
     }
 
-    function onUpdate(cb) {
-      listeners.push(cb)
-    }
+    function onUpdate(cb) { listeners.push(cb) }
+    function notify() { listeners.forEach(cb => cb(progress, weights)) }
 
-    function notify() {
-      listeners.forEach(cb => cb(progress, weights))
-    }
+    function getToken() { return localStorage.getItem(TOKEN_KEY) || '' }
+    function setToken(t) { localStorage.setItem(TOKEN_KEY, t) }
+    function hasToken() { return !!getToken() }
 
-    function getToken() {
-      return localStorage.getItem(TOKEN_KEY) || ''
-    }
-
-    function setToken(token) {
-      localStorage.setItem(TOKEN_KEY, token)
-    }
-
-    function hasToken() {
-      return !!getToken()
-    }
-
-    /* --- GitHub Gist Sync --- */
+    /* --- GitHub Gist Sync (encrypted) --- */
 
     async function syncToGist() {
       const token = getToken()
-      if (!token) return
+      if (!token || !_pin) return
 
       clearTimeout(syncToGist._timer)
       syncToGist._timer = setTimeout(async () => {
-        syncing = true
         try {
-          const body = {
-            description: 'Gym Trainer Progress',
-            files: {
-              'progress.json': {
-                content: JSON.stringify({ progress, weights }, null, 2)
-              }
-            }
-          }
+          const encrypted = await auth.encrypt({ progress, weights }, _pin)
           await fetch(`https://api.github.com/gists/${GIST_ID}`, {
             method: 'PATCH',
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(body),
+            body: JSON.stringify({
+              files: { 'progress.json.enc': { content: encrypted } }
+            }),
           })
-        } catch (err) {
-          console.warn('Gist sync error:', err)
-        }
-        syncing = false
+        } catch (err) { console.warn('Gist sync error:', err) }
       }, 500)
     }
 
     async function pullFromGist() {
       const token = getToken()
-      if (!token) return false
+      if (!token || !_pin) return false
 
       try {
         const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
@@ -100,14 +80,14 @@
         })
         if (!res.ok) throw new Error('HTTP ' + res.status)
         const data = await res.json()
-        const content = data.files['progress.json']?.content
+        const content = data.files['progress.json.enc']?.content
         if (!content) return false
 
-        const parsed = JSON.parse(content)
-        if (!parsed) return false
+        const decrypted = await auth.decrypt(content, _pin)
+        if (!decrypted) return false
 
-        const remoteP = parsed.progress || {}
-        const remoteW = parsed.weights || {}
+        const remoteP = decrypted.progress || {}
+        const remoteW = decrypted.weights || {}
         let changed = false
 
         for (const dk of Object.keys(remoteP)) {
@@ -120,8 +100,7 @@
             const ex = parseInt(ek)
             if (isNaN(ex)) continue
             if ((rd[ek] || 0) > (ld[ex] || 0)) {
-              ld[ex] = rd[ek]
-              dc = true
+              ld[ex] = rd[ek]; dc = true
             }
           }
           if (dc) { progress[day] = ld; changed = true }
@@ -129,15 +108,11 @@
 
         for (const k of Object.keys(remoteW)) {
           if (!weights[k] && remoteW[k]) {
-            weights[k] = remoteW[k]
-            changed = true
+            weights[k] = remoteW[k]; changed = true
           }
         }
 
-        if (changed) {
-          saveLocal()
-          notify()
-        }
+        if (changed) { saveLocal(); notify() }
         return true
       } catch (err) {
         console.warn('Gist pull error:', err)
@@ -146,17 +121,10 @@
     }
 
     return {
-      getProgress,
-      getWeights,
-      setProgress,
-      setWeights,
-      resetAll,
-      onUpdate,
-      getToken,
-      setToken,
-      hasToken,
-      pullFromGist,
-      syncToGist,
+      getProgress, getWeights, setProgress, setWeights,
+      resetAll, onUpdate, setPin,
+      getToken, setToken, hasToken,
+      pullFromGist, syncToGist,
       get connected() { return hasToken() },
       get gistId() { return GIST_ID },
     }

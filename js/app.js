@@ -1,22 +1,22 @@
 ;(() => {
-  const DAYS_KEY = 'gymapp_progress'
-  const WEIGHTS_KEY = 'gymapp_weights'
-
-  let progress = JSON.parse(localStorage.getItem(DAYS_KEY) || '{}')
-  let weights = JSON.parse(localStorage.getItem(WEIGHTS_KEY) || '{}')
+  let progress = db.getProgress()
+  let weights = db.getWeights()
   let currentDay = 0
   let timerInterval = null
+  let cloudReady = false
 
-  /* Persist */
-  function save() {
-    localStorage.setItem(DAYS_KEY, JSON.stringify(progress))
-    localStorage.setItem(WEIGHTS_KEY, JSON.stringify(weights))
-  }
-
-  /* Weekday names */
   const DAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB']
 
-  /* Init */
+  function refreshData() {
+    progress = db.getProgress()
+    weights = db.getWeights()
+  }
+
+  function save() {
+    db.setProgress(progress)
+    db.setWeights(weights)
+  }
+
   function init() {
     renderNav()
     renderDaySelector()
@@ -24,9 +24,57 @@
     renderMachines()
     renderProgress()
     setupTimer()
+
+    /* Cloud sync indicator */
+    renderCloudStatus()
+
+    /* Try Firebase */
+    if (typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== 'TU_API_KEY') {
+      db.initFirebase(FIREBASE_CONFIG).then(ok => {
+        cloudReady = ok
+        renderCloudStatus()
+      })
+    }
+
+    /* Listen for remote changes */
+    db.onUpdate((p, w) => {
+      refreshData()
+      renderDaySelector()
+      renderWorkout(currentDay)
+      renderProgress()
+    })
+
+    /* Keyboard shortcut */
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') hideTimer()
+    })
   }
 
-  /* Navigation */
+  function renderCloudStatus() {
+    const header = document.querySelector('.header-inner')
+    let badge = document.getElementById('cloudBadge')
+    if (!badge) {
+      badge = document.createElement('div')
+      badge.id = 'cloudBadge'
+      badge.style.cssText = 'font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;'
+      header.appendChild(badge)
+    }
+
+    if (cloudReady) {
+      badge.textContent = '☁️ Sincronizado'
+      badge.style.background = 'rgba(46,204,113,0.15)'
+      badge.style.color = '#2ecc71'
+    } else if (typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== 'TU_API_KEY') {
+      badge.textContent = '🔄 Conectando...'
+      badge.style.background = 'rgba(243,156,18,0.15)'
+      badge.style.color = '#f39c12'
+    } else {
+      badge.textContent = '💾 Local'
+      badge.style.background = 'rgba(136,136,136,0.15)'
+      badge.style.color = '#888'
+    }
+  }
+
   function renderNav() {
     const nav = document.getElementById('mainNav')
     nav.addEventListener('click', e => {
@@ -39,7 +87,6 @@
     })
   }
 
-  /* Day selector */
   function renderDaySelector() {
     const grid = document.getElementById('dayGrid')
     grid.innerHTML = ''
@@ -63,11 +110,9 @@
     })
   }
 
-  /* Workout detail */
   function renderWorkout(dayIndex) {
     const d = workoutPlan.days[dayIndex]
     if (!d) return
-
     const container = document.getElementById('workoutContent')
     const dayProgress = progress[dayIndex] || {}
 
@@ -83,7 +128,6 @@
       const setsCompleted = dayProgress[exIdx] || 0
       const machine = gymData.getMachineById(ex.machine)
       const weight = weights[`${dayIndex}-${exIdx}`] || ''
-      const isSuperset = ex.supersetWith
 
       html += `
         <div class="exercise-item" data-day="${dayIndex}" data-ex="${exIdx}">
@@ -104,7 +148,7 @@
               </div>
               <div class="weight-input-row">
                 <label style="font-size:0.8rem;color:var(--text-dim);">Carga (kg):</label>
-                <input type="number" class="weight-input" value="${weight}" 
+                <input type="number" class="weight-input" value="${weight}"
                        data-day="${dayIndex}" data-ex="${exIdx}" placeholder="kg">
               </div>
             </div>
@@ -124,7 +168,6 @@
       `
     })
 
-    /* Cardio */
     html += `
       <div class="cardio-card">
         <h3>🏃 Cardio — ${d.cardio.type}</h3>
@@ -138,7 +181,6 @@
 
     html += `<div class="cooldown-box"><strong>🧘 Enfriamiento:</strong> ${d.cooldown}</div>`
 
-    /* Reset day button */
     html += `
       <div style="margin-top:1.5rem;text-align:center;">
         <button class="reset-btn" id="resetDay">Reiniciar progreso del día</button>
@@ -147,15 +189,12 @@
 
     container.innerHTML = html
 
-    /* Event listeners */
     container.querySelectorAll('.set-dot').forEach(btn => {
       btn.addEventListener('click', handleSetClick)
     })
-
     container.querySelectorAll('.weight-input').forEach(inp => {
       inp.addEventListener('change', handleWeightChange)
     })
-
     container.querySelectorAll('.rest-timer-btn').forEach(btn => {
       btn.addEventListener('click', startTimer)
     })
@@ -173,7 +212,6 @@
     }
   }
 
-  /* Set click */
   function handleSetClick(e) {
     const btn = e.currentTarget
     const day = parseInt(btn.dataset.day)
@@ -181,7 +219,6 @@
     const setIdx = parseInt(btn.dataset.set)
 
     if (!progress[day]) progress[day] = {}
-
     const setsCompleted = progress[day][ex] || 0
 
     if (setIdx < setsCompleted) {
@@ -192,23 +229,19 @@
       return
     }
 
-    if (progress[day][ex] > workoutPlan.days[day].exercises[ex].sets) {
-      progress[day][ex] = workoutPlan.days[day].exercises[ex].sets
-    }
+    const maxSets = workoutPlan.days[day].exercises[ex].sets
+    if (progress[day][ex] > maxSets) progress[day][ex] = maxSets
 
     save()
     renderDaySelector()
     renderWorkout(day)
 
-    /* Auto-start rest timer */
     const restBtn = document.querySelector(`.exercise-item[data-day="${day}"][data-ex="${ex}"] .rest-timer-btn`)
-    if (restBtn && (progress[day][ex] || 0) > 0 &&
-        (progress[day][ex] || 0) < workoutPlan.days[day].exercises[ex].sets) {
+    if (restBtn && (progress[day][ex] || 0) > 0 && (progress[day][ex] || 0) < maxSets) {
       startTimer.call(restBtn)
     }
   }
 
-  /* Weight change */
   function handleWeightChange(e) {
     const inp = e.currentTarget
     const key = `${inp.dataset.day}-${inp.dataset.ex}`
@@ -252,7 +285,6 @@
         clearInterval(timerInterval)
         label.textContent = '¡Siguiente serie!'
         display.style.color = 'var(--green)'
-        /* Play notification sound using oscillator */
         try {
           const actx = new (window.AudioContext || window.webkitAudioContext)()
           const osc = actx.createOscillator()
@@ -317,7 +349,6 @@
   /* Progress tab */
   function renderProgress() {
     const container = document.getElementById('progressContent')
-
     let totalSetsDone = 0
     let totalSets = 0
     let totalWorkouts = 0
@@ -360,7 +391,6 @@
       </div>
     `
 
-    /* Detail per day */
     html += '<h3 style="margin-bottom:0.75rem;">Detalle por día</h3>'
     workoutPlan.days.forEach((d, i) => {
       const p = progress[i] || {}
@@ -393,9 +423,8 @@
     if (resetAll) {
       resetAll.addEventListener('click', () => {
         if (confirm('¿Reiniciar TODO el progreso? Esta acción no se puede deshacer.')) {
-          progress = {}
-          weights = {}
-          save()
+          db.resetAll()
+          refreshData()
           renderDaySelector()
           renderWorkout(currentDay)
           renderProgress()
@@ -404,11 +433,5 @@
     }
   }
 
-  /* Keyboard shortcuts */
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') hideTimer()
-  })
-
-  /* Start */
   init()
 })()

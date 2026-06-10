@@ -181,6 +181,14 @@
     })
   }
 
+  function recommendWeight(ex, currentKg, allDone) {
+    if (!allDone || !currentKg) return null
+    const w = parseFloat(currentKg)
+    if (!w || w <= 0) return null
+    const inc = ex.rir <= 1 ? 2.5 : 1.25
+    return Math.round((w + inc) * 10) / 10
+  }
+
   function renderWorkout(dayIndex) {
     const d = workoutPlan.days[dayIndex]
     if (!d) return
@@ -197,8 +205,10 @@
 
     d.exercises.forEach((ex, exIdx) => {
       const setsCompleted = dayProgress[exIdx] || 0
+      const allDone = setsCompleted >= ex.sets
       const machine = gymData.getMachineById(ex.machine)
       const weight = weights[dayIndex + '-' + exIdx] || ''
+      const nextW = recommendWeight(ex, weight, allDone)
 
       html += '<div class="exercise-item" data-day="' + dayIndex + '" data-ex="' + exIdx + '">'
       html += '<div class="exercise-top">'
@@ -218,6 +228,7 @@
       html += '<div class="weight-input-row">'
       html += '<label class="weight-label">Carga (kg):</label>'
       html += '<input type="number" class="weight-input" value="' + weight + '" data-day="' + dayIndex + '" data-ex="' + exIdx + '" placeholder="kg">'
+      if (nextW) html += '<span class="weight-rec">⬆ ' + nextW + ' kg</span>'
       html += '</div></div>'
       html += '<div class="exercise-controls">'
       html += '<div class="set-tracker">'

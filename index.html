@@ -10,6 +10,7 @@
                style-src 'self' 'unsafe-inline';
                connect-src 'self' https://api.github.com;
                img-src 'self' data:;
+               frame-src https://www.youtube.com;
                base-uri 'self';
                form-action 'none';">
   <title>GYM TRAINER — Definición 21y</title>
@@ -152,6 +153,19 @@
       <div id="settingsContent"></div>
     </div>
 
+  </div>
+
+  <!-- Video overlay -->
+  <div class="video-overlay" id="videoOverlay">
+    <div class="video-modal">
+      <div class="video-modal-header">
+        <span class="video-modal-title">📺 Demostración</span>
+        <button class="video-close" id="videoClose">✕</button>
+      </div>
+      <div class="video-wrapper">
+        <iframe id="videoIframe" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+      </div>
+    </div>
   </div>
 
   <!-- Timer overlay -->

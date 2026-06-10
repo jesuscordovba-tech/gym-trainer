@@ -113,6 +113,9 @@ const gymData = {
   }
 }
 
+const videoSearchUrl = (name) =>
+  `https://www.youtube.com/embed?listType=search&list=COMO+HACER+${encodeURIComponent(name)}+maquina+gimnasio`
+
 const workoutPlan = {
   days: [
     {
@@ -121,12 +124,12 @@ const workoutPlan = {
       focus: 'Fuerza e hipertrofia',
       warmup: '5 min elíptica + movilidad de hombros',
       exercises: [
-        { name: 'Press de Pecho Sentado', machine: 'press-pecho-sentado', sets: 4, reps: '8-10', rest: 90, rir: 1, muscle: 'Pectoral mayor' },
-        { name: 'Press de Hombros Sentado', machine: 'press-hombros-sentado', sets: 4, reps: '8-10', rest: 90, rir: 1, muscle: 'Deltoides' },
-        { name: 'Press Inclinado Sentado', machine: 'press-inclinado-sentado', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Pectoral mayor (cabeza clavicular)' },
-        { name: 'Elevación Lateral en Máquina', machine: 'elevacion-lateral-maquina', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Deltoides lateral' },
-        { name: 'Extensión de Tríceps en Polea Alta', machine: 'extension-triceps-polea-alta', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Tríceps' },
-        { name: 'Fondos Asistidos', machine: 'fondos-asistidos', sets: 3, reps: '10-15', rest: 60, rir: 1, muscle: 'Pecho + Tríceps' },
+        { name: 'Press de Pecho Sentado', machine: 'press-pecho-sentado', sets: 4, reps: '8-10', rest: 90, rir: 1, muscle: 'Pectoral mayor', video: 'XCFtfAkEWkE' },
+        { name: 'Press de Hombros Sentado', machine: 'press-hombros-sentado', sets: 4, reps: '8-10', rest: 90, rir: 1, muscle: 'Deltoides', video: videoSearchUrl('press de hombros sentado maquina') },
+        { name: 'Press Inclinado Sentado', machine: 'press-inclinado-sentado', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Pectoral mayor (cabeza clavicular)', video: videoSearchUrl('press inclinado sentado maquina') },
+        { name: 'Elevación Lateral en Máquina', machine: 'elevacion-lateral-maquina', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Deltoides lateral', video: '1Z0g4jl8DDQ' },
+        { name: 'Extensión de Tríceps en Polea Alta', machine: 'extension-triceps-polea-alta', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Tríceps', video: 'cGEPFQ99pyQ' },
+        { name: 'Fondos Asistidos', machine: 'fondos-asistidos', sets: 3, reps: '10-15', rest: 60, rir: 1, muscle: 'Pecho + Tríceps', video: videoSearchUrl('fondos asistidos maquina') },
       ],
       cardio: {
         type: 'HIIT',
@@ -142,12 +145,12 @@ const workoutPlan = {
       focus: 'Fuerza e hipertrofia',
       warmup: '5 min remo + movilidad torácica',
       exercises: [
-        { name: 'Jalón al Pecho Agarre Amplio', machine: 'jalon-amplio', sets: 4, reps: '8-10', rest: 90, rir: 1, muscle: 'Dorsales' },
-        { name: 'Remo Articulado (Low Row)', machine: 'remo-articulado', sets: 4, reps: '8-10', rest: 90, rir: 1, muscle: 'Espalda media' },
-        { name: 'Remo Unilateral', machine: 'remo-unilateral', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Dorsal + Romboides' },
-        { name: 'Reverse Pec Deck', machine: 'reverse-pec-deck', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Deltoides posterior' },
-        { name: 'Curl de Bíceps en Máquina', machine: 'curl-biceps-maquina', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Bíceps' },
-        { name: 'Pullover en Máquina', machine: 'pullover-maquina', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Dorsales + Serrato' },
+        { name: 'Jalón al Pecho Agarre Amplio', machine: 'jalon-amplio', sets: 4, reps: '8-10', rest: 90, rir: 1, muscle: 'Dorsales', video: 'Ln0CZzrlTEw' },
+        { name: 'Remo Articulado (Low Row)', machine: 'remo-articulado', sets: 4, reps: '8-10', rest: 90, rir: 1, muscle: 'Espalda media', video: 'nlPlY9FrDH8' },
+        { name: 'Remo Unilateral', machine: 'remo-unilateral', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Dorsal + Romboides', video: videoSearchUrl('remo unilateral mancuerna') },
+        { name: 'Reverse Pec Deck', machine: 'reverse-pec-deck', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Deltoides posterior', video: videoSearchUrl('reverse pec deck maquina') },
+        { name: 'Curl de Bíceps en Máquina', machine: 'curl-biceps-maquina', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Bíceps', video: '_CKKZGJ48DE' },
+        { name: 'Pullover en Máquina', machine: 'pullover-maquina', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Dorsales + Serrato', video: videoSearchUrl('pullover maquina espalda') },
       ],
       cardio: {
         type: 'HIIT',
@@ -163,12 +166,12 @@ const workoutPlan = {
       focus: 'Hipertrofia de piernas y abdominales',
       warmup: '5 min bicicleta + movilidad de cadera',
       exercises: [
-        { name: 'Hack Squat', machine: 'hack-squat', sets: 4, reps: '8-10', rest: 120, rir: 1, muscle: 'Cuádriceps + Glúteos' },
-        { name: 'Curl Femoral Acostado', machine: 'curl-femoral-acostado', sets: 4, reps: '8-10', rest: 90, rir: 1, muscle: 'Femorales' },
-        { name: 'Prensa de Piernas 45°', machine: 'prensa-45', sets: 3, reps: '10-12', rest: 90, rir: 1, muscle: 'Cuádriceps + Glúteos' },
-        { name: 'Sentadilla Hack Invertida', machine: 'hack-invertida', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Cuádriceps' },
-        { name: 'Extensión de Piernas', machine: 'extension-piernas', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Cuádriceps' },
-        { name: 'Elevación de Pantorrillas Sentado', machine: 'pantorrillas-sentado', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Sóleo' },
+        { name: 'Hack Squat', machine: 'hack-squat', sets: 4, reps: '8-10', rest: 120, rir: 1, muscle: 'Cuádriceps + Glúteos', video: '0tn5K9NlCfo' },
+        { name: 'Curl Femoral Acostado', machine: 'curl-femoral-acostado', sets: 4, reps: '8-10', rest: 90, rir: 1, muscle: 'Femorales', video: videoSearchUrl('curl femoral acostado maquina') },
+        { name: 'Prensa de Piernas 45°', machine: 'prensa-45', sets: 3, reps: '10-12', rest: 90, rir: 1, muscle: 'Cuádriceps + Glúteos', video: videoSearchUrl('prensa piernas 45 grados') },
+        { name: 'Sentadilla Hack Invertida', machine: 'hack-invertida', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Cuádriceps', video: videoSearchUrl('hack squat invertido') },
+        { name: 'Extensión de Piernas', machine: 'extension-piernas', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Cuádriceps', video: videoSearchUrl('extension de piernas maquina') },
+        { name: 'Elevación de Pantorrillas Sentado', machine: 'pantorrillas-sentado', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Sóleo', video: videoSearchUrl('elevacion pantorrillas sentado') },
       ],
       cardio: {
         type: 'HIIT',
@@ -184,12 +187,12 @@ const workoutPlan = {
       focus: 'Hipertrofia y resistencia muscular',
       warmup: '5 min caminadora + círculos de hombros',
       exercises: [
-        { name: 'Máquina Convergente para Pecho', machine: 'maquina-convergente-pecho', sets: 4, reps: '10-12', rest: 60, rir: 1, muscle: 'Pectoral mayor' },
-        { name: 'Pec Deck', machine: 'pec-deck', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Pectoral mayor (aducción)' },
-        { name: 'Press Declinado Sentado', machine: 'press-declinado-sentado', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Pectoral mayor (cabeza esternal)' },
-        { name: 'Polea para Elevaciones Laterales', machine: 'polea-elevaciones-laterales', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Deltoides lateral' },
-        { name: 'Máquina de Fondos para Tríceps', machine: 'maquina-fondos-triceps', sets: 3, reps: '10-15', rest: 45, rir: 0, muscle: 'Tríceps' },
-        { name: 'Extensión de Tríceps por Encima de la Cabeza en Polea', machine: 'extension-triceps-cabeza-polea', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Tríceps (cabeza larga)' },
+        { name: 'Máquina Convergente para Pecho', machine: 'maquina-convergente-pecho', sets: 4, reps: '10-12', rest: 60, rir: 1, muscle: 'Pectoral mayor', video: videoSearchUrl('maquina convergente pecho') },
+        { name: 'Pec Deck', machine: 'pec-deck', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Pectoral mayor (aducción)', video: '0nSrP3Xpvx4' },
+        { name: 'Press Declinado Sentado', machine: 'press-declinado-sentado', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Pectoral mayor (cabeza esternal)', video: videoSearchUrl('press declinado sentado maquina') },
+        { name: 'Polea para Elevaciones Laterales', machine: 'polea-elevaciones-laterales', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Deltoides lateral', video: videoSearchUrl('elevaciones laterales polea') },
+        { name: 'Máquina de Fondos para Tríceps', machine: 'maquina-fondos-triceps', sets: 3, reps: '10-15', rest: 45, rir: 0, muscle: 'Tríceps', video: videoSearchUrl('maquina fondos triceps') },
+        { name: 'Extensión de Tríceps por Encima de la Cabeza en Polea', machine: 'extension-triceps-cabeza-polea', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Tríceps (cabeza larga)', video: videoSearchUrl('extension triceps sobre cabeza polea') },
       ],
       cardio: {
         type: 'HIIT',
@@ -205,12 +208,12 @@ const workoutPlan = {
       focus: 'Hipertrofia y resistencia muscular',
       warmup: '5 min remo + rotación torácica',
       exercises: [
-        { name: 'Jalón al Pecho Agarre Neutro', machine: 'jalon-neutro', sets: 4, reps: '10-12', rest: 60, rir: 1, muscle: 'Dorsales' },
-        { name: 'Remo Sentado en Polea', machine: 'remo-sentado-polea', sets: 4, reps: '10-12', rest: 60, rir: 1, muscle: 'Espalda media' },
-        { name: 'Dominadas Asistidas', machine: 'dominadas-asistidas', sets: 3, reps: '8-12', rest: 90, rir: 1, muscle: 'Dorsales + Bíceps' },
-        { name: 'Curl Scott en Máquina', machine: 'curl-scott-maquina', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Bíceps' },
-        { name: 'Polea Baja para Bíceps', machine: 'polea-baja-biceps', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Bíceps' },
-        { name: 'Elevación de Piernas', machine: 'elevacion-piernas', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Abdominales inferiores' },
+        { name: 'Jalón al Pecho Agarre Neutro', machine: 'jalon-neutro', sets: 4, reps: '10-12', rest: 60, rir: 1, muscle: 'Dorsales', video: 'QFZiYjKWaa8' },
+        { name: 'Remo Sentado en Polea', machine: 'remo-sentado-polea', sets: 4, reps: '10-12', rest: 60, rir: 1, muscle: 'Espalda media', video: 'JtTusrYzAos' },
+        { name: 'Dominadas Asistidas', machine: 'dominadas-asistidas', sets: 3, reps: '8-12', rest: 90, rir: 1, muscle: 'Dorsales + Bíceps', video: videoSearchUrl('dominadas asistidas maquina') },
+        { name: 'Curl Scott en Máquina', machine: 'curl-scott-maquina', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Bíceps', video: videoSearchUrl('curl scott maquina') },
+        { name: 'Polea Baja para Bíceps', machine: 'polea-baja-biceps', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Bíceps', video: videoSearchUrl('polea baja biceps') },
+        { name: 'Elevación de Piernas', machine: 'elevacion-piernas', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Abdominales inferiores', video: videoSearchUrl('elevacion de piernas abdominales') },
       ],
       cardio: {
         type: 'LISS',
@@ -226,14 +229,14 @@ const workoutPlan = {
       focus: 'Hipertrofia de piernas y abdomen definido',
       warmup: '5 min escaladora + rotación de torso',
       exercises: [
-        { name: 'Smith Machine para Sentadillas', machine: 'smith-sentadillas', sets: 4, reps: '10-12', rest: 90, rir: 1, muscle: 'Cuádriceps + Glúteos' },
-        { name: 'Curl Femoral Sentado', machine: 'curl-femoral-sentado', sets: 3, reps: '12-15', rest: 60, rir: 0, muscle: 'Femorales' },
-        { name: 'Prensa Horizontal', machine: 'prensa-horizontal', sets: 3, reps: '12-15', rest: 60, rir: 1, muscle: 'Cuádriceps + Glúteos' },
-        { name: 'Aductores + Abductores (superset)', machine: 'aductores', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Aductores / Abductores', supersetWith: 'abductores' },
-        { name: 'Elevación de Pantorrillas de Pie', machine: 'pantorrillas-pie', sets: 4, reps: '12-15', rest: 30, rir: 0, muscle: 'Gemelos' },
-        { name: 'Crunch Abdominal en Máquina', machine: 'crunch-maquina', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Abdominales' },
-        { name: 'Elevación de Piernas', machine: 'elevacion-piernas', sets: 3, reps: '12-15', rest: 30, rir: 0, muscle: 'Abdominales inferiores' },
-        { name: 'Silla Romana', machine: 'silla-romana', sets: 3, reps: '12-15', rest: 30, rir: 0, muscle: 'Espalda baja + Core' },
+        { name: 'Smith Machine para Sentadillas', machine: 'smith-sentadillas', sets: 4, reps: '10-12', rest: 90, rir: 1, muscle: 'Cuádriceps + Glúteos', video: videoSearchUrl('smith machine sentadillas') },
+        { name: 'Curl Femoral Sentado', machine: 'curl-femoral-sentado', sets: 3, reps: '12-15', rest: 60, rir: 0, muscle: 'Femorales', video: videoSearchUrl('curl femoral sentado') },
+        { name: 'Prensa Horizontal', machine: 'prensa-horizontal', sets: 3, reps: '12-15', rest: 60, rir: 1, muscle: 'Cuádriceps + Glúteos', video: videoSearchUrl('prensa horizontal piernas') },
+        { name: 'Aductores + Abductores (superset)', machine: 'aductores', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Aductores / Abductores', supersetWith: 'abductores', video: videoSearchUrl('aductores abductores maquina') },
+        { name: 'Elevación de Pantorrillas de Pie', machine: 'pantorrillas-pie', sets: 4, reps: '12-15', rest: 30, rir: 0, muscle: 'Gemelos', video: videoSearchUrl('elevacion pantorrillas de pie') },
+        { name: 'Crunch Abdominal en Máquina', machine: 'crunch-maquina', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Abdominales', video: videoSearchUrl('crunch abdominal maquina') },
+        { name: 'Elevación de Piernas', machine: 'elevacion-piernas', sets: 3, reps: '12-15', rest: 30, rir: 0, muscle: 'Abdominales inferiores', video: videoSearchUrl('elevacion de piernas abdominales') },
+        { name: 'Silla Romana', machine: 'silla-romana', sets: 3, reps: '12-15', rest: 30, rir: 0, muscle: 'Espalda baja + Core', video: videoSearchUrl('silla romana ejercicios') },
       ],
       cardio: {
         type: 'HIIT',

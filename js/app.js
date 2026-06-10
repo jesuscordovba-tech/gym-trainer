@@ -115,6 +115,7 @@
     renderProgress()
     renderSettings()
     setupTimer()
+    setupVideo()
     renderCloudStatus()
 
     if (cloudReady) {
@@ -216,6 +217,7 @@
       html += '<div class="exercise-info">'
       html += '<div class="exercise-name">' + esc(ex.name)
       if (ex.supersetWith) html += '<span class="superset-badge">SUPERSET</span>'
+      if (ex.video) html += '<button class="video-btn" data-video="' + esc(ex.video) + '" title="Ver video demostrativo">▶</button>'
       html += '</div>'
       html += '<div class="exercise-meta">'
       html += '<span>🔁 ' + ex.sets + '×' + esc(ex.reps) + '</span>'
@@ -267,6 +269,9 @@
     })
     container.querySelectorAll('.rest-timer-btn').forEach(btn => {
       btn.addEventListener('click', startTimer)
+    })
+    container.querySelectorAll('.video-btn').forEach(btn => {
+      btn.addEventListener('click', openVideo)
     })
 
     const resetBtn = document.getElementById('resetDay')
@@ -378,6 +383,30 @@
     clearInterval(timerInterval)
     document.getElementById('timerOverlay').classList.remove('show')
     document.getElementById('timerDisplay').style.color = ''
+  }
+
+  /* === Video Modal === */
+  function setupVideo() {
+    document.getElementById('videoOverlay').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeVideo()
+    })
+    document.getElementById('videoClose').addEventListener('click', closeVideo)
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeVideo()
+    })
+  }
+
+  function openVideo(e) {
+    const url = e.currentTarget.dataset.video
+    const iframe = document.getElementById('videoIframe')
+    if (!url || !iframe) return
+    iframe.src = url.match(/^https?:\/\//) ? url : 'https://www.youtube.com/embed/' + url
+    document.getElementById('videoOverlay').classList.add('show')
+  }
+
+  function closeVideo() {
+    document.getElementById('videoOverlay').classList.remove('show')
+    document.getElementById('videoIframe').src = ''
   }
 
   function esc(s) {

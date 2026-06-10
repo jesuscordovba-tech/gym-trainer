@@ -597,8 +597,8 @@
         syncStatus.textContent = '✅ Conectado. Datos sincronizados y encriptados.'
         syncStatus.style.color = 'var(--green)'
       } else {
-        syncStatus.textContent = '❌ Token inválido o sin acceso. Verifica que tenga scope "gist".'
-        syncStatus.style.color = 'var(--primary)'
+        syncStatus.innerHTML = '❌ Token guardado, pero los datos en el Gist están encriptados con otro PIN. Haz clic en <strong>📤 Subir a GitHub</strong> para sobrescribirlos con tu PIN actual.'
+        syncStatus.style.color = 'var(--orange)'
       }
     })
 

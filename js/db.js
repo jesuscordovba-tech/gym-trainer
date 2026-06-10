@@ -2,15 +2,13 @@
   window.db = (function() {
     const DAYS_KEY = 'gymapp_progress'
     const WEIGHTS_KEY = 'gymapp_weights'
+    const GIST_ID = 'a2e0cc16311b5589246aa6215e5a7250'
+    const TOKEN_KEY = 'gymapp_github_token'
 
     let progress = JSON.parse(localStorage.getItem(DAYS_KEY) || '{}')
     let weights = JSON.parse(localStorage.getItem(WEIGHTS_KEY) || '{}')
-    let firebaseApp = null
-    let firestore = null
-    let userId = null
-    let unsubscribe = null
-    let syncing = false
     let listeners = []
+    let syncing = false
 
     function saveLocal() {
       localStorage.setItem(DAYS_KEY, JSON.stringify(progress))
@@ -23,20 +21,20 @@
     function setProgress(newProgress) {
       progress = newProgress
       saveLocal()
-      syncToCloud()
+      syncToGist()
     }
 
     function setWeights(newWeights) {
       weights = newWeights
       saveLocal()
-      syncToCloud()
+      syncToGist()
     }
 
     function resetAll() {
       progress = {}
       weights = {}
       saveLocal()
-      syncToCloud()
+      syncToGist()
     }
 
     function onUpdate(cb) {
@@ -47,98 +45,104 @@
       listeners.forEach(cb => cb(progress, weights))
     }
 
-    /* --- Firebase --- */
-
-    async function initFirebase(config) {
-      if (!config || !config.apiKey) return
-
-      try {
-        firebaseApp = firebase.initializeApp(config, 'gymapp')
-        firestore = firebase.firestore(firebaseApp)
-        firestore.settings({ merge: true })
-
-        const auth = firebase.auth(firebaseApp)
-        const cred = await auth.signInAnonymously()
-        userId = cred.user.uid
-
-        /* Listen for remote changes */
-        unsubscribe = firestore.collection('users').doc(userId)
-          .onSnapshot(snap => {
-            if (syncing) return
-            if (!snap.exists) return
-            const data = snap.data()
-            if (!data) return
-
-            const remoteProgress = data.progress || {}
-            const remoteWeights = data.weights || {}
-
-            /* Merge: remote wins if newer, but we keep local as base */
-            let changed = false
-            for (const dayKey of Object.keys(remoteProgress)) {
-              const day = parseInt(dayKey)
-              if (isNaN(day)) continue
-              const remoteDay = remoteProgress[dayKey]
-              const localDay = progress[day] || {}
-              let dayChanged = false
-              for (const exKey of Object.keys(remoteDay)) {
-                const ex = parseInt(exKey)
-                if (isNaN(ex)) continue
-                const remoteVal = remoteDay[exKey]
-                const localVal = localDay[ex] || 0
-                if (remoteVal > localVal) {
-                  localDay[ex] = remoteVal
-                  dayChanged = true
-                }
-              }
-              if (dayChanged) {
-                progress[day] = localDay
-                changed = true
-              }
-            }
-
-            for (const key of Object.keys(remoteWeights)) {
-              if (!weights[key] && remoteWeights[key]) {
-                weights[key] = remoteWeights[key]
-                changed = true
-              }
-            }
-
-            if (changed) {
-              saveLocal()
-              notify()
-            }
-          }, err => {
-            console.warn('Firestore sync error:', err)
-          })
-
-        /* Push local data to cloud */
-        await syncToCloud()
-
-        console.log('Firebase connected:', userId)
-        return true
-      } catch (err) {
-        console.warn('Firebase init failed:', err)
-        return false
-      }
+    function getToken() {
+      return localStorage.getItem(TOKEN_KEY) || ''
     }
 
-    let syncTimeout = null
-    function syncToCloud() {
-      if (!firestore || !userId) return
-      clearTimeout(syncTimeout)
-      syncTimeout = setTimeout(async () => {
+    function setToken(token) {
+      localStorage.setItem(TOKEN_KEY, token)
+    }
+
+    function hasToken() {
+      return !!getToken()
+    }
+
+    /* --- GitHub Gist Sync --- */
+
+    async function syncToGist() {
+      const token = getToken()
+      if (!token) return
+
+      clearTimeout(syncToGist._timer)
+      syncToGist._timer = setTimeout(async () => {
         syncing = true
         try {
-          await firestore.collection('users').doc(userId).set({
-            progress: progress,
-            weights: weights,
-            lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
-          }, { merge: true })
+          const body = {
+            description: 'Gym Trainer Progress',
+            files: {
+              'progress.json': {
+                content: JSON.stringify({ progress, weights }, null, 2)
+              }
+            }
+          }
+          await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+          })
         } catch (err) {
-          console.warn('Firestore write error:', err)
+          console.warn('Gist sync error:', err)
         }
         syncing = false
       }, 500)
+    }
+
+    async function pullFromGist() {
+      const token = getToken()
+      if (!token) return false
+
+      try {
+        const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        })
+        if (!res.ok) throw new Error('HTTP ' + res.status)
+        const data = await res.json()
+        const content = data.files['progress.json']?.content
+        if (!content) return false
+
+        const parsed = JSON.parse(content)
+        if (!parsed) return false
+
+        const remoteP = parsed.progress || {}
+        const remoteW = parsed.weights || {}
+        let changed = false
+
+        for (const dk of Object.keys(remoteP)) {
+          const day = parseInt(dk)
+          if (isNaN(day)) continue
+          const rd = remoteP[dk]
+          const ld = progress[day] || {}
+          let dc = false
+          for (const ek of Object.keys(rd)) {
+            const ex = parseInt(ek)
+            if (isNaN(ex)) continue
+            if ((rd[ek] || 0) > (ld[ex] || 0)) {
+              ld[ex] = rd[ek]
+              dc = true
+            }
+          }
+          if (dc) { progress[day] = ld; changed = true }
+        }
+
+        for (const k of Object.keys(remoteW)) {
+          if (!weights[k] && remoteW[k]) {
+            weights[k] = remoteW[k]
+            changed = true
+          }
+        }
+
+        if (changed) {
+          saveLocal()
+          notify()
+        }
+        return true
+      } catch (err) {
+        console.warn('Gist pull error:', err)
+        return false
+      }
     }
 
     return {
@@ -148,9 +152,13 @@
       setWeights,
       resetAll,
       onUpdate,
-      initFirebase,
-      get userId() { return userId },
-      get connected() { return !!userId },
+      getToken,
+      setToken,
+      hasToken,
+      pullFromGist,
+      syncToGist,
+      get connected() { return hasToken() },
+      get gistId() { return GIST_ID },
     }
   })()
 })()

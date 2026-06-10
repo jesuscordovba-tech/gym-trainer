@@ -23,20 +23,22 @@
     renderWorkout(currentDay)
     renderMachines()
     renderProgress()
+    renderSettings()
     setupTimer()
-
-    /* Cloud sync indicator */
     renderCloudStatus()
 
-    /* Try Firebase */
-    if (typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== 'TU_API_KEY') {
-      db.initFirebase(FIREBASE_CONFIG).then(ok => {
-        cloudReady = ok
-        renderCloudStatus()
+    cloudReady = db.connected
+    renderCloudStatus()
+
+    if (cloudReady) {
+      db.pullFromGist().then(() => {
+        refreshData()
+        renderDaySelector()
+        renderWorkout(currentDay)
+        renderProgress()
       })
     }
 
-    /* Listen for remote changes */
     db.onUpdate((p, w) => {
       refreshData()
       renderDaySelector()
@@ -44,7 +46,6 @@
       renderProgress()
     })
 
-    /* Keyboard shortcut */
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') hideTimer()
     })
@@ -52,26 +53,22 @@
 
   function renderCloudStatus() {
     const header = document.querySelector('.header-inner')
-    let badge = document.getElementById('cloudBadge')
-    if (!badge) {
-      badge = document.createElement('div')
-      badge.id = 'cloudBadge'
-      badge.style.cssText = 'font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;'
-      header.appendChild(badge)
+    let el = document.getElementById('cloudBadge')
+    if (!el) {
+      el = document.createElement('div')
+      el.id = 'cloudBadge'
+      el.style.cssText = 'font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;'
+      header.appendChild(el)
     }
 
     if (cloudReady) {
-      badge.textContent = '☁️ Sincronizado'
-      badge.style.background = 'rgba(46,204,113,0.15)'
-      badge.style.color = '#2ecc71'
-    } else if (typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== 'TU_API_KEY') {
-      badge.textContent = '🔄 Conectando...'
-      badge.style.background = 'rgba(243,156,18,0.15)'
-      badge.style.color = '#f39c12'
+      el.textContent = '☁️ Sincronizado'
+      el.style.background = 'rgba(46,204,113,0.15)'
+      el.style.color = '#2ecc71'
     } else {
-      badge.textContent = '💾 Local'
-      badge.style.background = 'rgba(136,136,136,0.15)'
-      badge.style.color = '#888'
+      el.textContent = '💾 Local'
+      el.style.background = 'rgba(136,136,136,0.15)'
+      el.style.color = '#888'
     }
   }
 
@@ -253,7 +250,6 @@
     save()
   }
 
-  /* Timer */
   function setupTimer() {
     document.getElementById('timerOverlay').addEventListener('click', e => {
       if (e.target === e.currentTarget) hideTimer()
@@ -312,7 +308,6 @@
     document.getElementById('timerDisplay').style.color = ''
   }
 
-  /* Machines tab */
   function renderMachines() {
     const container = document.getElementById('machinesContent')
     const categories = [
@@ -346,7 +341,6 @@
     container.innerHTML = html
   }
 
-  /* Progress tab */
   function renderProgress() {
     const container = document.getElementById('progressContent')
     let totalSetsDone = 0
@@ -431,6 +425,117 @@
         }
       })
     }
+  }
+
+  /* Settings tab */
+  function renderSettings() {
+    const container = document.getElementById('settingsContent')
+    const token = db.getToken()
+    const hasToken = !!token
+
+    container.innerHTML = `
+      <h2 style="margin-bottom:1.5rem;">⚙️ Sincronización</h2>
+      <div class="card">
+        <p style="margin-bottom:1rem;color:var(--text-dim);">
+          Tu progreso se guarda localmente en el navegador.
+          Para sincronizar entre dispositivos, conecta un token de GitHub.
+        </p>
+        <div style="margin-bottom:1rem;">
+          <label style="display:block;font-size:0.85rem;margin-bottom:0.4rem;color:var(--text-dim);">
+            Token de GitHub (solo permiso <code>gist</code>):
+          </label>
+          <div style="display:flex;gap:0.5rem;">
+            <input type="password" id="tokenInput" value="${token}"
+                   placeholder="ghp_..."
+                   style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);
+                          padding:0.5rem 0.75rem;border-radius:var(--radius-sm);font-size:0.9rem;">
+            <button id="saveTokenBtn" class="rest-timer-btn"
+                    style="background:rgba(46,204,113,0.15);border-color:var(--green);color:var(--green);">
+              ${hasToken ? 'Actualizar' : 'Conectar'}
+            </button>
+          </div>
+        </div>
+        <div id="syncStatus" style="font-size:0.85rem;margin-top:0.5rem;"></div>
+        <div style="margin-top:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+          <button id="syncPullBtn" class="reset-btn" style="border-color:var(--green);color:var(--green);" ${hasToken ? '' : 'disabled'}>
+            📥 Descargar de GitHub
+          </button>
+          <button id="syncPushBtn" class="reset-btn" style="border-color:var(--orange);color:var(--orange);" ${hasToken ? '' : 'disabled'}>
+            📤 Subir a GitHub
+          </button>
+        </div>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+          <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.5rem;">
+            <strong>ID del Gist:</strong> <code>${db.gistId}</code>
+          </p>
+          <details style="font-size:0.8rem;color:var(--text-dim);">
+            <summary style="cursor:pointer;color:var(--primary);">¿Cómo obtener un token?</summary>
+            <ol style="margin-top:0.5rem;padding-left:1.2rem;line-height:1.8;">
+              <li>Ve a <a href="https://github.com/settings/tokens" target="_blank" style="color:var(--primary);">github.com/settings/tokens</a></li>
+              <li>Clic en <strong>Generate new token (classic)</strong></li>
+              <li>Selecciona solo el scope <strong>gist</strong></li>
+              <li>Genera el token y cópialo aquí</li>
+            </ol>
+          </details>
+        </div>
+      </div>
+    `
+
+    const tokenInput = document.getElementById('tokenInput')
+    const saveBtn = document.getElementById('saveTokenBtn')
+    const pullBtn = document.getElementById('syncPullBtn')
+    const pushBtn = document.getElementById('syncPushBtn')
+    const syncStatus = document.getElementById('syncStatus')
+
+    saveBtn.addEventListener('click', async () => {
+      const newToken = tokenInput.value.trim()
+      if (!newToken) return
+
+      db.setToken(newToken)
+      syncStatus.textContent = '🔄 Verificando token...'
+      syncStatus.style.color = 'var(--orange)'
+
+      const ok = await db.pullFromGist()
+      if (ok) {
+        cloudReady = true
+        renderCloudStatus()
+        refreshData()
+        renderDaySelector()
+        renderWorkout(currentDay)
+        renderProgress()
+        renderSettings()
+        syncStatus.textContent = '✅ Token conectado y datos sincronizados'
+        syncStatus.style.color = 'var(--green)'
+      } else {
+        syncStatus.textContent = '❌ Token inválido o sin acceso al Gist. Verifica que tenga scope "gist".'
+        syncStatus.style.color = 'var(--primary)'
+      }
+    })
+
+    pullBtn.addEventListener('click', async () => {
+      syncStatus.textContent = '🔄 Descargando...'
+      syncStatus.style.color = 'var(--orange)'
+      const ok = await db.pullFromGist()
+      if (ok) {
+        refreshData()
+        renderDaySelector()
+        renderWorkout(currentDay)
+        renderProgress()
+        syncStatus.textContent = '✅ Datos descargados de GitHub'
+        syncStatus.style.color = 'var(--green)'
+      } else {
+        syncStatus.textContent = '❌ Error al descargar'
+        syncStatus.style.color = 'var(--primary)'
+      }
+    })
+
+    pushBtn.addEventListener('click', async () => {
+      syncStatus.textContent = '🔄 Subiendo...'
+      syncStatus.style.color = 'var(--orange)'
+      await db.syncToGist()
+      syncStatus.textContent = '✅ Datos subidos a GitHub'
+      syncStatus.style.color = 'var(--green)'
+    })
   }
 
   init()

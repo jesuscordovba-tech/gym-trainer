@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GYM TRAINER — Definición</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="logo">💪 <span>GYM</span>TRAINER</div>
+      <nav class="main-nav" id="mainNav">
+        <button data-tab="workoutTab" class="active">Entreno</button>
+        <button data-tab="progressTab">Progreso</button>
+        <button data-tab="machinesTab">Máquinas</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Day selector -->
+    <div id="dayGrid" class="day-grid"></div>
+
+    <!-- Workout tab -->
+    <div id="workoutTab" class="tab-content">
+      <div id="workoutContent"></div>
+    </div>
+
+    <!-- Progress tab -->
+    <div id="progressTab" class="tab-content hidden">
+      <div id="progressContent"></div>
+    </div>
+
+    <!-- Machines tab -->
+    <div id="machinesTab" class="tab-content hidden">
+      <h2 style="margin-bottom:1.5rem;">🏋️ Máquinas del Gym</h2>
+      <div id="machinesContent"></div>
+    </div>
+
+  </div>
+
+  <!-- Timer overlay -->
+  <div class="timer-overlay" id="timerOverlay">
+    <div class="timer-modal">
+      <div class="timer-label" id="timerLabel">Descanso</div>
+      <div class="timer-display" id="timerDisplay">0:00</div>
+      <div class="timer-controls">
+        <button class="timer-btn" id="timerStop">Detener</button>
+        <button class="timer-btn skip" id="timerSkip">Saltar →</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

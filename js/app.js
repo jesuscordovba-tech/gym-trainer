@@ -4,6 +4,7 @@
   let currentDay = 0
   let timerInterval = null
   let cloudReady = false
+  let audioCtx = null
 
   const DAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB']
 
@@ -98,12 +99,6 @@
         location.reload()
       }
     })
-
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') btn.click()
-    })
-
-    input.focus()
   }
 
   function initApp() {
@@ -144,18 +139,11 @@
     if (!el) {
       el = document.createElement('div')
       el.id = 'cloudBadge'
-      el.style.cssText = 'font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;'
+      el.className = 'cloud-badge'
       document.querySelector('.header-inner').appendChild(el)
     }
-    if (cloudReady) {
-      el.textContent = '☁️ Seguro'
-      el.style.background = 'rgba(46,204,113,0.15)'
-      el.style.color = '#2ecc71'
-    } else {
-      el.textContent = '🔒 Local'
-      el.style.background = 'rgba(136,136,136,0.15)'
-      el.style.color = '#888'
-    }
+    el.textContent = cloudReady ? '☁️ Seguro' : '🔒 Local'
+    el.className = 'cloud-badge' + (cloudReady ? ' cloud-ready' : ' cloud-local')
   }
 
   function renderNav() {
@@ -228,7 +216,7 @@
       html += '<span class="muscle-badge">' + esc(ex.muscle) + '</span>'
       html += '</div>'
       html += '<div class="weight-input-row">'
-      html += '<label style="font-size:0.8rem;color:var(--text-dim);">Carga (kg):</label>'
+      html += '<label class="weight-label">Carga (kg):</label>'
       html += '<input type="number" class="weight-input" value="' + weight + '" data-day="' + dayIndex + '" data-ex="' + exIdx + '" placeholder="kg">'
       html += '</div></div>'
       html += '<div class="exercise-controls">'
@@ -243,8 +231,7 @@
       html += '<button class="rest-timer-btn" data-rest="' + ex.rest + '">⏱ ' + ex.rest + 's</button>'
       html += '</div></div>'
       if (ex.video) {
-        const src = 'https://www.youtube.com/embed/' + ex.video + '?mute=1&autoplay=1&controls=1&rel=0&loop=1'
-        html += '<div class="exercise-video"><iframe src="' + src + '" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe></div>'
+        html += '<div class="exercise-video-placeholder" data-video="' + esc(ex.video) + '"><span>▶</span></div>'
       }
       html += '</div>'
     })
@@ -258,7 +245,7 @@
       '<div class="cardio-item"><strong>Protocolo</strong>' + esc(d.cardio.protocol) + '</div>',
       '</div></div>',
       '<div class="cooldown-box"><strong>🧘 Enfriamiento:</strong> ' + esc(d.cooldown) + '</div>',
-      '<div style="margin-top:1.5rem;text-align:center;">',
+      '<div class="reset-day-wrap">',
       '<button class="reset-btn" id="resetDay">Reiniciar progreso del día</button>',
       '</div>',
     ].join('')
@@ -273,6 +260,13 @@
     })
     container.querySelectorAll('.rest-timer-btn').forEach(btn => {
       btn.addEventListener('click', startTimer)
+    })
+    container.querySelectorAll('.exercise-video-placeholder').forEach(el => {
+      el.addEventListener('click', function () {
+        const id = this.dataset.video
+        if (!id) return
+        this.innerHTML = '<div class="exercise-video"><iframe src="https://www.youtube.com/embed/' + id + '?mute=1&autoplay=1&controls=1&rel=0&loop=1" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe></div>'
+      })
     })
     const resetBtn = document.getElementById('resetDay')
     if (resetBtn) {
@@ -311,7 +305,7 @@
     renderDaySelector()
     renderWorkout(day)
 
-    const restBtn = document.querySelector('.exercise-item[data-day="' + day + '"][data-ex="' + ex + '"] .rest-timer-btn')
+    const restBtn = e.currentTarget.closest('.exercise-item').querySelector('.rest-timer-btn')
     if (restBtn && (progress[day][ex] || 0) > 0 && (progress[day][ex] || 0) < maxSets) {
       startTimer.call(restBtn)
     }
@@ -359,15 +353,16 @@
         label.textContent = '¡Siguiente serie!'
         display.style.color = 'var(--green)'
         try {
-          const actx = new (window.AudioContext || window.webkitAudioContext)()
-          const osc = actx.createOscillator()
-          const gain = actx.createGain()
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+          if (audioCtx.state === 'suspended') audioCtx.resume()
+          const osc = audioCtx.createOscillator()
+          const gain = audioCtx.createGain()
           osc.connect(gain)
-          gain.connect(actx.destination)
+          gain.connect(audioCtx.destination)
           osc.frequency.value = 880
           gain.gain.value = 0.3
           osc.start()
-          osc.stop(actx.currentTime + 0.3)
+          osc.stop(audioCtx.currentTime + 0.3)
         } catch (_) {}
       }
     }, 1000)
@@ -471,14 +466,14 @@
     const pct = totalSets > 0 ? Math.round((totalSetsDone / totalSets) * 100) : 0
 
     let html = [
-      '<h2 style="margin-bottom:1.5rem;">📊 Tu Progreso</h2>',
+      '<h2>📊 Tu Progreso</h2>',
       '<div class="progress-stats">',
       '<div class="stat-card"><div class="stat-value">' + pct + '%</div><div class="stat-label">Progreso global</div></div>',
       '<div class="stat-card"><div class="stat-value">' + totalSetsDone + '</div><div class="stat-label">Series completadas</div></div>',
       '<div class="stat-card"><div class="stat-value">' + totalWorkouts + '/' + workoutPlan.days.length + '</div><div class="stat-label">Entrenos iniciados</div></div>',
       '<div class="stat-card"><div class="stat-value">' + daysCompleted + '</div><div class="stat-label">Días completados</div></div>',
       '</div>',
-      '<h3 style="margin-bottom:0.75rem;">Detalle por día</h3>',
+      '<h3>Detalle por día</h3>',
     ].join('')
 
     workoutPlan.days.forEach((d, i) => {
@@ -488,15 +483,16 @@
       d.exercises.forEach((ex, exIdx) => {
         dayDone += p[exIdx] || 0
       })
-      html += '<div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border);font-size:0.9rem;">'
+      const doneClass = dayDone >= daySets ? 'progress-day-done' : ''
+      html += '<div class="progress-day-row ' + doneClass + '">'
       html += '<span>' + DAY_LABELS[i] + ' — ' + esc(d.name.split(' — ')[0]) + '</span>'
-      html += '<span style="color:' + (dayDone >= daySets ? 'var(--green)' : 'var(--text-dim)') + '">'
+      html += '<span class="progress-day-count">'
       html += dayDone + '/' + daySets + ' series</span></div>'
     })
 
     html += [
-      '<div style="margin-top:1.5rem;text-align:center;">',
-      '<button class="reset-btn" id="resetAll" style="background:rgba(233,69,96,0.2);border-color:var(--primary);">Reiniciar todo el progreso</button>',
+      '<div class="reset-day-wrap">',
+      '<button class="reset-btn" id="resetAll">Reiniciar todo el progreso</button>',
       '</div>',
     ].join('')
 
@@ -523,66 +519,64 @@
     const idealW = (182 - 100).toFixed(0)
 
     container.innerHTML = [
-      '<h2 style="margin-bottom:1.5rem;">⚙️ Ajustes</h2>',
+      '<h2>⚙️ Ajustes</h2>',
 
       /* Profile card */
       '<div class="card">',
-      '<div class="card-title" style="margin-bottom:0.75rem;">👤 Tu Perfil</div>',
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.75rem;">',
-      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Edad</span><strong>21 años</strong></div>',
-      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Altura</span><strong>1.82 m</strong></div>',
-      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Peso</span><strong>180 lb (' + u.weightKg + ' kg)</strong></div>',
-      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">BMI</span><strong>' + u.bmi + '</strong></div>',
+      '<div class="card-title">👤 Tu Perfil</div>',
+      '<div class="settings-profile-grid">',
+      '<div><span class="settings-field-label">Edad</span><strong class="settings-field-value">21 años</strong></div>',
+      '<div><span class="settings-field-label">Altura</span><strong class="settings-field-value">1.82 m</strong></div>',
+      '<div><span class="settings-field-label">Peso</span><strong class="settings-field-value">180 lb (' + u.weightKg + ' kg)</strong></div>',
+      '<div><span class="settings-field-label">BMI</span><strong class="settings-field-value">' + u.bmi + '</strong></div>',
       '</div>',
-      '<hr style="border-color:var(--border);margin:1rem 0;">',
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.75rem;">',
-      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Metabolismo basal</span><strong>' + u.bmr + ' kcal/día</strong></div>',
-      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Gasto diario (TDEE)</span><strong>' + u.tdee + ' kcal/día</strong></div>',
-      '<div><span style="display:block;font-size:0.7rem;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;">🔥 Déficit sugerido</span><strong style="color:var(--primary);">' + u.deficitCalories + ' kcal/día</strong></div>',
-      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Peso ideal aprox</span><strong>' + idealW + ' kg (' + Math.round(idealW * 2.205) + ' lb)</strong></div>',
+      '<hr class="settings-divider">',
+      '<div class="settings-profile-grid">',
+      '<div><span class="settings-field-label">Metabolismo basal</span><strong class="settings-field-value">' + u.bmr + ' kcal/día</strong></div>',
+      '<div><span class="settings-field-label">Gasto diario (TDEE)</span><strong class="settings-field-value">' + u.tdee + ' kcal/día</strong></div>',
+      '<div><span class="settings-field-label settings-deficit">🔥 Déficit sugerido</span><strong class="settings-field-value settings-deficit-val">' + u.deficitCalories + ' kcal/día</strong></div>',
+      '<div><span class="settings-field-label">Peso ideal aprox</span><strong class="settings-field-value">' + idealW + ' kg (' + Math.round(idealW * 2.205) + ' lb)</strong></div>',
       '</div>',
-      '<p style="font-size:0.8rem;color:var(--text-dim);margin-top:0.75rem;">',
+      '<p class="settings-diet-tip">',
       '🍗 Come ~' + u.deficitCalories + ' kcal/día con alta proteína (1.6-2.2g/kg) para perder grasa sin perder músculo.</p>',
       '</div>',
 
       /* PIN section */
-      '<div class="card" style="margin-top:1rem;">',
-      '<div class="card-title" style="margin-bottom:0.75rem;">🔐 PIN de acceso</div>',
-      '<p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.75rem;">',
+      '<div class="card">',
+      '<div class="card-title">🔐 PIN de acceso</div>',
+      '<p class="settings-description">',
       'La app está protegida con PIN. Los datos se encriptan con AES-256 antes de subirse a GitHub.</p>',
-      '<button class="reset-btn" id="changePinBtn" style="border-color:var(--orange);color:var(--orange);">Cambiar PIN</button>',
+      '<button class="reset-btn" id="changePinBtn">Cambiar PIN</button>',
       '</div>',
 
       /* Sync section */
-      '<div class="card" style="margin-top:1rem;">',
-      '<div class="card-title" style="margin-bottom:0.75rem;">☁️ Sincronización en la nube</div>',
-      '<p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1rem;">',
+      '<div class="card">',
+      '<div class="card-title">☁️ Sincronización en la nube</div>',
+      '<p class="settings-description">',
       'Los datos se encriptan localmente con tu PIN antes de enviarse a un Gist privado de GitHub.',
       ' Nadie puede leerlos sin tu PIN.</p>',
-      '<div style="margin-bottom:1rem;">',
-      '<label style="display:block;font-size:0.85rem;margin-bottom:0.4rem;color:var(--text-dim);">Token de GitHub (scope: gist):</label>',
-      '<div style="display:flex;gap:0.5rem;">',
-      '<input type="password" id="tokenInput" value="' + esc(token) + '" placeholder="ghp_..."',
-      ' style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.5rem 0.75rem;border-radius:var(--radius-sm);font-size:0.9rem;">',
-      '<button id="saveTokenBtn" class="rest-timer-btn"',
-      ' style="background:rgba(46,204,113,0.15);border-color:var(--green);color:var(--green);min-width:90px;">',
+      '<div class="settings-token-section">',
+      '<label class="settings-token-label">Token de GitHub (scope: gist):</label>',
+      '<div class="settings-token-row">',
+      '<input type="password" id="tokenInput" class="settings-token-input" value="' + esc(token) + '" placeholder="ghp_...">',
+      '<button id="saveTokenBtn" class="reset-btn settings-save-btn">',
       hasToken ? 'Actualizar' : 'Conectar', '</button>',
       '</div></div>',
-      '<div id="syncStatus" style="font-size:0.85rem;min-height:1.2rem;"></div>',
-      '<div style="margin-top:0.75rem;display:flex;gap:0.75rem;flex-wrap:wrap;">',
-      '<button id="syncPullBtn" class="reset-btn" style="border-color:var(--green);color:var(--green);"',
+      '<div id="syncStatus" class="settings-sync-status"></div>',
+      '<div class="settings-sync-actions">',
+      '<button id="syncPullBtn" class="reset-btn settings-pull-btn"',
       hasToken ? '' : 'disabled', '>📥 Descargar de GitHub</button>',
-      '<button id="syncPushBtn" class="reset-btn" style="border-color:var(--orange);color:var(--orange);"',
+      '<button id="syncPushBtn" class="reset-btn settings-push-btn"',
       hasToken ? '' : 'disabled', '>📤 Subir a GitHub</button>',
       '</div>',
-      '<p style="margin-top:0.75rem;font-size:0.75rem;color:var(--text-dim);">',
+      '<p class="settings-gist-id">',
       'Gist ID: <code>' + db.gistId + '</code></p>',
       '</div>',
 
       /* Security info */
-      '<div class="card" style="margin-top:1rem;">',
-      '<div class="card-title" style="margin-bottom:0.75rem;">🛡️ Seguridad</div>',
-      '<ul style="font-size:0.85rem;color:var(--text-dim);padding-left:1.2rem;line-height:1.8;">',
+      '<div class="card">',
+      '<div class="card-title">🛡️ Seguridad</div>',
+      '<ul class="settings-security-list">',
       '<li>🔒 Acceso protegido con PIN</li>',
       '<li>🔐 Datos encriptados con AES-256-GCM antes de subir</li>',
       '<li>📡 Comunicación HTTPS con GitHub API</li>',

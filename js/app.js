@@ -488,11 +488,34 @@
     const token = db.getToken()
     const hasToken = !!token
 
+    const u = userProfile
+    const idealW = (182 - 100).toFixed(0)
+
     container.innerHTML = [
-      '<h2 style="margin-bottom:1.5rem;">⚙️ Seguridad y Sincronización</h2>',
+      '<h2 style="margin-bottom:1.5rem;">⚙️ Ajustes</h2>',
+
+      /* Profile card */
+      '<div class="card">',
+      '<div class="card-title" style="margin-bottom:0.75rem;">👤 Tu Perfil</div>',
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.75rem;">',
+      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Edad</span><strong>21 años</strong></div>',
+      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Altura</span><strong>1.82 m</strong></div>',
+      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Peso</span><strong>180 lb (' + u.weightKg + ' kg)</strong></div>',
+      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">BMI</span><strong>' + u.bmi + '</strong></div>',
+      '</div>',
+      '<hr style="border-color:var(--border);margin:1rem 0;">',
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.75rem;">',
+      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Metabolismo basal</span><strong>' + u.bmr + ' kcal/día</strong></div>',
+      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Gasto diario (TDEE)</span><strong>' + u.tdee + ' kcal/día</strong></div>',
+      '<div><span style="display:block;font-size:0.7rem;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;">🔥 Déficit sugerido</span><strong style="color:var(--primary);">' + u.deficitCalories + ' kcal/día</strong></div>',
+      '<div><span style="display:block;font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Peso ideal aprox</span><strong>' + idealW + ' kg (' + Math.round(idealW * 2.205) + ' lb)</strong></div>',
+      '</div>',
+      '<p style="font-size:0.8rem;color:var(--text-dim);margin-top:0.75rem;">',
+      '🍗 Come ~' + u.deficitCalories + ' kcal/día con alta proteína (1.6-2.2g/kg) para perder grasa sin perder músculo.</p>',
+      '</div>',
 
       /* PIN section */
-      '<div class="card">',
+      '<div class="card" style="margin-top:1rem;">',
       '<div class="card-title" style="margin-bottom:0.75rem;">🔐 PIN de acceso</div>',
       '<p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.75rem;">',
       'La app está protegida con PIN. Los datos se encriptan con AES-256 antes de subirse a GitHub.</p>',
@@ -525,11 +548,11 @@
       'Gist ID: <code>' + db.gistId + '</code></p>',
       '</div>',
 
-      /* Info */
+      /* Security info */
       '<div class="card" style="margin-top:1rem;">',
       '<div class="card-title" style="margin-bottom:0.75rem;">🛡️ Seguridad</div>',
       '<ul style="font-size:0.85rem;color:var(--text-dim);padding-left:1.2rem;line-height:1.8;">',
-      '<li>🔒 Acceso protegido con PIN (hash PBKDF2)</li>',
+      '<li>🔒 Acceso protegido con PIN</li>',
       '<li>🔐 Datos encriptados con AES-256-GCM antes de subir</li>',
       '<li>📡 Comunicación HTTPS con GitHub API</li>',
       '<li>🚫 Bloqueo tras 5 intentos fallidos</li>',

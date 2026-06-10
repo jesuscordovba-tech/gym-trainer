@@ -1,3 +1,21 @@
+const userProfile = {
+  name: '',
+  age: 21,
+  heightCm: 182,
+  weightLb: 180,
+  gender: 'M',
+  get bmr() {
+    const w = this.weightLb * 0.453592
+    const h = this.heightCm
+    const a = this.age
+    return Math.round(10 * w + 6.25 * h - 5 * a + 5)
+  },
+  get tdee() { return Math.round(this.bmr * 1.55) },
+  get deficitCalories() { return this.tdee - 500 },
+  get weightKg() { return (this.weightLb * 0.453592).toFixed(1) },
+  get bmi() { return ((this.weightKg / ((this.heightCm / 100) ** 2))).toFixed(1) },
+}
+
 const gymData = {
   machines: {
     cardio: [

@@ -32,15 +32,23 @@
       btn.textContent = 'Guardar PIN'
 
       btn.onclick = async () => {
-        const pin = input.value.trim()
-        if (pin.length < 4) {
-          error.textContent = 'Mínimo 4 dígitos'
-          return
+        try {
+          const pin = input.value.trim()
+          if (pin.length < 4) {
+            error.textContent = 'Mínimo 4 dígitos'
+            return
+          }
+          btn.disabled = true
+          btn.textContent = 'Guardando...'
+          await auth.setPin(pin)
+          db.setPin(pin)
+          screen.classList.add('hidden')
+          initApp()
+        } catch (e) {
+          error.textContent = 'Error: ' + e.message
+          btn.disabled = false
+          btn.textContent = 'Guardar PIN'
         }
-        await auth.setPin(pin)
-        db.setPin(pin)
-        screen.classList.add('hidden')
-        initApp()
       }
 
       input.addEventListener('keydown', e => {
@@ -58,24 +66,34 @@
     let attempts = 0
 
     btn.onclick = async () => {
-      const pin = input.value.trim()
-      if (!pin) return
-      const ok = await auth.checkPin(pin)
-      if (ok) {
-        attempts = 0
-        db.setPin(pin)
-        screen.classList.add('hidden')
-        initApp()
-      } else {
-        attempts++
-        error.textContent = `PIN incorrecto (intento ${attempts}/5)`
-        input.value = ''
-        input.focus()
-        if (attempts >= 5) {
-          error.textContent = 'Demasiados intentos. Recarga la página.'
-          btn.disabled = true
-          setTimeout(() => { btn.disabled = false; attempts = 0; error.textContent = '' }, 30000)
+      try {
+        const pin = input.value.trim()
+        if (!pin) return
+        btn.disabled = true
+        btn.textContent = 'Verificando...'
+        const ok = await auth.checkPin(pin)
+        if (ok) {
+          attempts = 0
+          db.setPin(pin)
+          screen.classList.add('hidden')
+          initApp()
+        } else {
+          attempts++
+          error.textContent = 'PIN incorrecto (intento ' + attempts + '/5)'
+          input.value = ''
+          input.focus()
+          if (attempts >= 5) {
+            error.textContent = 'Demasiados intentos. Recarga la página.'
+            setTimeout(() => { btn.disabled = false; attempts = 0; error.textContent = '' }, 30000)
+            return
+          }
         }
+        btn.disabled = false
+        btn.textContent = 'Entrar'
+      } catch (e) {
+        error.textContent = 'Error: ' + e.message
+        btn.disabled = false
+        btn.textContent = 'Entrar'
       }
     }
 

@@ -181,6 +181,21 @@
     })
   }
 
+  const DEFAULT_KG = {
+    'press-pecho-sentado': 30, 'press-hombros-sentado': 20, 'press-inclinado-sentado': 25, 'press-declinado-sentado': 25,
+    'maquina-convergente-pecho': 30, 'pec-deck': 25,
+    'jalon-amplio': 40, 'jalon-neutro': 40, 'remo-articulado': 35, 'remo-sentado-polea': 35, 'remo-unilateral': 25,
+    'dominadas-asistidas': 50, 'reverse-pec-deck': 20, 'pullover-maquina': 25,
+    'hack-squat': 40, 'hack-invertida': 40, 'prensa-45': 80, 'prensa-horizontal': 60,
+    'curl-femoral-acostado': 30, 'curl-femoral-sentado': 25, 'extension-piernas': 35,
+    'pantorrillas-pie': 50, 'pantorrillas-sentado': 30,
+    'curl-biceps-maquina': 20, 'curl-scott-maquina': 20, 'polea-baja-biceps': 15,
+    'extension-triceps-polea-alta': 15, 'extension-triceps-cabeza-polea': 12, 'fondos-asistidos': 50, 'maquina-fondos-triceps': 20,
+    'elevacion-lateral-maquina': 12, 'polea-elevaciones-laterales': 10,
+    'crunch-maquina': 20, 'elevacion-piernas': 15, 'silla-romana': 15,
+    'aductores': 30, 'smith-sentadillas': 30,
+  }
+
   function recommendWeight(ex, currentKg, allDone) {
     if (!allDone || !currentKg) return null
     const w = parseFloat(currentKg)
@@ -208,6 +223,7 @@
       const allDone = setsCompleted >= ex.sets
       const machine = gymData.getMachineById(ex.machine)
       const weight = weights[dayIndex + '-' + exIdx] || ''
+      const defaultKg = DEFAULT_KG[ex.machine] || null
       const nextW = recommendWeight(ex, weight, allDone)
 
       html += '<div class="exercise-item" data-day="' + dayIndex + '" data-ex="' + exIdx + '">'
@@ -228,7 +244,8 @@
       html += '<div class="weight-input-row">'
       html += '<label class="weight-label">Carga (kg):</label>'
       html += '<input type="number" class="weight-input" value="' + weight + '" data-day="' + dayIndex + '" data-ex="' + exIdx + '" placeholder="kg">'
-      if (nextW) html += '<span class="weight-rec">⬆ ' + nextW + ' kg</span>'
+      if (!weight && defaultKg) html += '<span class="weight-suggest">Inicia: ' + defaultKg + ' kg</span>'
+      else if (nextW) html += '<span class="weight-rec">⬆ ' + nextW + ' kg</span>'
       html += '</div></div>'
       html += '<div class="exercise-controls">'
       html += '<div class="set-tracker">'

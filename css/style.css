@@ -420,6 +420,15 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   border-radius: 4px;
   white-space: nowrap;
 }
+.weight-suggest {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--orange);
+  background: rgba(243,156,18,0.12);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
 
 /* Progress tab */
 .progress-stats {

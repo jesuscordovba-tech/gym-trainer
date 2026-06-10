@@ -199,14 +199,19 @@
     const container = document.getElementById('workoutContent')
     const dayProgress = progress[dayIndex] || {}
 
-    const hasVideos = d.exercises.some(ex => ex.video)
+    const ids = d.exercises.map(ex => ex.video).filter(Boolean)
+    const playlistSrc = ids.length ? 'https://www.youtube.com/embed/' + ids[0] + '?playlist=' + ids.slice(1).join(',') + '&loop=1&mute=1&autoplay=1&controls=1&rel=0' : ''
     let html = [
+      '<div class="workout-top">',
+      '<div class="workout-info">',
       '<div class="workout-header">',
       '<h2>' + esc(d.name) + '</h2>',
       '<div class="focus">' + esc(d.focus) + '</div>',
       '</div>',
       '<div class="warmup-box"><strong>🔥 Calentamiento:</strong> ' + esc(d.warmup) + '</div>',
-      hasVideos ? '<button class="play-all-btn" data-day="' + dayIndex + '">▶ Reproducir todo en ciclo</button>' : '',
+      '</div>',
+      playlistSrc ? '<div class="workout-video"><iframe src="' + playlistSrc + '" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe></div>' : '',
+      '</div>',
     ].join('')
 
     d.exercises.forEach((ex, exIdx) => {
@@ -275,9 +280,7 @@
     container.querySelectorAll('.video-btn').forEach(btn => {
       btn.addEventListener('click', openVideo)
     })
-    container.querySelectorAll('.play-all-btn').forEach(btn => {
-      btn.addEventListener('click', playAllVideos)
-    })
+
 
     const resetBtn = document.getElementById('resetDay')
     if (resetBtn) {
@@ -408,20 +411,6 @@
     const embedUrl = url.match(/^https?:\/\//) ? url : 'https://www.youtube.com/embed/' + url + '?autoplay=1'
     document.getElementById('videoModalTitle').textContent = '📺 Demostración'
     iframe.src = embedUrl
-    document.getElementById('videoOverlay').classList.add('show')
-  }
-
-  function playAllVideos(e) {
-    const dayIndex = parseInt(e.currentTarget.dataset.day)
-    const day = workoutPlan.days[dayIndex]
-    if (!day) return
-    const ids = day.exercises.map(ex => ex.video).filter(Boolean)
-    if (!ids.length) return
-    const iframe = document.getElementById('videoIframe')
-    if (!iframe) return
-    const playlistUrl = 'https://www.youtube.com/embed/' + ids[0] + '?playlist=' + ids.slice(1).join(',') + '&loop=1&autoplay=1'
-    document.getElementById('videoModalTitle').textContent = '📺 Ciclo: ' + day.name.split(' — ')[0]
-    iframe.src = playlistUrl
     document.getElementById('videoOverlay').classList.add('show')
   }
 

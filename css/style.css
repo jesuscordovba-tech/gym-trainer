@@ -558,24 +558,39 @@ body {
   height: 100%;
 }
 
-/* Play all button */
-.play-all-btn {
+/* Workout top: info + video side by side */
+.workout-top {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+.workout-info {
+  flex: 1;
+  min-width: 0;
+}
+.workout-video {
+  flex: 0 0 320px;
+  max-width: 100%;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #000;
+}
+.workout-video iframe {
   display: block;
   width: 100%;
-  background: rgba(233,69,96,0.15);
-  border: 1px solid var(--primary);
-  color: var(--primary);
-  padding: 0.6rem 1rem;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  transition: all 0.2s;
+  aspect-ratio: 16 / 9;
+  border: 0;
 }
-.play-all-btn:hover {
-  background: var(--primary);
-  color: white;
+@media (max-width: 640px) {
+  .workout-top {
+    flex-direction: column;
+  }
+  .workout-video {
+    flex: none;
+    width: 100%;
+  }
 }
 
 /* Reset button */

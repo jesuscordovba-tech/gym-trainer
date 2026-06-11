@@ -113,6 +113,79 @@ const gymData = {
   }
 }
 
+const dietPlan = {
+  nutritionists: [
+    { name: 'Dr. Mike Israetel', title: 'Cofundador de Renaissance Periodization', cite: 'RP Strength — Nutrition Made Simple' },
+    { name: 'Dr. Layne Norton', title: 'PhD en Nutrición — Biolayne', cite: 'Layne Norton — The Complete Guide to Macros' },
+    { name: 'Dr. Brad Schoenfeld', title: 'PhD — Investigador en hipertrofia', cite: 'Schoenfeld — Science and Development of Muscle Hypertrophy' },
+    { name: 'Alan Aragon', title: 'Investigador y educador en nutrición', cite: 'Aragon — The Lean Bulk Protocol' },
+    { name: 'Dr. Eric Helms', title: 'PhD — Muscle and Strength Pyramids', cite: 'Helms — The Muscle and Strength Pyramid' },
+  ],
+
+  mealStructure: [
+    { name: 'Desayuno', pct: 0.25, icon: '🌅' },
+    { name: 'Almuerzo', pct: 0.35, icon: '🍗' },
+    { name: 'Merienda', pct: 0.15, icon: '🥜' },
+    { name: 'Cena', pct: 0.25, icon: '🌙' },
+  ],
+
+  foods: {
+    proteinas: [
+      { name: 'Pechuga de pollo', proteina: 31, grasa: 3.6, kcal: 165 },
+      { name: 'Carne molida 93/7', proteina: 27, grasa: 7, kcal: 173 },
+      { name: 'Lomo de cerdo', proteina: 26, grasa: 6, kcal: 165 },
+      { name: 'Salmón', proteina: 25, grasa: 13, kcal: 208 },
+      { name: 'Atún en agua', proteina: 26, grasa: 1, kcal: 116 },
+      { name: 'Claras de huevo', proteina: 11, grasa: 0, kcal: 52 },
+      { name: 'Huevo entero', proteina: 13, grasa: 11, kcal: 155 },
+      { name: 'Whey protein', proteina: 24, grasa: 1.5, kcal: 115 },
+      { name: 'Yogurt griego 0%', proteina: 10, grasa: 0.3, kcal: 59 },
+      { name: 'Tofu firme', proteina: 8, grasa: 4, kcal: 73 },
+    ],
+    carbohidratos: [
+      { name: 'Arroz blanco cocido', proteina: 2.7, carb: 28, kcal: 130 },
+      { name: 'Arroz integral cocido', proteina: 2.6, carb: 23, kcal: 111 },
+      { name: 'Papa cocida', proteina: 2, carb: 20, kcal: 87 },
+      { name: 'Batata cocida', proteina: 2, carb: 23, kcal: 90 },
+      { name: 'Avena', proteina: 13, carb: 56, kcal: 350 },
+      { name: 'Pasta integral cocida', proteina: 5, carb: 25, kcal: 135 },
+      { name: 'Pan integral', proteina: 9, carb: 43, kcal: 250 },
+      { name: 'Quinoa cocida', proteina: 4.4, carb: 21, kcal: 120 },
+      { name: 'Tortilla de maíz', proteina: 3, carb: 44, kcal: 218 },
+    ],
+    vegetales: [
+      { name: 'Brócoli', fibra: 2.6, kcal: 34 },
+      { name: 'Espinaca', fibra: 2.2, kcal: 23 },
+      { name: 'Zanahoria', fibra: 2.8, kcal: 41 },
+      { name: 'Tomate', fibra: 1.2, kcal: 18 },
+      { name: 'Pepino', fibra: 0.5, kcal: 15 },
+      { name: 'Pimiento', fibra: 1.7, kcal: 26 },
+    ],
+    grasas: [
+      { name: 'Aceite de oliva', grasa: 14, kcal: 124 },
+      { name: 'Aguacate', grasa: 15, fibra: 7, kcal: 160 },
+      { name: 'Almendras', proteina: 6, grasa: 14, fibra: 3.5, kcal: 165 },
+      { name: 'Mantequilla de maní', proteina: 8, grasa: 16, carb: 6, kcal: 190 },
+      { name: 'Semillas de chía', proteina: 4, grasa: 9, fibra: 11, kcal: 138 },
+    ],
+  },
+
+  getMacros() {
+    const w = userProfile.weightKg
+    const cal = userProfile.deficitCalories
+    const protein = Math.round(w * 2)
+    const fat = Math.round(w * 0.9)
+    const carbs = Math.round((cal - protein * 4 - fat * 9) / 4)
+    return { protein, fat, carbs, calories: cal }
+  },
+
+  getMealPlan() {
+    const macros = this.getMacros()
+    const calPerMeal = this.mealStructure.map(m => Math.round(macros.calories * m.pct))
+    return { macros, calPerMeal, structure: this.mealStructure }
+  }
+}
+
 const videoSearchUrl = (name) =>
   `https://www.youtube.com/embed?listType=search&list=COMO+HACER+${encodeURIComponent(name)}+maquina+gimnasio`
 

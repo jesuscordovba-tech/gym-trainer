@@ -149,6 +149,7 @@
     renderWorkout(currentDay)
     renderMachines()
     renderProgress()
+    renderDiet()
     renderSettings()
     setupTimer()
     setupVideo()
@@ -587,6 +588,87 @@
         renderProgress()
       }
     })
+  }
+
+  /* Diet */
+  function renderDiet() {
+    const container = document.getElementById('dietContent')
+    const plan = dietPlan.getMealPlan()
+    const m = plan.macros
+
+    let html = [
+      '<h2>🥗 Plan de Alimentación</h2>',
+      '<div class="diet-macro-bar">',
+      '<div class="diet-macro"><span class="diet-macro-label">Calorías</span><span class="diet-macro-val">' + m.calories + ' kcal</span></div>',
+      '<div class="diet-macro"><span class="diet-macro-label">Proteína</span><span class="diet-macro-val">' + m.protein + ' g</span></div>',
+      '<div class="diet-macro"><span class="diet-macro-val carbs">' + m.carbs + ' g</span><span class="diet-macro-label">Carbohidratos</span></div>',
+      '<div class="diet-macro"><span class="diet-macro-val fat">' + m.fat + ' g</span><span class="diet-macro-label">Grasas</span></div>',
+      '</div>',
+      '<p class="diet-subtext">Distribución basada en evidencia científica. Proteína ~2g/kg, Grasa ~0.9g/kg, resto carbohidratos.</p>',
+    ].join('')
+
+    plan.structure.forEach((meal, i) => {
+      const cal = plan.calPerMeal[i]
+      const protein = Math.round(m.protein * meal.pct)
+      const carbs = Math.round(m.carbs * meal.pct)
+      const fat = Math.round(m.fat * meal.pct)
+
+      html += '<div class="diet-meal-card">'
+      html += '<div class="diet-meal-header">' + meal.icon + ' ' + esc(meal.name) + '<span class="diet-meal-cal">' + cal + ' kcal</span></div>'
+      html += '<div class="diet-meal-macros">P: ' + protein + 'g · C: ' + carbs + 'g · G: ' + fat + 'g</div>'
+      html += '<div class="diet-meal-examples-title">🔹 Ejemplos (elige 1 por comida):</div>'
+      html += '<div class="diet-examples">'
+
+      const examples = getMealExamples(i, protein, carbs, fat)
+      examples.forEach(ex => {
+        html += '<div class="diet-example">'
+        html += '<div class="diet-example-name">' + esc(ex.name) + '</div>'
+        html += '<div class="diet-example-items">'
+        ex.items.forEach(item => {
+          html += '<span class="diet-food-item">' + esc(item) + '</span>'
+        })
+        html += '</div>'
+        html += '<div class="diet-example-macros">' + ex.macros + '</div>'
+        html += '</div>'
+      })
+
+      html += '</div></div>'
+    })
+
+    html += '<div class="diet-refs">'
+    html += '<h3>📚 Referencias científicas</h3>'
+    dietPlan.nutritionists.forEach(n => {
+      html += '<div class="diet-ref"><strong>' + esc(n.name) + '</strong> — ' + esc(n.title) + '<br><span class="diet-ref-cite">' + esc(n.cite) + '</span></div>'
+    })
+    html += '</div>'
+
+    container.innerHTML = html
+  }
+
+  function getMealExamples(mealIdx, protein, carbs, fat) {
+    const examples = [
+      [
+        { name: 'Omelette de claras + avena', items: ['6 claras + 1 huevo', '70g avena', '100g arándanos'], macros: 'P~38g C~52g G~12g' },
+        { name: 'Whey + yogurt griego', items: ['1 scoop whey', '200g yogurt griego 0%', '60g avena', '1 cda mantequilla de maní'], macros: 'P~42g C~48g G~14g' },
+        { name: 'Tostadas integrales + huevos', items: ['2 rebanadas pan integral', '3 huevos revueltos', '1/2 aguacate'], macros: 'P~35g C~50g G~15g' },
+      ],
+      [
+        { name: 'Pollo + arroz + verduras', items: ['180g pechuga pollo', '200g arroz blanco cocido', '200g brócoli', '1 cda aceite oliva'], macros: 'P~50g C~58g G~18g' },
+        { name: 'Carne molida + papa + espinaca', items: ['180g carne 93/7', '250g papa cocida', '150g espinaca salteada', '1 cda aceite oliva'], macros: 'P~48g C~55g G~20g' },
+        { name: 'Salmón + quinoa + vegetales', items: ['170g salmón', '200g quinoa cocida', '150g espárragos', '1 cda aceite oliva'], macros: 'P~45g C~50g G~22g' },
+      ],
+      [
+        { name: 'Yogurt + whey + frutos secos', items: ['200g yogurt griego', '1 scoop whey', '30g almendras', '1 manzana'], macros: 'P~38g C~28g G~16g' },
+        { name: 'Batido proteico', items: ['1 scoop whey', '1 cda mantequilla de maní', '1 banana', '200ml leche descremada'], macros: 'P~35g C~40g G~14g' },
+        { name: 'Requesón + fruta', items: ['200g requesón 0%', '100g piña/papaya', '20g nueces'], macros: 'P~32g C~30g G~12g' },
+      ],
+      [
+        { name: 'Pollo + batata + verduras', items: ['170g pechuga pollo', '250g batata cocida', '150g brócoli', '1 cda aceite oliva'], macros: 'P~46g C~52g G~17g' },
+        { name: 'Pescado + arroz + ensalada', items: ['180g tilapia/merluza', '180g arroz integral', 'Ensalada verde', '1 cda aceite oliva'], macros: 'P~44g C~48g G~16g' },
+        { name: 'Tofu + pasta integral + vegetales', items: ['200g tofu firme', '200g pasta integral', '150g verduras salteadas', '1 cda aceite oliva'], macros: 'P~38g C~55g G~18g' },
+      ],
+    ]
+    return examples[mealIdx] || []
   }
 
   /* Settings */

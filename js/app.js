@@ -747,12 +747,16 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
             contents: [{ role: 'user', parts: [{ text }] }]
           })
         })
-        if (!res.ok) throw new Error('HTTP ' + res.status)
+        if (!res.ok) {
+          let detail = ''
+          try { const err = await res.json(); detail = err?.error?.message || '' } catch (_) {}
+          throw new Error('HTTP ' + res.status + (detail ? ' — ' + detail : ''))
+        }
         const data = await res.json()
         const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '⚠️ No pude generar respuesta.'
         addCoachMsg('🤖 Coach', reply)
       } catch (e) {
-        addCoachMsg('🤖 Coach', '⚠️ Error: ' + (e.message.includes('429') ? 'Demasiadas solicitudes — espera un minuto y vuelve a intentar' : e.message.includes('403') ? 'API key inválida — revisa Ajustes' : e.message))
+        addCoachMsg('🤖 Coach', '⚠️ Error: ' + (e.message.includes('429') ? 'Demasiadas solicitudes — espera un minuto y vuelve a intentar.\n\n💡 Ve a https://aistudio.google.com/apikey, checa tu cuota o genera una key nueva.' : e.message.includes('403') ? 'API key inválida — ve a Ajustes y actualiza tu key' : e.message))
       }
       coachSend.disabled = false; coachSend.textContent = 'Enviar'
     }

@@ -316,4 +316,43 @@ const workoutPlan = {
       cooldown: '5 min estiramientos de piernas y espalda baja',
     },
   ],
+
+  getDefaultKg(machineId, profile) {
+    const BASE = {
+      'press-pecho-sentado': 30, 'press-hombros-sentado': 20, 'press-inclinado-sentado': 25, 'press-declinado-sentado': 25,
+      'maquina-convergente-pecho': 30, 'pec-deck': 25,
+      'jalon-amplio': 40, 'jalon-neutro': 40, 'remo-articulado': 35, 'remo-sentado-polea': 35, 'remo-unilateral': 25,
+      'dominadas-asistidas': 50, 'reverse-pec-deck': 20, 'pullover-maquina': 25,
+      'hack-squat': 40, 'hack-invertida': 40, 'prensa-45': 80, 'prensa-horizontal': 60,
+      'curl-femoral-acostado': 30, 'curl-femoral-sentado': 25, 'extension-piernas': 35,
+      'pantorrillas-pie': 50, 'pantorrillas-sentado': 30,
+      'curl-biceps-maquina': 20, 'curl-scott-maquina': 20, 'polea-baja-biceps': 15,
+      'extension-triceps-polea-alta': 15, 'extension-triceps-cabeza-polea': 12, 'fondos-asistidos': 50, 'maquina-fondos-triceps': 20,
+      'elevacion-lateral-maquina': 12, 'polea-elevaciones-laterales': 10,
+      'crunch-maquina': 20, 'elevacion-piernas': 15, 'silla-romana': 15,
+      'aductores': 30, 'smith-sentadillas': 30,
+    }
+    let kg = BASE[machineId] || 20
+    const isUpper = ['press-', 'pec-', 'jalon', 'remo', 'dominadas', 'reverse', 'pullover',
+                     'curl-', 'polea-baja', 'extension-triceps', 'fondos', 'maquina-fondos',
+                     'elevacion-lateral', 'polea-elevaciones', 'crunch', 'elevacion-piernas',
+                     'silla-romana', 'aductores'].some(p => machineId.startsWith(p))
+    if (profile.gender === 'F') {
+      kg = isUpper ? Math.round(kg * 0.45) : Math.round(kg * 0.7)
+    }
+    const ratio = profile.weightLb / 165
+    kg = Math.round(kg * Math.max(0.65, Math.min(1.35, ratio)))
+    kg = Math.round(kg / 2.5) * 2.5
+    if (kg < 2.5) kg = 2.5
+    return kg
+  },
+
+  getFocusNote(profile) {
+    const sexo = profile.gender === 'F' ? 'ella' : 'él'
+    const base = `Rutina personalizada para ${profile.name || 'ti'} `
+    if (profile.gender === 'F') {
+      return base + '· ENFOQUE: glúteos + piernas con volumen moderado, upper body con mayor frecuencia y rango de reps más alto para maximizar tono muscular.'
+    }
+    return base + '· ENFOQUE: fuerza + hipertrofia equilibrada, priorizando pectoral, dorsales y cuádriceps con cargas progresivas.'
+  },
 }

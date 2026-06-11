@@ -2,6 +2,8 @@
   let currentDay = 0
   let timerInterval = null
   let audioCtx = null
+  const GEMINI_KEY = 'gymapp_gemini_key'
+  let geminiKey = localStorage.getItem(GEMINI_KEY) || ''
 
   const DAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB']
 
@@ -189,6 +191,7 @@
     setupTimer()
     setupVideo()
     setupVariantOverlay()
+    setupCoachChat()
 
     db.onUpdate(() => {
       renderDaySelector()
@@ -199,6 +202,8 @@
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') hideTimer()
     })
+
+    updateCoachFab()
   }
 
   function renderNav() {
@@ -683,6 +688,89 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') overlay?.classList.remove('show') })
   }
 
+  /* Coach Chat Setup (called once from initApp) */
+  function setupCoachChat() {
+    const coachMessages = document.getElementById('coachMessages')
+    const coachInput = document.getElementById('coachInput')
+    const coachSend = document.getElementById('coachSend')
+
+    document.getElementById('coachFab')?.addEventListener('click', () => {
+      document.getElementById('coachOverlay').classList.add('show')
+      if (!coachMessages.children.length) addCoachMsg('🤖 Coach', '¡Hola! Soy tu coach con IA. Pregúntame sobre tu rutina, pesos, técnica, o cualquier duda de entrenamiento.')
+      coachInput.focus()
+    })
+    document.getElementById('coachClose')?.addEventListener('click', () => document.getElementById('coachOverlay').classList.remove('show'))
+    document.getElementById('coachOverlay')?.addEventListener('click', e => {
+      if (e.target === e.currentTarget) document.getElementById('coachOverlay').classList.remove('show')
+    })
+
+    coachSend?.addEventListener('click', () => sendCoachMsg())
+    coachInput?.addEventListener('keydown', e => { if (e.key === 'Enter') sendCoachMsg() })
+
+    async function sendCoachMsg() {
+      const text = coachInput.value.trim()
+      if (!text) return
+      coachInput.value = ''
+      addCoachMsg('Tú', text)
+      coachSend.disabled = true; coachSend.textContent = '...'
+
+      try {
+        const profile = db.getProfile()
+        const progress = db.getProgress()
+        const weights = db.getWeights()
+        const username = db.getUsername()
+        const fullPlan = workoutPlan.days.map((d, i) =>
+          `${d.name}:\n${d.exercises.map(e => `  - ${e.name} (${e.machine}) · ${e.sets}x${e.reps} · RIR ${e.rir} · ${e.muscle}`).join('\n')}`
+        ).join('\n\n')
+
+        const systemPrompt = `Eres un entrenador personal experto en fuerza e hipertrofia. Tu nombre es Coach IA.
+Contexto del usuario:
+- Nombre: ${username || 'Desconocido'}
+- Edad: ${profile?.age || '?'} años
+- Altura: ${profile?.heightCm || '?'} cm
+- Peso: ${profile?.weightKg || '?'} kg
+- Género: ${profile?.gender === 'F' ? 'Femenino' : 'Masculino'}
+- BMR: ${profile?.bmr || '?'} kcal
+- TDEE: ${profile?.tdee || '?'} kcal
+- Déficit: ${profile?.deficitCalories || '?'} kcal
+
+Plan de entrenamiento (${workoutPlan.days.length} días):
+${fullPlan}
+
+Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, progresión de pesos, nutrición básica, y recuperación. Si no sabes algo, dilo honestamente.`
+
+        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + geminiKey, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: 'user', parts: [{ text }] }]
+          })
+        })
+        if (!res.ok) throw new Error('HTTP ' + res.status)
+        const data = await res.json()
+        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '⚠️ No pude generar respuesta.'
+        addCoachMsg('🤖 Coach', reply)
+      } catch (e) {
+        addCoachMsg('🤖 Coach', '⚠️ Error: ' + (e.message.includes('403') ? 'API key inválida — revisa Ajustes' : e.message))
+      }
+      coachSend.disabled = false; coachSend.textContent = 'Enviar'
+    }
+
+    function addCoachMsg(who, text) {
+      const d = document.createElement('div')
+      d.style.cssText = 'margin-bottom:0.75rem;padding:0.5rem 0.75rem;border-radius:var(--radius-sm);background:' + (who === 'Tú' ? 'var(--primary)' : 'var(--bg)') + ';color:' + (who === 'Tú' ? '#fff' : 'var(--text)') + ';max-width:90%;' + (who === 'Tú' ? 'margin-left:auto;' : '')
+      d.innerHTML = '<strong>' + who + '</strong><br>' + esc(text)
+      coachMessages.appendChild(d)
+      coachMessages.scrollTop = coachMessages.scrollHeight
+    }
+  }
+
+  function updateCoachFab() {
+    const fab = document.getElementById('coachFab')
+    if (fab) fab.style.display = geminiKey ? '' : 'none'
+  }
+
   function esc(s) {
     if (!s) return ''
     const d = document.createElement('div')
@@ -1010,6 +1098,18 @@
       'Gist ID: <code>' + db.gistId + '</code></p>',
       '</div>',
 
+      /* AI Coach */
+      '<div class="card">',
+      '<div class="card-title">🤖 Coach IA — Gemini</div>',
+      '<p class="settings-description">Ingresa tu API key de <strong>Google Gemini</strong> (gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--primary)">aistudio.google.com/apikey</a>) para activar el coach con inteligencia artificial.</p>',
+      '<div class="settings-token-section">',
+      '<div class="settings-token-row">',
+      '<input type="password" id="geminiKeyInput" class="settings-token-input" value="' + esc(geminiKey) + '" placeholder="AIzaSy...">',
+      '<button id="saveGeminiKeyBtn" class="reset-btn settings-save-btn">' + (geminiKey ? 'Actualizar' : 'Conectar') + '</button>',
+      '</div></div>',
+      '<div id="geminiStatus" class="settings-sync-status"></div>',
+      '</div>',
+
       /* Security info */
       '<div class="card">',
       '<div class="card-title">🛡️ Seguridad</div>',
@@ -1083,6 +1183,20 @@
         st.textContent = '❌ No hay datos en la nube o PIN incorrecto'
         st.style.color = 'var(--primary)'
       }
+    })
+
+    /* --- Gemini AI Coach (key save in settings) --- */
+    document.getElementById('saveGeminiKeyBtn')?.addEventListener('click', async () => {
+      const inp = document.getElementById('geminiKeyInput')
+      const st = document.getElementById('geminiStatus')
+      const key = inp.value.trim()
+      if (!key) { st.textContent = '❌ Ingresa una API key'; return }
+      geminiKey = key
+      localStorage.setItem(GEMINI_KEY, key)
+      st.textContent = '✅ Key guardada'
+      st.style.color = 'var(--green)'
+      updateCoachFab()
+      showToast('🤖 Coach IA activado')
     })
   }
 

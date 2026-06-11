@@ -8,6 +8,7 @@
     let data = null
     let _username = ''
     let _pin = ''
+    let _lastGistData = null
     let token = localStorage.getItem(TOKEN_KEY) || ''
     let listeners = []
 
@@ -107,6 +108,15 @@
       gdata.users.push(u)
       gdata[u] = await auth.encrypt(userBlob, pin)
       await updateGist(gdata)
+
+      // Set internal state directly — skip loginUser call
+      _username = u
+      _pin = pin
+      data = userBlob
+      _lastGistData = gdata
+      localStorage.setItem(CURRENT_USER_KEY, u)
+      localStorage.setItem(PIN_KEY, pin)
+
       return { ok: true }
     }
 
@@ -137,6 +147,7 @@
       _username = u
       _pin = pin
       data = decrypted
+      _lastGistData = gdata
       localStorage.setItem(CURRENT_USER_KEY, u)
       localStorage.setItem(PIN_KEY, pin)
 
@@ -198,12 +209,13 @@
 
     async function persist() {
       if (!_username || !_pin || !data) return
-      const gdata = (await getGistData()) || { users: [] }
+      const gdata = _lastGistData || (await getGistData()) || { users: [] }
       if (!gdata.users || !gdata.users.includes(_username)) {
         gdata.users = gdata.users || []
         if (!gdata.users.includes(_username)) gdata.users.push(_username)
       }
       gdata[_username] = await auth.encrypt(data, _pin)
+      _lastGistData = gdata
       await updateGist(gdata)
       notify()
     }

@@ -122,15 +122,8 @@
         btn.textContent = 'Registrando...'
         const result = await db.registerUser(username, pin, createDefaultProfile())
         if (result.ok) {
-          const login = await db.loginUser(username, pin)
-          if (login.ok) {
-            screen.classList.add('hidden')
-            initApp()
-          } else {
-            error.textContent = login.error
-            btn.disabled = false
-            btn.textContent = 'Registrarse'
-          }
+          screen.classList.add('hidden')
+          initApp()
         } else {
           error.textContent = result.error || 'Error al registrar'
           btn.disabled = false

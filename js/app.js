@@ -768,6 +768,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
           throw new Error('HTTP ' + res.status + (detail ? ' — ' + detail : ''))
         }
         const data = await res.json()
+        alert('DEBUG: ' + JSON.stringify(data).slice(0, 500))
         const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.choices?.[0]?.message?.content
         if (reply) { addCoachMsg('🤖 Coach', reply) }
         else { console.error('Coach respuesta cruda:', JSON.stringify(data)); addCoachMsg('🤖 Coach', '⚠️ No pude generar respuesta — revisa la consola (F12) para más detalles.') }

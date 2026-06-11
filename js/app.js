@@ -752,7 +752,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
         const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '⚠️ No pude generar respuesta.'
         addCoachMsg('🤖 Coach', reply)
       } catch (e) {
-        addCoachMsg('🤖 Coach', '⚠️ Error: ' + (e.message.includes('403') ? 'API key inválida — revisa Ajustes' : e.message))
+        addCoachMsg('🤖 Coach', '⚠️ Error: ' + (e.message.includes('429') ? 'Demasiadas solicitudes — espera un minuto y vuelve a intentar' : e.message.includes('403') ? 'API key inválida — revisa Ajustes' : e.message))
       }
       coachSend.disabled = false; coachSend.textContent = 'Enviar'
     }

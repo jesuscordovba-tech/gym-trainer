@@ -127,6 +127,8 @@
   function initApp() {
     const wasReset = db.checkWeekReset()
     if (wasReset) { refreshData(); showToast('🔄 Nueva semana — progreso reiniciado') }
+    const hasSets = Object.values(progress).some(d => d && typeof d === 'object' && Object.values(d).some(v => v > 0))
+    if (hasSets) db.recordTrainingDate()
 
     cloudReady = db.connected
     renderNav()

@@ -206,9 +206,9 @@
       lb.textContent = '🚪'
       lb.style.cssText = 'background:none;border:none;font-size:1.2rem;cursor:pointer;opacity:0.6;margin-left:auto;'
       lb.title = 'Cerrar sesión'
-      lb.addEventListener('click', () => {
+      lb.addEventListener('click', async () => {
         if (confirm('¿Cerrar sesión?')) {
-          db.logoutUser()
+          await db.logoutUser()
           location.reload()
         }
       })

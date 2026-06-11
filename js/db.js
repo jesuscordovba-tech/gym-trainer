@@ -158,13 +158,18 @@
       return { ok: true, data: decrypted }
     }
 
-    function logoutUser() {
-      if (_persistTimer) clearTimeout(_persistTimer)
-      _persistTimer = null
+    async function logoutUser() {
+      // Flush any pending save immediately
+      if (_persistTimer) { clearTimeout(_persistTimer); _persistTimer = null }
+      await persistNow()
+
       data = null
       _username = ''
+      _pin = ''
       _lastGistData = null
-      // Don't clear _pin or localStorage — next login reuses cached PIN
+      localStorage.removeItem(CURRENT_USER_KEY)
+      localStorage.removeItem(PIN_KEY)
+      localStorage.removeItem('gymapp_pin')
     }
 
     function isLoggedIn() { return !!data }
@@ -185,21 +190,25 @@
     async function setProfile(p) { if (data) { data.profile = p; schedulePersist() } }
     async function setCustomWorkout(cw) { if (data) { data.customWorkout = cw; schedulePersist() } }
 
+    async function persistNow() {
+      if (!_username || !_pin || !data) return
+      try {
+        const gdata = _lastGistData || (await getGistData()) || { users: [] }
+        if (!gdata.users || !gdata.users.includes(_username)) {
+          gdata.users = gdata.users || []
+          if (!gdata.users.includes(_username)) gdata.users.push(_username)
+        }
+        gdata[_username] = await auth.encrypt(data, _pin)
+        _lastGistData = gdata
+        await updateGist(gdata)
+      } catch (e) { console.warn('Persist error:', e) }
+    }
+
     function schedulePersist() {
       if (_persistTimer) clearTimeout(_persistTimer)
       _persistTimer = setTimeout(async () => {
         _persistTimer = null
-        if (!_username || !_pin || !data) return
-        try {
-          const gdata = _lastGistData || (await getGistData()) || { users: [] }
-          if (!gdata.users || !gdata.users.includes(_username)) {
-            gdata.users = gdata.users || []
-            if (!gdata.users.includes(_username)) gdata.users.push(_username)
-          }
-          gdata[_username] = await auth.encrypt(data, _pin)
-          _lastGistData = gdata
-          await updateGist(gdata)
-        } catch (e) { console.warn('Persist error:', e) }
+        await persistNow()
       }, 400)
     }
 

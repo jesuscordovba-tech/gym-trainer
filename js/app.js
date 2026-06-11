@@ -8,6 +8,18 @@
 
   const DAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB']
 
+  function getISOWeek(d) {
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+    const dayNum = date.getUTCDay() || 7
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum)
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
+    return Math.ceil((((date - yearStart) / 86400000) + 1) / 7)
+  }
+
+  function formatDate(d) {
+    return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  }
+
   function refreshData() {
     progress = db.getProgress()
     weights = db.getWeights()
@@ -343,6 +355,7 @@
     const maxSets = workoutPlan.days[day].exercises[ex].sets
     if (progress[day][ex] > maxSets) progress[day][ex] = maxSets
 
+    if (progress[day][ex] > setsCompleted) db.recordTrainingDate()
     save()
     renderDaySelector()
     renderWorkout(day)
@@ -507,8 +520,17 @@
 
     const pct = totalSets > 0 ? Math.round((totalSetsDone / totalSets) * 100) : 0
 
+    const now = new Date()
+    const weekNum = getISOWeek(now)
+    const trainingDays = db.getTrainingDayCount()
+
     let html = [
       '<h2>📊 Tu Progreso</h2>',
+      '<div class="week-info-bar">',
+      '<span>📅 ' + esc(formatDate(now)) + '</span>',
+      '<span>📆 Semana ' + weekNum + ' de ' + now.getFullYear() + '</span>',
+      '<span>🏋️ ' + trainingDays + ' día' + (trainingDays !== 1 ? 's' : '') + ' entrenando</span>',
+      '</div>',
       '<div class="progress-stats">',
       '<div class="stat-card"><div class="stat-value">' + pct + '%</div><div class="stat-label">Progreso global</div></div>',
       '<div class="stat-card"><div class="stat-value">' + totalSetsDone + '</div><div class="stat-label">Series completadas</div></div>',

@@ -97,13 +97,13 @@
         if (pin !== pin2) { error.textContent = 'Los PIN no coinciden'; btn.disabled = false; return }
         btn.textContent = 'Registrando...'
         const r = await db.registerUser(username, pin, createDefaultProfile())
-        if (r.ok) { screen.classList.add('hidden'); initApp(); return }
+        if (r.ok) { screen.classList.add('hidden'); showToast('🎉 Usuario registrado correctamente'); initApp(); return }
         error.textContent = r.error || 'Error'
         btn.disabled = false; btn.textContent = 'Registrarse'
       } else {
         btn.textContent = 'Entrando...'
         const r = await db.loginUser(username, pin)
-        if (r.ok) { screen.classList.add('hidden'); initApp(); return }
+        if (r.ok) { screen.classList.add('hidden'); showToast('👋 Bienvenido, ' + esc(username)); initApp(); return }
         if (r.error === 'Usuario no registrado') {
           error.textContent = 'Usuario no existe. ¿Quieres registrarte?'
           setMode('register')
@@ -398,6 +398,7 @@
         cw[day + '-' + ex] = { name: src.name, machine: src.machine, sets: src.sets, reps: src.reps, rest: src.rest, rir: src.rir, muscle: src.muscle, video: src.video }
         db.setCustomWorkout(cw)
         overlay.classList.remove('show')
+        showToast('✅ Ejercicio cambiado: ' + esc(src.name))
         renderWorkout(day)
       })
     })
@@ -428,7 +429,9 @@
     if (progress[day][ex] > maxSets) progress[day][ex] = maxSets
 
     if (progress[day][ex] > setsCompleted) recordTrainingDay()
+    const wasMilestone = progress[day][ex] >= maxSets && setsCompleted < maxSets
     db.setProgress(progress)
+    if (wasMilestone) showToast('✅ Ejercicio completado — ' + maxSets + '/' + maxSets + ' series')
     renderDaySelector()
     renderWorkout(day)
     renderProgress()
@@ -449,6 +452,7 @@
       delete weights[key]
     }
     db.setWeights(weights)
+    showToast('✅ Peso guardado: ' + inp.value + ' kg')
   }
 
   function setupTimer() {
@@ -886,6 +890,7 @@
       p.weightLb = parseInt(document.getElementById('editWeight').value) || 165
       p.gender = document.getElementById('editGender').value
       await db.setProfile(p)
+      showToast('✅ Perfil actualizado')
       renderSettings()
       renderDiet()
     })
@@ -899,8 +904,9 @@
       if (!newToken) return
 
       db.setToken(newToken)
-      syncStatus.textContent = '🔄 Token guardado. Los datos se subirán automáticamente.'
+      syncStatus.textContent = '✅ Token guardado. Los datos se subirán automáticamente.'
       syncStatus.style.color = 'var(--green)'
+      showToast('✅ Token de GitHub guardado')
     })
   }
 

@@ -9,6 +9,7 @@
     let _username = ''
     let _pin = ''
     let _lastGistData = null
+    let _persistTimer = null
     let token = localStorage.getItem(TOKEN_KEY) || ''
     let listeners = []
 
@@ -37,15 +38,16 @@
       })
     }
 
-    async function getGistData() {
+    async function getGistData(forceRefresh) {
+      if (!forceRefresh && _lastGistData) return _lastGistData
       try {
         const gist = await fetchGist()
         if (!gist) return null
         const raw = gist.files['gymapp_data.json']?.content
-        return raw ? JSON.parse(raw) : null
-      } catch {
-        return null
-      }
+        const result = raw ? JSON.parse(raw) : null
+        if (result) _lastGistData = result
+        return result
+      } catch { return null }
     }
 
     function isLegacyFormat(gistData) {
@@ -72,6 +74,7 @@
           }, pin)
         }
         await updateGist(newData)
+        _lastGistData = newData
         localStorage.removeItem('gymapp_progress')
         localStorage.removeItem('gymapp_weights')
         localStorage.removeItem('gymapp_history')
@@ -109,7 +112,6 @@
       gdata[u] = await auth.encrypt(userBlob, pin)
       await updateGist(gdata)
 
-      // Set internal state directly — skip loginUser call
       _username = u
       _pin = pin
       data = userBlob
@@ -121,19 +123,22 @@
     }
 
     async function loginUser(username, pin) {
-      const gist = await fetchGist()
-      if (!gist) return { ok: false, error: 'Revisa tu token de GitHub' }
+      let gdata = _lastGistData
+      if (!gdata) {
+        const gist = await fetchGist()
+        if (!gist) return { ok: false, error: 'Revisa tu token de GitHub' }
 
-      if (isLegacyFormat(gist)) {
-        const migrated = await migrateLegacy(username, pin)
-        if (!migrated) return { ok: false, error: 'PIN incorrecto o error de migración' }
-        return await loginUser(username, pin)
+        if (isLegacyFormat(gist)) {
+          const migrated = await migrateLegacy(username, pin)
+          if (!migrated) return { ok: false, error: 'PIN incorrecto o error de migración' }
+          return await loginUser(username, pin)
+        }
+
+        const raw = gist.files['gymapp_data.json']?.content
+        if (!raw) return { ok: false, error: 'No hay datos en la nube' }
+        try { gdata = JSON.parse(raw) } catch { return { ok: false, error: 'Error al leer datos' } }
+        _lastGistData = gdata
       }
-
-      const raw = gist.files['gymapp_data.json']?.content
-      if (!raw) return { ok: false, error: 'No hay datos en la nube' }
-      let gdata
-      try { gdata = JSON.parse(raw) } catch { return { ok: false, error: 'Error al leer datos' } }
 
       const u = username.toLowerCase()
       if (!gdata.users || !gdata.users.includes(u)) return { ok: false, error: 'Usuario no registrado' }
@@ -147,7 +152,6 @@
       _username = u
       _pin = pin
       data = decrypted
-      _lastGistData = gdata
       localStorage.setItem(CURRENT_USER_KEY, u)
       localStorage.setItem(PIN_KEY, pin)
 
@@ -158,9 +162,9 @@
       data = null
       _username = ''
       _pin = ''
+      _lastGistData = null
       localStorage.removeItem(CURRENT_USER_KEY)
       localStorage.removeItem(PIN_KEY)
-      // clear local app data
       localStorage.removeItem('gymapp_week')
       localStorage.removeItem('gymapp_progress')
       localStorage.removeItem('gymapp_weights')
@@ -169,60 +173,42 @@
     }
 
     function isLoggedIn() { return !!data }
-
     function getUsername() { return _username }
-
     function getProfile() { return data ? data.profile : null }
-
-    async function setProfile(profile) {
-      if (!data) return
-      data.profile = profile
-      await persist()
-    }
-
     function getProgress() { return data ? data.progress : {} }
     function getWeights() { return data ? data.weights : {} }
     function getTrainingDates() { return data ? data.trainingDates : [] }
     function getHistory() { return data ? data.history : {} }
+    function getHistoryWeek(weekId) { return data ? (data.history[weekId] || null) : null }
 
-    function getHistoryWeek(weekId) {
-      return data ? (data.history[weekId] || null) : null
-    }
+    /* --- Debounced persist (fire-and-forget) --- */
 
-    async function setProgress(progress) {
-      if (!data) return
-      data.progress = progress
-      await persist()
-    }
+    async function setProgress(p) { if (data) { data.progress = p; notify(); schedulePersist() } }
+    async function setWeights(w) { if (data) { data.weights = w; schedulePersist() } }
+    async function setTrainingDates(d) { if (data) { data.trainingDates = d; schedulePersist() } }
+    async function setProfile(p) { if (data) { data.profile = p; schedulePersist() } }
 
-    async function setWeights(weights) {
-      if (!data) return
-      data.weights = weights
-      await persist()
-    }
-
-    async function setTrainingDates(dates) {
-      if (!data) return
-      data.trainingDates = dates
-      await persist()
-    }
-
-    async function persist() {
-      if (!_username || !_pin || !data) return
-      const gdata = _lastGistData || (await getGistData()) || { users: [] }
-      if (!gdata.users || !gdata.users.includes(_username)) {
-        gdata.users = gdata.users || []
-        if (!gdata.users.includes(_username)) gdata.users.push(_username)
-      }
-      gdata[_username] = await auth.encrypt(data, _pin)
-      _lastGistData = gdata
-      await updateGist(gdata)
-      notify()
+    function schedulePersist() {
+      if (_persistTimer) clearTimeout(_persistTimer)
+      _persistTimer = setTimeout(async () => {
+        _persistTimer = null
+        if (!_username || !_pin || !data) return
+        try {
+          const gdata = _lastGistData || (await getGistData()) || { users: [] }
+          if (!gdata.users || !gdata.users.includes(_username)) {
+            gdata.users = gdata.users || []
+            if (!gdata.users.includes(_username)) gdata.users.push(_username)
+          }
+          gdata[_username] = await auth.encrypt(data, _pin)
+          _lastGistData = gdata
+          await updateGist(gdata)
+        } catch (e) { console.warn('Persist error:', e) }
+      }, 400)
     }
 
     async function syncFromGist() {
       if (!_username || !_pin) return false
-      const gdata = await getGistData()
+      const gdata = await getGistData(true)
       if (!gdata) return false
       const encrypted = gdata[_username]
       if (!encrypted) return false
@@ -233,7 +219,7 @@
       return true
     }
 
-    /* --- Local helpers (same as before, but operate on data) --- */
+    /* --- Local helpers --- */
 
     function getWeekId() {
       const now = new Date()
@@ -260,21 +246,22 @@
       const hasData = Object.keys(p).length > 0 || Object.keys(w).length > 0
       if (!hasData) return
       const hist = data.history || {}
-      const existing = hist[weekId]
-      if (existing) {
+      if (hist[weekId]) {
+        let changed = false
         for (const dk of Object.keys(p)) {
           const day = parseInt(dk); if (isNaN(day)) continue
-          existing.progress[day] = existing.progress[day] || {}
+          if (!hist[weekId].progress[day]) { hist[weekId].progress[day] = {}; changed = true }
           for (const ek of Object.keys(p[dk])) {
             const ex = parseInt(ek); if (isNaN(ex)) continue
-            if ((p[dk][ek] || 0) > (existing.progress[day][ex] || 0)) {
-              existing.progress[day][ex] = p[dk][ek]
+            if ((p[dk][ek] || 0) > (hist[weekId].progress[day][ex] || 0)) {
+              hist[weekId].progress[day][ex] = p[dk][ek]; changed = true
             }
           }
         }
         for (const k of Object.keys(w)) {
-          if (!existing.weights[k] && w[k]) existing.weights[k] = w[k]
+          if (!hist[weekId].weights[k] && w[k]) { hist[weekId].weights[k] = w[k]; changed = true }
         }
+        if (!changed) return
       } else {
         hist[weekId] = {
           progress: JSON.parse(JSON.stringify(p)),
@@ -282,7 +269,7 @@
         }
       }
       data.history = hist
-      persist()
+      schedulePersist()
     }
 
     function checkWeekReset() {
@@ -306,24 +293,19 @@
               existing.progress[day] = existing.progress[day] || {}
               for (const ek of Object.keys(p[dk])) {
                 const ex = parseInt(ek); if (isNaN(ex)) continue
-                if ((p[dk][ek] || 0) > (existing.progress[day][ex] || 0)) {
-                  existing.progress[day][ex] = p[dk][ek]
-                }
+                if ((p[dk][ek] || 0) > (existing.progress[day][ex] || 0)) existing.progress[day][ex] = p[dk][ek]
               }
             }
             for (const k of Object.keys(data.weights || {})) {
               if (!existing.weights[k] && data.weights[k]) existing.weights[k] = data.weights[k]
             }
           } else {
-            hist[oldWeekId] = {
-              progress: JSON.parse(JSON.stringify(p)),
-              weights: JSON.parse(JSON.stringify(data.weights || {}))
-            }
+            hist[oldWeekId] = { progress: JSON.parse(JSON.stringify(p)), weights: JSON.parse(JSON.stringify(data.weights || {})) }
           }
           data.history = hist
           data.progress = {}
           data.weights = {}
-          persist()
+          schedulePersist()
         }
         localStorage.setItem('gymapp_week', currentWeek)
         return hadProgress
@@ -336,19 +318,16 @@
       const prefix = year + '-W'
       const weeks = Object.keys(data.history).filter(k => k.startsWith(prefix)).sort()
       let totalSets = 0, totalDays = 0
-
       weeks.forEach(wk => {
         const h = data.history[wk]
         if (!h || !h.progress) return
         for (const dk of Object.keys(h.progress)) {
-          const day = h.progress[dk]
-          let daySets = 0
+          const day = h.progress[dk]; let daySets = 0
           for (const ek of Object.keys(day)) daySets += day[ek] || 0
           if (daySets > 0) totalDays++
           totalSets += daySets
         }
       })
-
       return { year, weeks: weeks.length, totalSets, totalDays, setsPerWeek: weeks.length ? Math.round(totalSets / weeks.length) : 0 }
     }
 
@@ -362,8 +341,7 @@
     return {
       getUsers, registerUser, loginUser, logoutUser, isLoggedIn, getUsername, getProfile, setProfile,
       getProgress, getWeights, setProgress, setWeights,
-      getTrainingDates, setTrainingDates,
-      getHistory, getHistoryWeek, getYearStats,
+      getTrainingDates, setTrainingDates, getHistory, getHistoryWeek, getYearStats,
       checkWeekReset, archiveCurrentWeek,
       onUpdate, syncFromGist,
       getToken, setToken, hasToken,

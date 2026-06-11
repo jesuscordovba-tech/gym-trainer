@@ -863,10 +863,10 @@
 
       /* Sync section */
       '<div class="card">',
-      '<div class="card-title">☁️ Sincronización en la nube</div>',
+      '<div class="card-title">☁️ Respaldo en la nube</div>',
       '<p class="settings-description">',
-      'Los datos se encriptan localmente con tu PIN antes de enviarse a un Gist privado de GitHub.',
-      ' Nadie puede leerlos sin tu PIN.</p>',
+      'Tus datos se guardan automáticamente en este navegador.',
+      ' Opcionalmente puedes respaldarlos en un Gist privado de GitHub.</p>',
       '<div class="settings-token-section">',
       '<label class="settings-token-label">Token de GitHub (scope: gist):</label>',
       '<div class="settings-token-row">',
@@ -874,6 +874,10 @@
       '<button id="saveTokenBtn" class="reset-btn settings-save-btn">',
       hasToken ? 'Actualizar' : 'Conectar', '</button>',
       '</div></div>',
+      '<div class="settings-token-row" style="margin-top:0.75rem;gap:0.5rem;">',
+      '<button id="pushGistBtn" class="reset-btn"' + (!hasToken ? ' disabled style="opacity:0.4"' : '') + '>⬆ Subir a Gist</button>',
+      '<button id="pullGistBtn" class="reset-btn"' + (!hasToken ? ' disabled style="opacity:0.4"' : '') + '>⬇ Bajar de Gist</button>',
+      '</div>',
       '<div id="syncStatus" class="settings-sync-status"></div>',
       '<p class="settings-gist-id">',
       'Gist ID: <code>' + db.gistId + '</code></p>',
@@ -913,9 +917,35 @@
       if (!newToken) return
 
       db.setToken(newToken)
-      syncStatus.textContent = '✅ Token guardado. Los datos se subirán automáticamente.'
-      syncStatus.style.color = 'var(--green)'
       showToast('✅ Token de GitHub guardado')
+      renderSettings()
+    })
+
+    document.getElementById('pushGistBtn')?.addEventListener('click', async () => {
+      const st = document.getElementById('syncStatus')
+      st.textContent = '⏳ Subiendo...'; st.style.color = 'var(--text-dim)'
+      const ok = await db.pushToGist()
+      st.textContent = ok ? '✅ Datos subidos correctamente' : '❌ Error al subir'
+      st.style.color = ok ? 'var(--green)' : 'var(--primary)'
+      if (ok) showToast('⬆ Datos respaldados en Gist')
+    })
+
+    document.getElementById('pullGistBtn')?.addEventListener('click', async () => {
+      const st = document.getElementById('syncStatus')
+      st.textContent = '⏳ Descargando...'; st.style.color = 'var(--text-dim)'
+      const ok = await db.syncFromGist()
+      if (ok) {
+        st.textContent = '✅ Datos restaurados desde la nube'
+        st.style.color = 'var(--green)'
+        showToast('⬇ Datos restaurados')
+        renderSettings()
+        renderWorkout(currentDay)
+        renderProgress()
+        renderDiet()
+      } else {
+        st.textContent = '❌ No hay datos en la nube o PIN incorrecto'
+        st.style.color = 'var(--primary)'
+      }
     })
   }
 

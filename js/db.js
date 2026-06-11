@@ -2,19 +2,172 @@
   window.db = (function() {
     const TOKEN_KEY = 'gymapp_github_token'
     const PIN_KEY = 'gymapp_pin'
-    const GIST_ID = 'a2e0cc16311b5589246aa6215e5a7250'
+    const USERS_KEY = 'gymapp_users'
     const CURRENT_USER_KEY = 'gymapp_current_user'
-    const BACKUP_KEY = 'gymapp_local_backup'
+    const DATA_PREFIX = 'gymapp_data_'
+    const GIST_ID = 'a2e0cc16311b5589246aa6215e5a7250'
 
     let data = null
     let _username = ''
     let _pin = ''
-    let _lastGistData = null
     let _persistTimer = null
     let token = localStorage.getItem(TOKEN_KEY) || ''
     let listeners = []
 
+    function userKey(u) { return DATA_PREFIX + u.toLowerCase() }
     function getGistUrl() { return `https://api.github.com/gists/${GIST_ID}` }
+
+    /* --- Users --- */
+
+    async function getUsers() {
+      const raw = localStorage.getItem(USERS_KEY)
+      return raw ? JSON.parse(raw) : []
+    }
+
+    async function saveUsers(users) {
+      localStorage.setItem(USERS_KEY, JSON.stringify(users))
+    }
+
+    /* --- Auth --- */
+
+    async function registerUser(username, pin, profile) {
+      const u = username.toLowerCase()
+      const users = await getUsers()
+      if (users.includes(u)) return { ok: false, error: 'Usuario ya existe' }
+
+      const userBlob = {
+        profile: profile || createDefaultProfile(),
+        progress: {},
+        weights: {},
+        trainingDates: [],
+        history: {},
+        customWorkout: {},
+      }
+
+      const encrypted = await auth.encrypt(userBlob, pin)
+      localStorage.setItem(userKey(u), encrypted)
+      users.push(u)
+      saveUsers(users)
+
+      _username = u
+      _pin = pin
+      data = userBlob
+      localStorage.setItem(CURRENT_USER_KEY, u)
+      localStorage.setItem(PIN_KEY, pin)
+
+      return { ok: true }
+    }
+
+    async function loginUser(username, pin) {
+      const u = username.toLowerCase()
+      let encrypted = localStorage.getItem(userKey(u))
+      let decrypted = encrypted ? await auth.decrypt(encrypted, pin) : null
+
+      // Fallback: try Gist if no local data (migration from old system)
+      if (!decrypted && token) {
+        try {
+          const gist = await fetchGist()
+          if (gist) {
+            const raw = gist.files['gymapp_data.json']?.content
+            if (raw) {
+              const gdata = JSON.parse(raw)
+              if (gdata.users && gdata.users.includes(u) && gdata[u]) {
+                encrypted = gdata[u]
+                decrypted = await auth.decrypt(encrypted, pin)
+                if (decrypted) {
+                  localStorage.setItem(userKey(u), encrypted)
+                  // Ensure user appears in local users list
+                  const users = await getUsers()
+                  if (!users.includes(u)) { users.push(u); saveUsers(users) }
+                }
+              }
+            }
+          }
+        } catch {}
+      }
+
+      // Legacy single-user migration (old localStorage keys)
+      if (!decrypted) {
+        const oldProgress = localStorage.getItem('gymapp_progress')
+        if (oldProgress && pin === localStorage.getItem('gymapp_pin_hash')) {
+          const userBlob = {
+            profile: createDefaultProfile(),
+            progress: JSON.parse(oldProgress || '{}'),
+            weights: JSON.parse(localStorage.getItem('gymapp_weights') || '{}'),
+            trainingDates: JSON.parse(localStorage.getItem('gymapp_dates') || '[]'),
+            history: JSON.parse(localStorage.getItem('gymapp_history') || '{}'),
+            customWorkout: {},
+          }
+          encrypted = await auth.encrypt(userBlob, pin)
+          localStorage.setItem(userKey(u), encrypted)
+          decrypted = userBlob
+          const users = await getUsers()
+          if (!users.includes(u)) { users.push(u); saveUsers(users) }
+        }
+      }
+
+      if (!decrypted) return { ok: false, error: 'Usuario o PIN incorrecto' }
+
+      _username = u
+      _pin = pin
+      data = decrypted
+      localStorage.setItem(CURRENT_USER_KEY, u)
+      localStorage.setItem(PIN_KEY, pin)
+
+      return { ok: true, data: decrypted }
+    }
+
+    async function logoutUser() {
+      if (_persistTimer) { clearTimeout(_persistTimer); _persistTimer = null }
+      if (data && _username && _pin) {
+        try {
+          const encrypted = await auth.encrypt(data, _pin)
+          localStorage.setItem(userKey(_username), encrypted)
+        } catch {}
+      }
+      data = null
+      _username = ''
+      _pin = ''
+      localStorage.removeItem(CURRENT_USER_KEY)
+      localStorage.removeItem(PIN_KEY)
+      localStorage.removeItem('gymapp_pin')
+    }
+
+    function isLoggedIn() { return !!data }
+    function getUsername() { return _username }
+    function getProfile() { return data ? data.profile : null }
+    function getProgress() { return data ? data.progress : {} }
+    function getWeights() { return data ? data.weights : {} }
+    function getTrainingDates() { return data ? data.trainingDates : [] }
+    function getHistory() { return data ? data.history : {} }
+    function getHistoryWeek(weekId) { return data ? (data.history[weekId] || null) : null }
+    function getCustomWorkout() { return data ? (data.customWorkout || {}) : {} }
+
+    /* --- Persist (localStorage) --- */
+
+    async function setProgress(p) { if (data) { data.progress = p; notify(); schedulePersist() } }
+    async function setWeights(w) { if (data) { data.weights = w; schedulePersist() } }
+    async function setTrainingDates(d) { if (data) { data.trainingDates = d; schedulePersist() } }
+    async function setProfile(p) { if (data) { data.profile = p; schedulePersist() } }
+    async function setCustomWorkout(cw) { if (data) { data.customWorkout = cw; schedulePersist() } }
+
+    async function persistNow() {
+      if (!_username || !_pin || !data) return
+      try {
+        const encrypted = await auth.encrypt(data, _pin)
+        localStorage.setItem(userKey(_username), encrypted)
+      } catch (e) { console.warn('Persist error:', e) }
+    }
+
+    function schedulePersist() {
+      if (_persistTimer) clearTimeout(_persistTimer)
+      _persistTimer = setTimeout(async () => {
+        _persistTimer = null
+        await persistNow()
+      }, 400)
+    }
+
+    /* --- Gist sync (manual backup/restore) --- */
 
     async function fetchGist() {
       if (!token) return null
@@ -39,212 +192,38 @@
       })
     }
 
-    async function getGistData(forceRefresh) {
-      if (!forceRefresh && _lastGistData) return _lastGistData
-      try {
-        const gist = await fetchGist()
-        if (!gist) return null
-        const raw = gist.files['gymapp_data.json']?.content
-        const result = raw ? JSON.parse(raw) : null
-        if (result) _lastGistData = result
-        return result
-      } catch { return null }
-    }
-
-    function isLegacyFormat(gistData) {
-      return gistData && !gistData.users && gistData.files && gistData.files['progress.json.enc']
-    }
-
-    async function migrateLegacy(username, pin) {
+    async function syncFromGist() {
+      if (!_username || !_pin) return false
       try {
         const gist = await fetchGist()
         if (!gist) return false
-        const content = gist.files['progress.json.enc']?.content
-        if (!content) return false
-        const decrypted = await auth.decrypt(content, pin)
+        const gdata = JSON.parse(gist.files['gymapp_data.json']?.content || 'null')
+        if (!gdata || !gdata[_username]) return false
+        const decrypted = await auth.decrypt(gdata[_username], _pin)
         if (!decrypted) return false
-
-        const newData = {
-          users: [username.toLowerCase()],
-          [username.toLowerCase()]: await auth.encrypt({
-            profile: createDefaultProfile(),
-            progress: decrypted.progress || {},
-            weights: decrypted.weights || {},
-            trainingDates: JSON.parse(localStorage.getItem('gymapp_dates') || '[]'),
-            history: decrypted.history || {},
-          }, pin)
-        }
-        await updateGist(newData)
-        _lastGistData = newData
-        localStorage.removeItem('gymapp_progress')
-        localStorage.removeItem('gymapp_weights')
-        localStorage.removeItem('gymapp_history')
-        localStorage.removeItem('gymapp_dates')
-        localStorage.removeItem('gymapp_pin_hash')
-        localStorage.removeItem('gymapp_pin_salt')
-        return true
-      } catch (e) {
-        console.warn('Migration error:', e)
-        return false
-      }
-    }
-
-    async function getUsers() {
-      const gdata = await getGistData()
-      if (!gdata) return []
-      return gdata.users || []
-    }
-
-    async function registerUser(username, pin, profile) {
-      const gdata = (await getGistData()) || { users: [] }
-      const u = username.toLowerCase()
-      if (gdata.users && gdata.users.includes(u)) return { ok: false, error: 'Usuario ya existe' }
-
-      const userBlob = {
-        profile: profile || createDefaultProfile(),
-        progress: {},
-        weights: {},
-        trainingDates: [],
-        history: {},
-      }
-
-      gdata.users = gdata.users || []
-      gdata.users.push(u)
-      gdata[u] = await auth.encrypt(userBlob, pin)
-      await updateGist(gdata)
-
-      _username = u
-      _pin = pin
-      data = userBlob
-      _lastGistData = gdata
-      localStorage.setItem(CURRENT_USER_KEY, u)
-      localStorage.setItem(PIN_KEY, pin)
-
-      return { ok: true }
-    }
-
-    async function loginUser(username, pin) {
-      const u = username.toLowerCase()
-
-      // Try to load from Gist (primary source)
-      let gdata = _lastGistData
-      if (!gdata) {
-        try {
-          const gist = await fetchGist()
-          if (gist) {
-            if (isLegacyFormat(gist)) {
-              const migrated = await migrateLegacy(username, pin)
-              if (!migrated) return { ok: false, error: 'PIN incorrecto o error de migración' }
-              return await loginUser(username, pin)
-            }
-            const raw = gist.files['gymapp_data.json']?.content
-            if (raw) {
-              try { gdata = JSON.parse(raw) } catch {}
-              if (gdata) _lastGistData = gdata
-            }
-          }
-        } catch {}
-      }
-
-      let decrypted = null
-      if (gdata && gdata.users && gdata.users.includes(u) && gdata[u]) {
-        decrypted = await auth.decrypt(gdata[u], pin)
-      }
-
-      // Fallback: try local encrypted backup if Gist failed or has no user data
-      if (!decrypted) {
-        const backup = localStorage.getItem(BACKUP_KEY)
-        if (backup) {
-          decrypted = await auth.decrypt(backup, pin)
-        }
-      }
-
-      if (!decrypted) return { ok: false, error: 'PIN incorrecto o usuario no encontrado' }
-
-      _username = u
-      _pin = pin
-      data = decrypted
-      localStorage.setItem(CURRENT_USER_KEY, u)
-      localStorage.setItem(PIN_KEY, pin)
-
-      return { ok: true, data: decrypted }
-    }
-
-    async function logoutUser() {
-      // Save local encrypted backup before clearing (never lose data)
-      if (data && _username && _pin) {
-        try {
-          const encrypted = await auth.encrypt(data, _pin)
-          localStorage.setItem(BACKUP_KEY, encrypted)
-        } catch {}
-      }
-      // Flush any pending save
-      if (_persistTimer) { clearTimeout(_persistTimer); _persistTimer = null }
-      await persistNow()
-
-      data = null
-      _username = ''
-      _pin = ''
-      _lastGistData = null
-      localStorage.removeItem(CURRENT_USER_KEY)
-      localStorage.removeItem(PIN_KEY)
-      localStorage.removeItem('gymapp_pin')
-    }
-
-    function isLoggedIn() { return !!data }
-    function getUsername() { return _username }
-    function getProfile() { return data ? data.profile : null }
-    function getProgress() { return data ? data.progress : {} }
-    function getWeights() { return data ? data.weights : {} }
-    function getTrainingDates() { return data ? data.trainingDates : [] }
-    function getHistory() { return data ? data.history : {} }
-    function getHistoryWeek(weekId) { return data ? (data.history[weekId] || null) : null }
-    function getCustomWorkout() { return data ? (data.customWorkout || {}) : {} }
-
-    /* --- Debounced persist (fire-and-forget) --- */
-
-    async function setProgress(p) { if (data) { data.progress = p; notify(); schedulePersist() } }
-    async function setWeights(w) { if (data) { data.weights = w; schedulePersist() } }
-    async function setTrainingDates(d) { if (data) { data.trainingDates = d; schedulePersist() } }
-    async function setProfile(p) { if (data) { data.profile = p; schedulePersist() } }
-    async function setCustomWorkout(cw) { if (data) { data.customWorkout = cw; schedulePersist() } }
-
-    async function persistNow() {
-      if (!_username || !_pin || !data) return
-      try {
-        const gdata = _lastGistData || (await getGistData()) || { users: [] }
-        if (!gdata.users || !gdata.users.includes(_username)) {
-          gdata.users = gdata.users || []
-          if (!gdata.users.includes(_username)) gdata.users.push(_username)
-        }
+        data = decrypted
         const encrypted = await auth.encrypt(data, _pin)
+        localStorage.setItem(userKey(_username), encrypted)
+        notify()
+        return true
+      } catch { return false }
+    }
+
+    async function pushToGist() {
+      if (!_username || !_pin || !data || !token) return false
+      try {
+        const encrypted = await auth.encrypt(data, _pin)
+        let gdata = { users: [] }
+        const gist = await fetchGist()
+        if (gist) {
+          try { gdata = JSON.parse(gist.files['gymapp_data.json']?.content || '{}') } catch {}
+        }
+        if (!gdata.users) gdata.users = []
+        if (!gdata.users.includes(_username)) gdata.users.push(_username)
         gdata[_username] = encrypted
-        _lastGistData = gdata
         await updateGist(gdata)
-        // Save local encrypted backup so data survives logout even if Gist fails
-        localStorage.setItem(BACKUP_KEY, encrypted)
-      } catch (e) { console.warn('Persist error:', e) }
-    }
-
-    function schedulePersist() {
-      if (_persistTimer) clearTimeout(_persistTimer)
-      _persistTimer = setTimeout(async () => {
-        _persistTimer = null
-        await persistNow()
-      }, 400)
-    }
-
-    async function syncFromGist() {
-      if (!_username || !_pin) return false
-      const gdata = await getGistData(true)
-      if (!gdata) return false
-      const encrypted = gdata[_username]
-      if (!encrypted) return false
-      const decrypted = await auth.decrypt(encrypted, _pin)
-      if (!decrypted) return false
-      data = decrypted
-      notify()
-      return true
+        return true
+      } catch { return false }
     }
 
     /* --- Local helpers --- */
@@ -372,7 +351,7 @@
       getTrainingDates, setTrainingDates, getCustomWorkout, setCustomWorkout,
       getHistory, getHistoryWeek, getYearStats,
       checkWeekReset, archiveCurrentWeek,
-      onUpdate, syncFromGist,
+      onUpdate, syncFromGist, pushToGist,
       getToken, setToken, hasToken,
       get connected() { return hasToken() },
       get gistId() { return GIST_ID },

@@ -348,11 +348,54 @@ const workoutPlan = {
   },
 
   getFocusNote(profile) {
-    const sexo = profile.gender === 'F' ? 'ella' : 'él'
     const base = `Rutina personalizada para ${profile.name || 'ti'} `
     if (profile.gender === 'F') {
       return base + '· ENFOQUE: glúteos + piernas con volumen moderado, upper body con mayor frecuencia y rango de reps más alto para maximizar tono muscular.'
     }
     return base + '· ENFOQUE: fuerza + hipertrofia equilibrada, priorizando pectoral, dorsales y cuádriceps con cargas progresivas.'
+  },
+
+  getAlternatives(dayIdx, exIdx) {
+    const current = this.days[dayIdx]?.exercises[exIdx]
+    if (!current) return []
+    const mainMuscle = current.muscle.split(' + ')[0].split(' (')[0].trim()
+    const alts = []
+    this.days.forEach((day, di) => {
+      day.exercises.forEach((ex, ei) => {
+        if (di === dayIdx && ei === exIdx) return
+        const em = ex.muscle.split(' + ')[0].split(' (')[0].trim()
+        if (em === mainMuscle || ex.muscle.includes(mainMuscle) || current.muscle.includes(em)) {
+          alts.push({ ...ex, day: di, ex: ei })
+        }
+      })
+    })
+    const seen = new Set()
+    return alts.filter(a => { const k = a.machine; if (seen.has(k)) return false; seen.add(k); return true })
+  },
+
+  validateWorkout(profile) {
+    const msgs = []
+    const counts = {}
+    this.days.forEach(day => {
+      day.exercises.forEach(ex => {
+        const key = ex.muscle.split(' + ')[0].split(' (')[0].trim()
+        counts[key] = (counts[key] || 0) + 1
+      })
+    })
+    const totalEx = Object.values(counts).reduce((a, b) => a + b, 0)
+    msgs.push(`📊 ${totalEx} ejercicios en la semana`)
+
+    if (profile.gender === 'F') {
+      const glute = (counts['Cuádriceps'] || 0) + (counts['Glúteos'] || 0)
+      msgs.push(glute >= 6 ? '✅ Buen volumen de piernas/glúteos' : '🍑 Considera añadir más ejercicios de cadena posterior')
+      msgs.push('💪 Trabaja upper body con más frecuencia (3+ días/sem) para tono')
+    } else {
+      const chest = (counts['Pectoral mayor'] || 0) + (counts['Pectoral mayor (cabeza clavicular)'] || 0) + (counts['Pectoral mayor (cabeza esternal)'] || 0) + (counts['Pectoral mayor (aducción)'] || 0)
+      const back = (counts['Dorsales'] || 0) + (counts['Espalda media'] || 0) + (counts['Dorsal + Romboides'] || 0) + (counts['Dorsales + Serrato'] || 0) + (counts['Dorsales + Bíceps'] || 0)
+      msgs.push(chest >= 4 ? '✅ Volumen de pecho adecuado' : '💪 Asegura 4+ ejercicios de pecho/semana')
+      msgs.push(back >= 4 ? '✅ Volumen de espalda adecuado' : '🔙 Asegura 4+ ejercicios de espalda/semana')
+    }
+    msgs.push('🔄 Si un ejercicio no te funciona, usa el botón ↻ para cambiarlo')
+    return msgs
   },
 }

@@ -180,6 +180,7 @@
     function getTrainingDates() { return data ? data.trainingDates : [] }
     function getHistory() { return data ? data.history : {} }
     function getHistoryWeek(weekId) { return data ? (data.history[weekId] || null) : null }
+    function getCustomWorkout() { return data ? (data.customWorkout || {}) : {} }
 
     /* --- Debounced persist (fire-and-forget) --- */
 
@@ -187,6 +188,7 @@
     async function setWeights(w) { if (data) { data.weights = w; schedulePersist() } }
     async function setTrainingDates(d) { if (data) { data.trainingDates = d; schedulePersist() } }
     async function setProfile(p) { if (data) { data.profile = p; schedulePersist() } }
+    async function setCustomWorkout(cw) { if (data) { data.customWorkout = cw; schedulePersist() } }
 
     function schedulePersist() {
       if (_persistTimer) clearTimeout(_persistTimer)
@@ -341,7 +343,8 @@
     return {
       getUsers, registerUser, loginUser, logoutUser, isLoggedIn, getUsername, getProfile, setProfile,
       getProgress, getWeights, setProgress, setWeights,
-      getTrainingDates, setTrainingDates, getHistory, getHistoryWeek, getYearStats,
+      getTrainingDates, setTrainingDates, getCustomWorkout, setCustomWorkout,
+      getHistory, getHistoryWeek, getYearStats,
       checkWeekReset, archiveCurrentWeek,
       onUpdate, syncFromGist,
       getToken, setToken, hasToken,

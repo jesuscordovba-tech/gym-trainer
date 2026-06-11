@@ -164,6 +164,7 @@
     renderSettings()
     setupTimer()
     setupVideo()
+    setupVariantOverlay()
 
     db.onUpdate(() => {
       renderDaySelector()
@@ -250,58 +251,72 @@
     const progress = db.getProgress()
     const weights = db.getWeights()
     const dayProgress = progress[dayIndex] || {}
+    const customWorkout = db.getCustomWorkout()
+    const profile = db.getProfile()
 
+    // Bot validation card
+    const botMsgs = profile ? workoutPlan.validateWorkout(profile) : []
     let html = [
+      '<div class="bot-card">',
+      '<div class="bot-card-title">🤖 Coach — Análisis de tu rutina</div>',
+      botMsgs.map(m => '<div class="bot-msg">' + m + '</div>').join(''),
+      '</div>',
+    ].join('') + [
       '<div class="workout-header">',
       '<h2>' + esc(d.name) + '</h2>',
       '<div class="focus">' + esc(d.focus) + '</div>',
-      '<div class="focus" style="font-size:0.75rem;color:var(--primary);margin-top:0.3rem;">' + esc(workoutPlan.getFocusNote(db.getProfile())) + '</div>',
+      '<div class="focus" style="font-size:0.75rem;color:var(--primary);margin-top:0.3rem;">' + esc(workoutPlan.getFocusNote(profile)) + '</div>',
       '</div>',
       '<div class="warmup-box"><strong>🔥 Calentamiento:</strong> ' + esc(d.warmup) + '</div>',
     ].join('')
 
     d.exercises.forEach((ex, exIdx) => {
+      const swapKey = dayIndex + '-' + exIdx
+      const swapped = customWorkout[swapKey]
+      const activeEx = swapped || ex
       const setsCompleted = dayProgress[exIdx] || 0
-      const allDone = setsCompleted >= ex.sets
-      const machine = gymData.getMachineById(ex.machine)
-      const weight = weights[dayIndex + '-' + exIdx] || ''
-      const defaultKg = getDefaultKg(ex.machine)
-      const nextW = recommendWeight(ex, weight, allDone)
+      const allDone = setsCompleted >= activeEx.sets
+      const machine = gymData.getMachineById(activeEx.machine)
+      const weight = weights[swapKey] || ''
+      const defaultKg = getDefaultKg(activeEx.machine)
+      const nextW = recommendWeight(activeEx, weight, allDone)
 
       html += '<div class="exercise-item" data-day="' + dayIndex + '" data-ex="' + exIdx + '">'
       html += '<div class="exercise-top">'
       html += '<div class="exercise-info">'
-      html += '<div class="exercise-name">' + esc(ex.name)
-      if (ex.supersetWith) html += '<span class="superset-badge">SUPERSET</span>'
+      html += '<div class="exercise-name">' + esc(activeEx.name)
+      if (activeEx.supersetWith) html += '<span class="superset-badge">SUPERSET</span>'
+      if (swapped) html += '<span class="swapped-badge">↻</span>'
       html += '</div>'
       html += '<div class="exercise-meta">'
-      html += '<span>🔁 ' + ex.sets + '×' + esc(ex.reps) + '</span>'
-      html += '<span>⏱ ' + ex.rest + 's</span>'
-      html += '<span>📌 RIR ' + ex.rir + '</span>'
+      html += '<span>🔁 ' + activeEx.sets + '×' + esc(activeEx.reps) + '</span>'
+      html += '<span>⏱ ' + activeEx.rest + 's</span>'
+      html += '<span>📌 RIR ' + activeEx.rir + '</span>'
       html += '</div>'
       html += '<div>'
-      html += '<span class="machine-badge">' + esc(machine ? machine.name : ex.machine) + '</span>'
-      html += '<span class="muscle-badge">' + esc(ex.muscle) + '</span>'
+      html += '<span class="machine-badge">' + esc(machine ? machine.name : activeEx.machine) + '</span>'
+      html += '<span class="muscle-badge">' + esc(activeEx.muscle) + '</span>'
       html += '</div>'
       html += '<div class="weight-input-row">'
       html += '<label class="weight-label">Carga (kg):</label>'
-      html += '<input type="number" class="weight-input" value="' + weight + '" data-day="' + dayIndex + '" data-ex="' + exIdx + '" placeholder="kg">'
+      html += '<input type="number" class="weight-input" value="' + weight + '" data-key="' + swapKey + '" placeholder="kg">'
       if (!weight && defaultKg) html += '<span class="weight-suggest">Inicia: ' + defaultKg + ' kg</span>'
       else if (nextW) html += '<span class="weight-rec">⬆ ' + nextW + ' kg</span>'
       html += '</div></div>'
       html += '<div class="exercise-controls">'
       html += '<div class="set-tracker">'
-      for (let s = 0; s < ex.sets; s++) {
+      for (let s = 0; s < activeEx.sets; s++) {
         html += '<button class="set-dot ' +
           (s < setsCompleted ? 'completed' : s === setsCompleted ? 'current' : '') +
           '" data-day="' + dayIndex + '" data-ex="' + exIdx + '" data-set="' + s + '">' +
           (s + 1) + '</button>'
       }
       html += '</div>'
-      html += '<button class="rest-timer-btn" data-rest="' + ex.rest + '">⏱ ' + ex.rest + 's</button>'
+      html += '<button class="rest-timer-btn" data-rest="' + activeEx.rest + '">⏱ ' + activeEx.rest + 's</button>'
+      html += '<button class="swap-btn" data-day="' + dayIndex + '" data-ex="' + exIdx + '" title="Cambiar ejercicio">↻</button>'
       html += '</div></div>'
-      if (ex.video) {
-        html += '<div class="exercise-video-placeholder" data-video="' + esc(ex.video) + '"><span>▶</span></div>'
+      if (activeEx.video) {
+        html += '<div class="exercise-video-placeholder" data-video="' + esc(activeEx.video) + '"><span>▶</span></div>'
       }
       html += '</div>'
     })
@@ -338,6 +353,9 @@
         this.innerHTML = '<div class="exercise-video"><iframe src="https://www.youtube.com/embed/' + id + '?mute=1&autoplay=1&controls=1&rel=0&loop=1" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe></div>'
       })
     })
+    container.querySelectorAll('.swap-btn').forEach(btn => {
+      btn.addEventListener('click', showVariants)
+    })
     const resetBtn = document.getElementById('resetDay')
     if (resetBtn) {
       resetBtn.addEventListener('click', () => {
@@ -350,6 +368,42 @@
         }
       })
     }
+  }
+
+  function showVariants(e) {
+    const day = parseInt(e.currentTarget.dataset.day)
+    const ex = parseInt(e.currentTarget.dataset.ex)
+    const alts = workoutPlan.getAlternatives(day, ex)
+    const overlay = document.getElementById('variantOverlay')
+    const list = document.getElementById('variantList')
+    if (!overlay || !list || !alts.length) return
+
+    list.innerHTML = alts.map(a => {
+      const m = gymData.getMachineById(a.machine)
+      return '<div class="variant-item" data-day="' + a.day + '" data-ex="' + a.ex + '">' +
+        '<div class="variant-name">' + esc(a.name) + '</div>' +
+        '<div class="variant-meta">' + esc(m ? m.name : a.machine) + ' · ' + esc(a.muscle) + ' · ' + a.sets + '×' + esc(a.reps) + '</div>' +
+        '<button class="variant-select-btn" data-day="' + a.day + '" data-ex="' + a.ex + '">Seleccionar</button>' +
+        (a.video ? '<a class="variant-video-link" href="https://www.youtube.com/watch?v=' + a.video + '" target="_blank" rel="noopener">▶ Ver video</a>' : '') +
+        '</div>'
+    }).join('')
+
+    list.querySelectorAll('.variant-select-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const srcDay = parseInt(btn.dataset.day)
+        const srcEx = parseInt(btn.dataset.ex)
+        const src = workoutPlan.days[srcDay]?.exercises[srcEx]
+        if (!src) return
+        const cw = db.getCustomWorkout()
+        cw[day + '-' + ex] = { name: src.name, machine: src.machine, sets: src.sets, reps: src.reps, rest: src.rest, rir: src.rir, muscle: src.muscle, video: src.video }
+        db.setCustomWorkout(cw)
+        overlay.classList.remove('show')
+        renderWorkout(day)
+      })
+    })
+
+    overlay.classList.add('show')
+    overlay.onclick = e => { if (e.target === overlay) overlay.classList.remove('show') }
   }
 
   function handleSetClick(e) {
@@ -387,7 +441,7 @@
 
   function handleWeightChange(e) {
     const inp = e.currentTarget
-    const key = inp.dataset.day + '-' + inp.dataset.ex
+    const key = inp.dataset.key || inp.dataset.day + '-' + inp.dataset.ex
     const weights = db.getWeights()
     if (inp.value) {
       weights[key] = inp.value
@@ -479,6 +533,14 @@
   function closeVideo() {
     document.getElementById('videoOverlay').classList.remove('show')
     document.getElementById('videoIframe').src = ''
+  }
+
+  /* === Variant Overlay === */
+  function setupVariantOverlay() {
+    const overlay = document.getElementById('variantOverlay')
+    document.getElementById('variantClose')?.addEventListener('click', () => overlay.classList.remove('show'))
+    overlay?.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('show') })
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') overlay?.classList.remove('show') })
   }
 
   function esc(s) {

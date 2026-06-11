@@ -133,6 +133,122 @@
     .settings-edit-grid select:focus {
       border-color: var(--primary);
     }
+
+    /* Swap button */
+    .swap-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.2s;
+    }
+    .swap-btn:hover { border-color: var(--primary); }
+
+    /* Swapped badge */
+    .swapped-badge {
+      font-size: 0.65rem;
+      background: var(--primary);
+      color: white;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      margin-left: 0.3rem;
+      vertical-align: middle;
+    }
+
+    /* Bot card */
+    .bot-card {
+      background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+    }
+    .bot-card-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.4rem;
+    }
+    .bot-msg {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* Variant overlay */
+    .variant-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .variant-overlay.show { opacity: 1; pointer-events: auto; }
+
+    .variant-modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      width: 380px;
+      max-width: 90vw;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .variant-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .variant-modal-title { font-size: 1rem; font-weight: 700; }
+    .variant-close {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.2rem;
+      cursor: pointer;
+      opacity: 0.6;
+    }
+    .variant-close:hover { opacity: 1; }
+
+    .variant-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .variant-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem; }
+    .variant-meta { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.5rem; }
+    .variant-select-btn {
+      background: var(--primary);
+      border: none;
+      color: white;
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-right: 0.5rem;
+    }
+    .variant-video-link {
+      font-size: 0.75rem;
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .variant-video-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -209,9 +325,20 @@
     </div>
   </div>
 
-  <script src="js/data.js?v=7"></script>
-  <script src="js/auth.js?v=7"></script>
-  <script src="js/db.js?v=7"></script>
-  <script src="js/app.js?v=7"></script>
+  <!-- Variant overlay (exercise swap) -->
+  <div class="variant-overlay" id="variantOverlay">
+    <div class="variant-modal">
+      <div class="variant-modal-header">
+        <span class="variant-modal-title">🔄 Cambiar ejercicio</span>
+        <button class="variant-close" id="variantClose">✕</button>
+      </div>
+      <div class="variant-list" id="variantList"></div>
+    </div>
+  </div>
+
+  <script src="js/data.js?v=8"></script>
+  <script src="js/auth.js?v=8"></script>
+  <script src="js/db.js?v=8"></script>
+  <script src="js/app.js?v=8"></script>
 </body>
 </html>

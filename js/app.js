@@ -2,8 +2,11 @@
   let currentDay = 0
   let timerInterval = null
   let audioCtx = null
-  const GEMINI_KEY = 'gymapp_gemini_key'
-  let geminiKey = localStorage.getItem(GEMINI_KEY) || ''
+  const LS_PREFIX = 'gymapp_ai_'
+  let aiProvider = localStorage.getItem(LS_PREFIX + 'provider') || 'gemini'
+  let aiKey = localStorage.getItem(LS_PREFIX + 'key') || ''
+  let aiUrl = localStorage.getItem(LS_PREFIX + 'url') || 'https://api.groq.com/openai/v1'
+  let aiModel = localStorage.getItem(LS_PREFIX + 'model') || 'llama-3.3-70b-versatile'
 
   const DAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB']
 
@@ -739,14 +742,26 @@ ${fullPlan}
 
 Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, progresión de pesos, nutrición básica, y recuperación. Si no sabes algo, dilo honestamente.`
 
-        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + geminiKey, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        let body, headers, url
+        if (aiProvider === 'gemini') {
+          url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + aiKey
+          headers = { 'Content-Type': 'application/json' }
+          body = JSON.stringify({
             system_instruction: { parts: [{ text: systemPrompt }] },
             contents: [{ role: 'user', parts: [{ text }] }]
           })
-        })
+        } else {
+          url = aiUrl.replace(/\/+$/, '') + '/chat/completions'
+          headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + aiKey }
+          body = JSON.stringify({
+            model: aiModel || 'llama-3.3-70b-versatile',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: text }
+            ]
+          })
+        }
+        const res = await fetch(url, { method: 'POST', headers, body })
         if (!res.ok) {
           let detail = ''
           try { const err = await res.json(); detail = err?.error?.message || '' } catch (_) {}
@@ -772,7 +787,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
 
   function updateCoachFab() {
     const fab = document.getElementById('coachFab')
-    if (fab) fab.style.display = geminiKey ? '' : 'none'
+    if (fab) fab.style.display = aiKey ? '' : 'none'
   }
 
   function esc(s) {
@@ -1104,14 +1119,22 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
 
       /* AI Coach */
       '<div class="card">',
-      '<div class="card-title">🤖 Coach IA — Gemini</div>',
-      '<p class="settings-description">Ingresa tu API key de <strong>Google Gemini</strong> (gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--primary)">aistudio.google.com/apikey</a>) para activar el coach con inteligencia artificial.</p>',
-      '<div class="settings-token-section">',
-      '<div class="settings-token-row">',
-      '<input type="password" id="geminiKeyInput" class="settings-token-input" value="' + esc(geminiKey) + '" placeholder="AIzaSy...">',
-      '<button id="saveGeminiKeyBtn" class="reset-btn settings-save-btn">' + (geminiKey ? 'Actualizar' : 'Conectar') + '</button>',
-      '</div></div>',
-      '<div id="geminiStatus" class="settings-sync-status"></div>',
+      '<div class="card-title">🤖 Coach IA</div>',
+      '<div class="settings-edit-grid">',
+      '<label>Proveedor <select id="aiProviderSelect" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.5rem;border-radius:var(--radius-sm);font-size:0.9rem;">',
+      '<option value="gemini"' + (aiProvider === 'gemini' ? ' selected' : '') + '>Gemini (aistudio.google.com)</option>',
+      '<option value="openai"' + (aiProvider === 'openai' ? ' selected' : '') + '>OpenAI-compatible (Groq, OpenRouter, etc.)</option>',
+      '</select></label>',
+      '<label>API Key <input type="password" id="aiKeyInput" class="settings-token-input" value="' + esc(aiKey) + '" placeholder="' + (aiProvider === 'gemini' ? 'AIzaSy...' : 'gsk_...') + '"></label>',
+      '<label id="aiUrlLabel"' + (aiProvider !== 'openai' ? ' style="display:none"' : '') + '>URL Base <input type="text" id="aiUrlInput" class="settings-token-input" value="' + esc(aiUrl) + '" placeholder="https://api.groq.com/openai/v1"></label>',
+      '<label id="aiModelLabel"' + (aiProvider !== 'openai' ? ' style="display:none"' : '') + '>Modelo <input type="text" id="aiModelInput" class="settings-token-input" value="' + esc(aiModel) + '" placeholder="llama-3.3-70b-versatile"></label>',
+      '</div>',
+      '<button id="saveAiBtn" class="reset-btn" style="margin-top:0.75rem;">' + (aiKey ? 'Actualizar' : 'Conectar') + ' Coach IA</button>',
+      '<div id="aiStatus" class="settings-sync-status"></div>',
+      '<p style="font-size:0.75rem;color:var(--text-dim);margin-top:0.5rem;">',
+      '💡 <strong>Groq</strong> (gratis): <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color:var(--primary)">console.groq.com/keys</a> — 30 req/min, no necesita tarjeta.',
+      ' · <strong>Gemini</strong> (gratis): <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--primary)">aistudio.google.com/apikey</a>',
+      '</p>',
       '</div>',
 
       /* Security info */
@@ -1189,18 +1212,28 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       }
     })
 
-    /* --- Gemini AI Coach (key save in settings) --- */
-    document.getElementById('saveGeminiKeyBtn')?.addEventListener('click', async () => {
-      const inp = document.getElementById('geminiKeyInput')
-      const st = document.getElementById('geminiStatus')
-      const key = inp.value.trim()
+    /* --- AI Coach Provider Settings --- */
+    document.getElementById('saveAiBtn')?.addEventListener('click', async () => {
+      const st = document.getElementById('aiStatus')
+      aiProvider = document.getElementById('aiProviderSelect').value
+      const key = document.getElementById('aiKeyInput').value.trim()
       if (!key) { st.textContent = '❌ Ingresa una API key'; return }
-      geminiKey = key
-      localStorage.setItem(GEMINI_KEY, key)
-      st.textContent = '✅ Key guardada'
+      aiKey = key
+      aiUrl = document.getElementById('aiUrlInput')?.value.trim() || 'https://api.groq.com/openai/v1'
+      aiModel = document.getElementById('aiModelInput')?.value.trim() || 'llama-3.3-70b-versatile'
+      localStorage.setItem(LS_PREFIX + 'provider', aiProvider)
+      localStorage.setItem(LS_PREFIX + 'key', aiKey)
+      localStorage.setItem(LS_PREFIX + 'url', aiUrl)
+      localStorage.setItem(LS_PREFIX + 'model', aiModel)
+      st.textContent = '✅ Coach IA configurado'
       st.style.color = 'var(--green)'
       updateCoachFab()
       showToast('🤖 Coach IA activado')
+    })
+    document.getElementById('aiProviderSelect')?.addEventListener('change', function () {
+      const isOpenAI = this.value === 'openai'
+      document.getElementById('aiUrlLabel').style.display = isOpenAI ? '' : 'none'
+      document.getElementById('aiModelLabel').style.display = isOpenAI ? '' : 'none'
     })
   }
 

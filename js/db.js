@@ -4,6 +4,7 @@
     const PIN_KEY = 'gymapp_pin'
     const GIST_ID = 'a2e0cc16311b5589246aa6215e5a7250'
     const CURRENT_USER_KEY = 'gymapp_current_user'
+    const BACKUP_KEY = 'gymapp_local_backup'
 
     let data = null
     let _username = ''
@@ -123,31 +124,42 @@
     }
 
     async function loginUser(username, pin) {
+      const u = username.toLowerCase()
+
+      // Try to load from Gist (primary source)
       let gdata = _lastGistData
       if (!gdata) {
-        const gist = await fetchGist()
-        if (!gist) return { ok: false, error: 'Revisa tu token de GitHub' }
-
-        if (isLegacyFormat(gist)) {
-          const migrated = await migrateLegacy(username, pin)
-          if (!migrated) return { ok: false, error: 'PIN incorrecto o error de migración' }
-          return await loginUser(username, pin)
-        }
-
-        const raw = gist.files['gymapp_data.json']?.content
-        if (!raw) return { ok: false, error: 'No hay datos en la nube' }
-        try { gdata = JSON.parse(raw) } catch { return { ok: false, error: 'Error al leer datos' } }
-        _lastGistData = gdata
+        try {
+          const gist = await fetchGist()
+          if (gist) {
+            if (isLegacyFormat(gist)) {
+              const migrated = await migrateLegacy(username, pin)
+              if (!migrated) return { ok: false, error: 'PIN incorrecto o error de migración' }
+              return await loginUser(username, pin)
+            }
+            const raw = gist.files['gymapp_data.json']?.content
+            if (raw) {
+              try { gdata = JSON.parse(raw) } catch {}
+              if (gdata) _lastGistData = gdata
+            }
+          }
+        } catch {}
       }
 
-      const u = username.toLowerCase()
-      if (!gdata.users || !gdata.users.includes(u)) return { ok: false, error: 'Usuario no registrado' }
+      let decrypted = null
+      if (gdata && gdata.users && gdata.users.includes(u) && gdata[u]) {
+        decrypted = await auth.decrypt(gdata[u], pin)
+      }
 
-      const encrypted = gdata[u]
-      if (!encrypted) return { ok: false, error: 'No hay datos para este usuario' }
+      // Fallback: try local encrypted backup if Gist failed or has no user data
+      if (!decrypted) {
+        const backup = localStorage.getItem(BACKUP_KEY)
+        if (backup) {
+          decrypted = await auth.decrypt(backup, pin)
+        }
+      }
 
-      const decrypted = await auth.decrypt(encrypted, pin)
-      if (!decrypted) return { ok: false, error: 'PIN incorrecto' }
+      if (!decrypted) return { ok: false, error: 'PIN incorrecto o usuario no encontrado' }
 
       _username = u
       _pin = pin
@@ -159,7 +171,14 @@
     }
 
     async function logoutUser() {
-      // Flush any pending save immediately
+      // Save local encrypted backup before clearing (never lose data)
+      if (data && _username && _pin) {
+        try {
+          const encrypted = await auth.encrypt(data, _pin)
+          localStorage.setItem(BACKUP_KEY, encrypted)
+        } catch {}
+      }
+      // Flush any pending save
       if (_persistTimer) { clearTimeout(_persistTimer); _persistTimer = null }
       await persistNow()
 
@@ -198,9 +217,12 @@
           gdata.users = gdata.users || []
           if (!gdata.users.includes(_username)) gdata.users.push(_username)
         }
-        gdata[_username] = await auth.encrypt(data, _pin)
+        const encrypted = await auth.encrypt(data, _pin)
+        gdata[_username] = encrypted
         _lastGistData = gdata
         await updateGist(gdata)
+        // Save local encrypted backup so data survives logout even if Gist fails
+        localStorage.setItem(BACKUP_KEY, encrypted)
       } catch (e) { console.warn('Persist error:', e) }
     }
 

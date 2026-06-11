@@ -4,12 +4,10 @@
     const WEIGHTS_KEY = 'gymapp_weights'
     const TOKEN_KEY = 'gymapp_github_token'
     const WEEK_KEY = 'gymapp_week'
-    const DATES_KEY = 'gymapp_dates'
     const GIST_ID = 'a2e0cc16311b5589246aa6215e5a7250'
 
     let progress = JSON.parse(localStorage.getItem(DAYS_KEY) || '{}')
     let weights = JSON.parse(localStorage.getItem(WEIGHTS_KEY) || '{}')
-    let trainingDates = JSON.parse(localStorage.getItem(DATES_KEY) || '[]')
     let listeners = []
     let _pin = ''
 
@@ -18,7 +16,6 @@
     function saveLocal() {
       localStorage.setItem(DAYS_KEY, JSON.stringify(progress))
       localStorage.setItem(WEIGHTS_KEY, JSON.stringify(weights))
-      localStorage.setItem(DATES_KEY, JSON.stringify(trainingDates))
     }
 
     function getProgress() { return progress }
@@ -68,18 +65,6 @@
       return false
     }
 
-    function recordTrainingDate() {
-      const today = new Date().toISOString().split('T')[0]
-      if (!trainingDates.includes(today)) {
-        trainingDates.push(today)
-        saveLocal()
-        syncToGist()
-      }
-    }
-
-    function getTrainingDates() { return trainingDates }
-    function getTrainingDayCount() { return trainingDates.length }
-
     function onUpdate(cb) { listeners.push(cb) }
     function notify() { listeners.forEach(cb => cb(progress, weights)) }
 
@@ -96,7 +81,7 @@
       clearTimeout(syncToGist._timer)
       syncToGist._timer = setTimeout(async () => {
         try {
-          const encrypted = await auth.encrypt({ progress, weights, trainingDates }, _pin)
+          const encrypted = await auth.encrypt({ progress, weights }, _pin)
           await fetch(`https://api.github.com/gists/${GIST_ID}`, {
             method: 'PATCH',
             headers: {
@@ -129,7 +114,6 @@
 
         const remoteP = decrypted.progress || {}
         const remoteW = decrypted.weights || {}
-        const remoteD = decrypted.trainingDates || []
         let changed = false
 
         for (const dk of Object.keys(remoteP)) {
@@ -154,10 +138,6 @@
           }
         }
 
-        for (const d of remoteD) {
-          if (!trainingDates.includes(d)) { trainingDates.push(d); changed = true }
-        }
-
         if (changed) { saveLocal(); notify() }
         return true
       } catch (err) {
@@ -169,7 +149,6 @@
     return {
       getProgress, getWeights, setProgress, setWeights,
       resetAll, onUpdate, setPin, checkWeekReset,
-      recordTrainingDate, getTrainingDates, getTrainingDayCount,
       getToken, setToken, hasToken,
       pullFromGist, syncToGist,
       get connected() { return hasToken() },

@@ -124,12 +124,24 @@
     setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300) }, 4000)
   }
 
+  function getTrainingCount() {
+    try { return JSON.parse(localStorage.getItem('gymapp_dates') || '[]').length } catch { return 0 }
+  }
+
+  function recordTrainingDay() {
+    const today = new Date().toISOString().split('T')[0]
+    try {
+      const arr = JSON.parse(localStorage.getItem('gymapp_dates') || '[]')
+      if (!arr.includes(today)) { arr.push(today); localStorage.setItem('gymapp_dates', JSON.stringify(arr)) }
+    } catch {}
+  }
+
   function initApp() {
     const wasReset = db.checkWeekReset()
     if (wasReset) { refreshData(); showToast('🔄 Nueva semana — progreso reiniciado') }
     let totalSets = 0
     for (const k in progress) { const d = progress[k]; if (d) for (const ek in d) totalSets += d[ek] || 0 }
-    if (totalSets > 0) db.recordTrainingDate()
+    if (totalSets > 0) recordTrainingDay()
 
     cloudReady = db.connected
     renderNav()
@@ -358,7 +370,7 @@
     const maxSets = workoutPlan.days[day].exercises[ex].sets
     if (progress[day][ex] > maxSets) progress[day][ex] = maxSets
 
-    if (progress[day][ex] > setsCompleted) db.recordTrainingDate()
+    if (progress[day][ex] > setsCompleted) recordTrainingDay()
     save()
     renderDaySelector()
     renderWorkout(day)
@@ -526,7 +538,7 @@
 
     const now = new Date()
     const weekNum = getISOWeek(now)
-    const trainingDays = db.getTrainingDayCount()
+    const trainingDays = getTrainingCount()
 
     let html = [
       '<h2>📊 Tu Progreso</h2>',

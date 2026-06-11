@@ -139,6 +139,7 @@
   function initApp() {
     const wasReset = db.checkWeekReset()
     if (wasReset) { refreshData(); showToast('🔄 Nueva semana — progreso reiniciado') }
+    db.archiveCurrentWeek()
     let totalSets = 0
     for (const k in progress) { const d = progress[k]; if (d) for (const ek in d) totalSets += d[ek] || 0 }
     if (totalSets > 0) recordTrainingDay()
@@ -576,6 +577,41 @@
       '<button class="reset-btn" id="resetAll">Reiniciar todo el progreso</button>',
       '</div>',
     ].join('')
+
+    /* === Year history === */
+    const year = now.getFullYear()
+    const yearStats = db.getYearStats(year)
+    const historyData = db.getHistory()
+    const yearWeeks = Object.keys(historyData).filter(k => k.startsWith(year + '-W')).sort()
+
+    if (yearWeeks.length > 0) {
+      html += '<h3 style="margin-top:2rem;">📆 Historial ' + year + '</h3>'
+      html += '<div class="progress-stats">'
+      html += '<div class="stat-card"><div class="stat-value">' + yearStats.totalSets + '</div><div class="stat-label">Series totales</div></div>'
+      html += '<div class="stat-card"><div class="stat-value">' + yearStats.totalDays + '</div><div class="stat-label">Días entrenados</div></div>'
+      html += '<div class="stat-card"><div class="stat-value">' + yearStats.weeks + '</div><div class="stat-label">Semanas registradas</div></div>'
+      html += '<div class="stat-card"><div class="stat-value">' + yearStats.setsPerWeek + '</div><div class="stat-label">Series/semana (promedio)</div></div>'
+      html += '</div>'
+
+      html += '<div class="history-week-list">'
+      yearWeeks.slice().reverse().forEach(wk => {
+        const h = historyData[wk]
+        if (!h || !h.progress) return
+        let wkSets = 0, wkDays = 0
+        for (const dk of Object.keys(h.progress)) {
+          const day = h.progress[dk]
+          let ds = 0
+          for (const ek of Object.keys(day)) ds += day[ek] || 0
+          if (ds > 0) wkDays++
+          wkSets += ds
+        }
+        html += '<div class="history-week-row">'
+        html += '<span class="history-week-label">' + esc(wk) + '</span>'
+        html += '<span class="history-week-count">' + wkSets + ' series · ' + wkDays + ' días</span>'
+        html += '</div>'
+      })
+      html += '</div>'
+    }
 
     container.innerHTML = html
 

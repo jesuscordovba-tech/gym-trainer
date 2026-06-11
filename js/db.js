@@ -3,6 +3,7 @@
     const DAYS_KEY = 'gymapp_progress'
     const WEIGHTS_KEY = 'gymapp_weights'
     const TOKEN_KEY = 'gymapp_github_token'
+    const WEEK_KEY = 'gymapp_week'
     const GIST_ID = 'a2e0cc16311b5589246aa6215e5a7250'
 
     let progress = JSON.parse(localStorage.getItem(DAYS_KEY) || '{}')
@@ -37,6 +38,27 @@
       weights = {}
       saveLocal()
       syncToGist()
+    }
+
+    function getWeekId() {
+      const now = new Date()
+      const day = now.getDay()
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1)
+      const monday = new Date(now.setDate(diff))
+      return monday.toISOString().split('T')[0]
+    }
+
+    function checkWeekReset() {
+      const currentWeek = getWeekId()
+      const storedWeek = localStorage.getItem(WEEK_KEY)
+      const hadProgress = Object.keys(progress).length > 0
+      if (!storedWeek || storedWeek !== currentWeek) {
+        progress = {}
+        localStorage.setItem(WEEK_KEY, currentWeek)
+        saveLocal()
+        return hadProgress
+      }
+      return false
     }
 
     function onUpdate(cb) { listeners.push(cb) }
@@ -122,7 +144,7 @@
 
     return {
       getProgress, getWeights, setProgress, setWeights,
-      resetAll, onUpdate, setPin,
+      resetAll, onUpdate, setPin, checkWeekReset,
       getToken, setToken, hasToken,
       pullFromGist, syncToGist,
       get connected() { return hasToken() },

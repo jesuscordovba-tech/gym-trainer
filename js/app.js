@@ -101,7 +101,21 @@
     })
   }
 
+  function showToast(msg) {
+    const existing = document.querySelector('.week-toast')
+    if (existing) existing.remove()
+    const t = document.createElement('div')
+    t.className = 'week-toast'
+    t.textContent = msg
+    document.body.appendChild(t)
+    setTimeout(() => t.classList.add('show'), 10)
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300) }, 4000)
+  }
+
   function initApp() {
+    const wasReset = db.checkWeekReset()
+    if (wasReset) { refreshData(); showToast('🔄 Nueva semana — progreso reiniciado') }
+
     cloudReady = db.connected
     renderNav()
     renderDaySelector()

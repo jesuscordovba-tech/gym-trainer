@@ -1,48 +1,227 @@
 ;(() => {
   window.db = (function() {
-    const DAYS_KEY = 'gymapp_progress'
-    const WEIGHTS_KEY = 'gymapp_weights'
     const TOKEN_KEY = 'gymapp_github_token'
-    const WEEK_KEY = 'gymapp_week'
-    const HISTORY_KEY = 'gymapp_history'
+    const PIN_KEY = 'gymapp_pin'
     const GIST_ID = 'a2e0cc16311b5589246aa6215e5a7250'
+    const CURRENT_USER_KEY = 'gymapp_current_user'
 
-    let progress = JSON.parse(localStorage.getItem(DAYS_KEY) || '{}')
-    let weights = JSON.parse(localStorage.getItem(WEIGHTS_KEY) || '{}')
-    let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '{}')
-    let listeners = []
+    let data = null
+    let _username = ''
     let _pin = ''
+    let token = localStorage.getItem(TOKEN_KEY) || ''
+    let listeners = []
 
-    function setPin(pin) { _pin = pin }
+    function getGistUrl() { return `https://api.github.com/gists/${GIST_ID}` }
 
-    function saveLocal() {
-      localStorage.setItem(DAYS_KEY, JSON.stringify(progress))
-      localStorage.setItem(WEIGHTS_KEY, JSON.stringify(weights))
+    async function fetchGist() {
+      if (!token) return null
+      const res = await fetch(getGistUrl(), {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      return await res.json()
     }
 
-    function getProgress() { return progress }
-    function getWeights() { return weights }
-
-    function setProgress(newProgress) {
-      progress = newProgress
-      saveLocal()
-      syncToGist()
+    async function updateGist(content) {
+      if (!token) return
+      await fetch(getGistUrl(), {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          files: { 'gymapp_data.json': { content: JSON.stringify(content) } }
+        }),
+      })
     }
 
-    function setWeights(newWeights) {
-      weights = newWeights
-      saveLocal()
-      syncToGist()
+    async function getGistData() {
+      try {
+        const gist = await fetchGist()
+        if (!gist) return null
+        const raw = gist.files['gymapp_data.json']?.content
+        return raw ? JSON.parse(raw) : null
+      } catch {
+        return null
+      }
     }
 
-    function resetAll() {
-      progress = {}
-      weights = {}
-      history = {}
-      localStorage.setItem(HISTORY_KEY, '{}')
-      saveLocal()
-      syncToGist()
+    function isLegacyFormat(gistData) {
+      return gistData && !gistData.users && gistData.files && gistData.files['progress.json.enc']
     }
+
+    async function migrateLegacy(username, pin) {
+      try {
+        const gist = await fetchGist()
+        if (!gist) return false
+        const content = gist.files['progress.json.enc']?.content
+        if (!content) return false
+        const decrypted = await auth.decrypt(content, pin)
+        if (!decrypted) return false
+
+        const newData = {
+          users: [username.toLowerCase()],
+          [username.toLowerCase()]: await auth.encrypt({
+            profile: createDefaultProfile(),
+            progress: decrypted.progress || {},
+            weights: decrypted.weights || {},
+            trainingDates: JSON.parse(localStorage.getItem('gymapp_dates') || '[]'),
+            history: decrypted.history || {},
+          }, pin)
+        }
+        await updateGist(newData)
+        localStorage.removeItem('gymapp_progress')
+        localStorage.removeItem('gymapp_weights')
+        localStorage.removeItem('gymapp_history')
+        localStorage.removeItem('gymapp_dates')
+        localStorage.removeItem('gymapp_pin_hash')
+        localStorage.removeItem('gymapp_pin_salt')
+        return true
+      } catch (e) {
+        console.warn('Migration error:', e)
+        return false
+      }
+    }
+
+    async function getUsers() {
+      const gdata = await getGistData()
+      if (!gdata) return []
+      return gdata.users || []
+    }
+
+    async function registerUser(username, pin, profile) {
+      const gdata = (await getGistData()) || { users: [] }
+      const u = username.toLowerCase()
+      if (gdata.users && gdata.users.includes(u)) return { ok: false, error: 'Usuario ya existe' }
+
+      const userBlob = {
+        profile: profile || createDefaultProfile(),
+        progress: {},
+        weights: {},
+        trainingDates: [],
+        history: {},
+      }
+
+      gdata.users = gdata.users || []
+      gdata.users.push(u)
+      gdata[u] = await auth.encrypt(userBlob, pin)
+      await updateGist(gdata)
+      return { ok: true }
+    }
+
+    async function loginUser(username, pin) {
+      const gist = await fetchGist()
+      if (!gist) return { ok: false, error: 'Revisa tu token de GitHub' }
+
+      if (isLegacyFormat(gist)) {
+        const migrated = await migrateLegacy(username, pin)
+        if (!migrated) return { ok: false, error: 'PIN incorrecto o error de migración' }
+        return await loginUser(username, pin)
+      }
+
+      const raw = gist.files['gymapp_data.json']?.content
+      if (!raw) return { ok: false, error: 'No hay datos en la nube' }
+      let gdata
+      try { gdata = JSON.parse(raw) } catch { return { ok: false, error: 'Error al leer datos' } }
+
+      const u = username.toLowerCase()
+      if (!gdata.users || !gdata.users.includes(u)) return { ok: false, error: 'Usuario no registrado' }
+
+      const encrypted = gdata[u]
+      if (!encrypted) return { ok: false, error: 'No hay datos para este usuario' }
+
+      const decrypted = await auth.decrypt(encrypted, pin)
+      if (!decrypted) return { ok: false, error: 'PIN incorrecto' }
+
+      _username = u
+      _pin = pin
+      data = decrypted
+      localStorage.setItem(CURRENT_USER_KEY, u)
+      localStorage.setItem(PIN_KEY, pin)
+
+      return { ok: true, data: decrypted }
+    }
+
+    function logoutUser() {
+      data = null
+      _username = ''
+      _pin = ''
+      localStorage.removeItem(CURRENT_USER_KEY)
+      localStorage.removeItem(PIN_KEY)
+      // clear local app data
+      localStorage.removeItem('gymapp_week')
+      localStorage.removeItem('gymapp_progress')
+      localStorage.removeItem('gymapp_weights')
+      localStorage.removeItem('gymapp_history')
+      localStorage.removeItem('gymapp_dates')
+    }
+
+    function isLoggedIn() { return !!data }
+
+    function getUsername() { return _username }
+
+    function getProfile() { return data ? data.profile : null }
+
+    async function setProfile(profile) {
+      if (!data) return
+      data.profile = profile
+      await persist()
+    }
+
+    function getProgress() { return data ? data.progress : {} }
+    function getWeights() { return data ? data.weights : {} }
+    function getTrainingDates() { return data ? data.trainingDates : [] }
+    function getHistory() { return data ? data.history : {} }
+
+    function getHistoryWeek(weekId) {
+      return data ? (data.history[weekId] || null) : null
+    }
+
+    async function setProgress(progress) {
+      if (!data) return
+      data.progress = progress
+      await persist()
+    }
+
+    async function setWeights(weights) {
+      if (!data) return
+      data.weights = weights
+      await persist()
+    }
+
+    async function setTrainingDates(dates) {
+      if (!data) return
+      data.trainingDates = dates
+      await persist()
+    }
+
+    async function persist() {
+      if (!_username || !_pin || !data) return
+      const gdata = (await getGistData()) || { users: [] }
+      if (!gdata.users || !gdata.users.includes(_username)) {
+        gdata.users = gdata.users || []
+        if (!gdata.users.includes(_username)) gdata.users.push(_username)
+      }
+      gdata[_username] = await auth.encrypt(data, _pin)
+      await updateGist(gdata)
+      notify()
+    }
+
+    async function syncFromGist() {
+      if (!_username || !_pin) return false
+      const gdata = await getGistData()
+      if (!gdata) return false
+      const encrypted = gdata[_username]
+      if (!encrypted) return false
+      const decrypted = await auth.decrypt(encrypted, _pin)
+      if (!decrypted) return false
+      data = decrypted
+      notify()
+      return true
+    }
+
+    /* --- Local helpers (same as before, but operate on data) --- */
 
     function getWeekId() {
       const now = new Date()
@@ -61,67 +240,93 @@
       return d.getUTCFullYear() + '-W' + String(weekNum).padStart(2, '0')
     }
 
-    function archiveWeek(weekId) {
-      const hasData = Object.keys(progress).length > 0 || Object.keys(weights).length > 0
+    function archiveCurrentWeek() {
+      if (!data) return
+      const weekId = getISOWeekString(new Date())
+      const p = data.progress || {}
+      const w = data.weights || {}
+      const hasData = Object.keys(p).length > 0 || Object.keys(w).length > 0
       if (!hasData) return
-      const existing = history[weekId]
+      const hist = data.history || {}
+      const existing = hist[weekId]
       if (existing) {
-        for (const dk of Object.keys(progress)) {
+        for (const dk of Object.keys(p)) {
           const day = parseInt(dk); if (isNaN(day)) continue
           existing.progress[day] = existing.progress[day] || {}
-          for (const ek of Object.keys(progress[dk])) {
+          for (const ek of Object.keys(p[dk])) {
             const ex = parseInt(ek); if (isNaN(ex)) continue
-            if ((progress[dk][ek] || 0) > (existing.progress[day][ex] || 0)) {
-              existing.progress[day][ex] = progress[dk][ek]
+            if ((p[dk][ek] || 0) > (existing.progress[day][ex] || 0)) {
+              existing.progress[day][ex] = p[dk][ek]
             }
           }
         }
-        for (const k of Object.keys(weights)) {
-          if (!existing.weights[k] && weights[k]) existing.weights[k] = weights[k]
+        for (const k of Object.keys(w)) {
+          if (!existing.weights[k] && w[k]) existing.weights[k] = w[k]
         }
       } else {
-        history[weekId] = { progress: JSON.parse(JSON.stringify(progress)), weights: JSON.parse(JSON.stringify(weights)) }
+        hist[weekId] = {
+          progress: JSON.parse(JSON.stringify(p)),
+          weights: JSON.parse(JSON.stringify(w))
+        }
       }
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+      data.history = hist
+      persist()
     }
 
     function checkWeekReset() {
+      if (!data) return false
       const currentWeek = getWeekId()
-      const storedWeek = localStorage.getItem(WEEK_KEY)
+      const storedWeek = localStorage.getItem('gymapp_week')
       if (!storedWeek) {
-        localStorage.setItem(WEEK_KEY, currentWeek)
+        localStorage.setItem('gymapp_week', currentWeek)
         return false
       }
       if (storedWeek !== currentWeek) {
-        const hadProgress = Object.keys(progress).length > 0
+        const p = data.progress || {}
+        const hadProgress = Object.keys(p).length > 0
         if (hadProgress) {
           const oldWeekId = getISOWeekString(new Date(storedWeek))
-          archiveWeek(oldWeekId)
+          const hist = data.history || {}
+          const existing = hist[oldWeekId]
+          if (existing) {
+            for (const dk of Object.keys(p)) {
+              const day = parseInt(dk); if (isNaN(day)) continue
+              existing.progress[day] = existing.progress[day] || {}
+              for (const ek of Object.keys(p[dk])) {
+                const ex = parseInt(ek); if (isNaN(ex)) continue
+                if ((p[dk][ek] || 0) > (existing.progress[day][ex] || 0)) {
+                  existing.progress[day][ex] = p[dk][ek]
+                }
+              }
+            }
+            for (const k of Object.keys(data.weights || {})) {
+              if (!existing.weights[k] && data.weights[k]) existing.weights[k] = data.weights[k]
+            }
+          } else {
+            hist[oldWeekId] = {
+              progress: JSON.parse(JSON.stringify(p)),
+              weights: JSON.parse(JSON.stringify(data.weights || {}))
+            }
+          }
+          data.history = hist
+          data.progress = {}
+          data.weights = {}
+          persist()
         }
-        progress = {}
-        localStorage.setItem(WEEK_KEY, currentWeek)
-        saveLocal()
+        localStorage.setItem('gymapp_week', currentWeek)
         return hadProgress
       }
       return false
     }
 
-    function archiveCurrentWeek() {
-      const now = new Date()
-      const weekId = getISOWeekString(now)
-      archiveWeek(weekId)
-    }
-
-    function getHistory() { return history }
-    function getHistoryWeek(weekId) { return history[weekId] || null }
-
     function getYearStats(year) {
+      if (!data || !data.history) return { year, weeks: 0, totalSets: 0, totalDays: 0, setsPerWeek: 0 }
       const prefix = year + '-W'
-      const weeks = Object.keys(history).filter(k => k.startsWith(prefix)).sort()
-      let totalSets = 0, totalDays = 0, daySetCount = {}
+      const weeks = Object.keys(data.history).filter(k => k.startsWith(prefix)).sort()
+      let totalSets = 0, totalDays = 0
 
       weeks.forEach(wk => {
-        const h = history[wk]
+        const h = data.history[wk]
         if (!h || !h.progress) return
         for (const dk of Object.keys(h.progress)) {
           const day = h.progress[dk]
@@ -136,97 +341,20 @@
     }
 
     function onUpdate(cb) { listeners.push(cb) }
-    function notify() { listeners.forEach(cb => cb(progress, weights)) }
+    function notify() { listeners.forEach(cb => cb(data ? data.progress : {}, data ? data.weights : {})) }
 
-    function getToken() { return localStorage.getItem(TOKEN_KEY) || '' }
-    function setToken(t) { localStorage.setItem(TOKEN_KEY, t) }
-    function hasToken() { return !!getToken() }
-
-    /* --- GitHub Gist Sync (encrypted) --- */
-
-    async function syncToGist() {
-      const token = getToken()
-      if (!token || !_pin) return
-
-      clearTimeout(syncToGist._timer)
-      syncToGist._timer = setTimeout(async () => {
-        try {
-          const encrypted = await auth.encrypt({ progress, weights, history }, _pin)
-          await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-            method: 'PATCH',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              files: { 'progress.json.enc': { content: encrypted } }
-            }),
-          })
-        } catch (err) { console.warn('Gist sync error:', err) }
-      }, 500)
-    }
-
-    async function pullFromGist() {
-      const token = getToken()
-      if (!token || !_pin) return false
-
-      try {
-        const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        })
-        if (!res.ok) throw new Error('HTTP ' + res.status)
-        const data = await res.json()
-        const content = data.files['progress.json.enc']?.content
-        if (!content) return false
-
-        const decrypted = await auth.decrypt(content, _pin)
-        if (!decrypted) return false
-
-        const remoteP = decrypted.progress || {}
-        const remoteW = decrypted.weights || {}
-        const remoteH = decrypted.history || {}
-        let changed = false
-
-        for (const dk of Object.keys(remoteP)) {
-          const day = parseInt(dk)
-          if (isNaN(day)) continue
-          const rd = remoteP[dk]
-          const ld = progress[day] || {}
-          let dc = false
-          for (const ek of Object.keys(rd)) {
-            const ex = parseInt(ek)
-            if (isNaN(ex)) continue
-            if ((rd[ek] || 0) > (ld[ex] || 0)) {
-              ld[ex] = rd[ek]; dc = true
-            }
-          }
-          if (dc) { progress[day] = ld; changed = true }
-        }
-
-        for (const k of Object.keys(remoteW)) {
-          if (!weights[k] && remoteW[k]) {
-            weights[k] = remoteW[k]; changed = true
-          }
-        }
-
-        for (const wk of Object.keys(remoteH)) {
-          if (!history[wk]) { history[wk] = remoteH[wk]; changed = true }
-        }
-
-        if (changed) { saveLocal(); notify() }
-        return true
-      } catch (err) {
-        console.warn('Gist pull error:', err)
-        return false
-      }
-    }
+    function getToken() { return token }
+    function setToken(t) { token = t; localStorage.setItem(TOKEN_KEY, t) }
+    function hasToken() { return !!token }
 
     return {
+      getUsers, registerUser, loginUser, logoutUser, isLoggedIn, getUsername, getProfile, setProfile,
       getProgress, getWeights, setProgress, setWeights,
-      resetAll, onUpdate, setPin, checkWeekReset,
-      archiveCurrentWeek, getHistory, getHistoryWeek, getYearStats,
+      getTrainingDates, setTrainingDates,
+      getHistory, getHistoryWeek, getYearStats,
+      checkWeekReset, archiveCurrentWeek,
+      onUpdate, syncFromGist,
       getToken, setToken, hasToken,
-      pullFromGist, syncToGist,
       get connected() { return hasToken() },
       get gistId() { return GIST_ID },
     }

@@ -1,19 +1,15 @@
-const userProfile = {
-  name: '',
-  age: 21,
-  heightCm: 182,
-  weightLb: 180,
-  gender: 'M',
-  get bmr() {
-    const w = this.weightLb * 0.453592
-    const h = this.heightCm
-    const a = this.age
-    return Math.round(10 * w + 6.25 * h - 5 * a + 5)
-  },
-  get tdee() { return Math.round(this.bmr * 1.55) },
-  get deficitCalories() { return this.tdee - 500 },
-  get weightKg() { return (this.weightLb * 0.453592).toFixed(1) },
-  get bmi() { return ((this.weightKg / ((this.heightCm / 100) ** 2))).toFixed(1) },
+function createDefaultProfile() {
+  return {
+    name: '', age: 21, heightCm: 175, weightLb: 165, gender: 'M',
+    get bmr() {
+      const w = this.weightLb * 0.453592, h = this.heightCm, a = this.age
+      return Math.round(10 * w + 6.25 * h - 5 * a + 5)
+    },
+    get tdee() { return Math.round(this.bmr * 1.55) },
+    get deficitCalories() { return this.tdee - 500 },
+    get weightKg() { return (this.weightLb * 0.453592).toFixed(1) },
+    get bmi() { return ((this.weightKg / ((this.heightCm / 100) ** 2))).toFixed(1) },
+  }
 }
 
 const gymData = {
@@ -170,17 +166,17 @@ const dietPlan = {
     ],
   },
 
-  getMacros() {
-    const w = userProfile.weightKg
-    const cal = userProfile.deficitCalories
+  getMacros(profile) {
+    const w = profile.weightKg
+    const cal = profile.deficitCalories
     const protein = Math.round(w * 2)
     const fat = Math.round(w * 0.9)
     const carbs = Math.round((cal - protein * 4 - fat * 9) / 4)
     return { protein, fat, carbs, calories: cal }
   },
 
-  getMealPlan() {
-    const macros = this.getMacros()
+  getMealPlan(profile) {
+    const macros = this.getMacros(profile)
     const calPerMeal = this.mealStructure.map(m => Math.round(macros.calories * m.pct))
     return { macros, calPerMeal, structure: this.mealStructure }
   }

@@ -1,9 +1,6 @@
 ;(() => {
-  let progress = db.getProgress()
-  let weights = db.getWeights()
   let currentDay = 0
   let timerInterval = null
-  let cloudReady = false
   let audioCtx = null
 
   const DAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB']
@@ -20,97 +17,154 @@
     return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   }
 
-  function refreshData() {
-    progress = db.getProgress()
-    weights = db.getWeights()
-  }
-
-  function save() {
-    db.setProgress(progress)
-    db.setWeights(weights)
-  }
-
-  /* === LOCK SCREEN (mismo PIN en todos los dispositivos) === */
-  async function initLockScreen() {
+  /* === LOGIN / REGISTER SCREEN === */
+  async function initLoginScreen() {
     const screen = document.getElementById('lockScreen')
-    const input = document.getElementById('lockInput')
+    const box = screen.querySelector('.lock-box')
+    const hasToken = db.hasToken()
+
+    if (!hasToken) {
+      box.innerHTML = `
+        <h1>💪 <span>GYM</span>TRAINER</h1>
+        <p style="color:var(--text-dim);font-size:0.85rem;margin-bottom:1.25rem;">
+          Para usar la app necesitas un token de GitHub con scope <strong>gist</strong>.
+        </p>
+        <input type="password" id="tokenSetupInput" class="lock-input" placeholder="ghp_..." autocomplete="off" style="letter-spacing:0;font-size:0.9rem;-webkit-text-security:none;">
+        <div class="lock-error" id="lockError"></div>
+        <button class="lock-btn" id="tokenSetupBtn">Guardar Token</button>
+      `
+
+      document.getElementById('tokenSetupBtn').onclick = () => {
+        const t = document.getElementById('tokenSetupInput').value.trim()
+        if (!t) { document.getElementById('lockError').textContent = 'Ingresa un token'; return }
+        db.setToken(t)
+        initLoginScreen()
+      }
+      document.getElementById('tokenSetupInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('tokenSetupBtn').click()
+      })
+      document.getElementById('tokenSetupInput').focus()
+      return
+    }
+
+    let users = []
+    try { users = await db.getUsers() } catch {}
+
+    const savedUser = localStorage.getItem('gymapp_current_user')
+    const savedPin = localStorage.getItem('gymapp_pin')
+
+    box.innerHTML = `
+      <h1>💪 <span>GYM</span>TRAINER</h1>
+      <div id="loginMode" style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1rem;"></div>
+      <div id="loginUsers" style="margin-bottom:1rem;${users.length === 0 ? 'display:none' : ''}">
+        <label style="font-size:0.75rem;color:var(--text-dim);display:block;text-align:left;margin-bottom:0.3rem;">Usuario existente:</label>
+        <div style="display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;">
+          ${users.map(u => `<button class="login-user-btn" data-user="${esc(u)}" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.4rem 0.8rem;border-radius:var(--radius-sm);cursor:pointer;font-size:0.85rem;">${esc(u)}</button>`).join('')}
+        </div>
+        <div style="margin:0.5rem 0;text-align:center;color:var(--text-dim);font-size:0.75rem;">— o nuevo usuario —</div>
+      </div>
+      <input type="text" id="loginUsername" class="lock-input" placeholder="Usuario" autocomplete="username" style="letter-spacing:0;font-size:1rem;-webkit-text-security:none;">
+      <input type="password" id="loginPin" class="lock-input" placeholder="PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password">
+      <input type="password" id="loginPin2" class="lock-input" placeholder="Confirmar PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password" style="display:none;">
+      <div class="lock-error" id="lockError"></div>
+      <button class="lock-btn" id="lockBtn">Entrar</button>
+      <div class="lock-hint" style="margin-top:0.5rem;"><button id="changeTokenLink">Cambiar token de GitHub</button></div>
+    `
+
+    const usernameInput = document.getElementById('loginUsername')
+    const pinInput = document.getElementById('loginPin')
+    const pin2Input = document.getElementById('loginPin2')
     const btn = document.getElementById('lockBtn')
     const error = document.getElementById('lockError')
-    const subtitle = document.getElementById('lockSubtitle')
-    const hint = document.getElementById('lockHint')
+    const modeLabel = document.getElementById('loginMode')
 
-    const firstTime = !auth.isLocked()
-    let attempts = 0
+    let mode = 'login'
 
-    if (firstTime) {
-      subtitle.textContent = 'Crea tu PIN (4-6 dígitos) — úsalo en todos tus dispositivos'
-      hint.textContent = 'Este PIN también encripta tus datos en la nube.'
-      btn.textContent = 'Listo'
-    } else {
-      subtitle.textContent = 'Ingresa tu PIN'
-      hint.innerHTML = '¿Olvidaste tu PIN? <button id="resetPinBtn">Restablecer</button>'
-      btn.textContent = 'Entrar'
+    function setMode(m) {
+      mode = m
+      if (mode === 'register') {
+        modeLabel.textContent = '🆕 Crear nuevo usuario'
+        pin2Input.style.display = ''
+        btn.textContent = 'Registrarse'
+      } else {
+        modeLabel.textContent = '🔐 Inicia sesión'
+        pin2Input.style.display = 'none'
+        btn.textContent = 'Entrar'
+      }
+    }
+    setMode(users.length === 0 ? 'register' : 'login')
+
+    box.querySelectorAll('.login-user-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        usernameInput.value = b.dataset.user
+        pinInput.focus()
+      })
+    })
+
+    if (savedUser && savedPin) {
+      usernameInput.value = savedUser
+      pinInput.value = savedPin
+      btn.click()
+      return
     }
 
     btn.onclick = async () => {
-      try {
-        const pin = input.value.trim()
-        if (firstTime) {
-          if (pin.length < 4) {
-            error.textContent = 'Mínimo 4 dígitos'
-            return
-          }
-          btn.disabled = true
-          btn.textContent = 'Guardando...'
-          await auth.setPin(pin)
-          db.setPin(pin)
-          screen.classList.add('hidden')
-          initApp()
-        } else {
-          if (!pin) return
-          btn.disabled = true
-          btn.textContent = 'Verificando...'
-          const ok = await auth.checkPin(pin)
-          if (ok) {
-            attempts = 0
-            db.setPin(pin)
+      const username = usernameInput.value.trim().toLowerCase()
+      const pin = pinInput.value.trim()
+      const pin2 = pin2Input.value.trim()
+
+      if (!username || !pin) { error.textContent = 'Completa todos los campos'; return }
+
+      if (mode === 'register') {
+        if (pin.length < 4) { error.textContent = 'PIN mínimo 4 dígitos'; return }
+        if (pin !== pin2) { error.textContent = 'Los PIN no coinciden'; return }
+        btn.disabled = true
+        btn.textContent = 'Registrando...'
+        const result = await db.registerUser(username, pin, createDefaultProfile())
+        if (result.ok) {
+          const login = await db.loginUser(username, pin)
+          if (login.ok) {
             screen.classList.add('hidden')
             initApp()
           } else {
-            attempts++
-            error.textContent = 'PIN incorrecto (intento ' + attempts + '/5)'
-            input.value = ''
-            input.focus()
-            if (attempts >= 5) {
-              error.textContent = 'Demasiados intentos. Recarga la página.'
-              setTimeout(() => { btn.disabled = false; attempts = 0; error.textContent = '' }, 30000)
-              return
-            }
+            error.textContent = login.error
+            btn.disabled = false
+            btn.textContent = 'Registrarse'
           }
+        } else {
+          error.textContent = result.error || 'Error al registrar'
+          btn.disabled = false
+          btn.textContent = 'Registrarse'
+        }
+      } else {
+        btn.disabled = true
+        btn.textContent = 'Entrando...'
+        const result = await db.loginUser(username, pin)
+        if (result.ok) {
+          screen.classList.add('hidden')
+          initApp()
+        } else {
+          error.textContent = result.error
           btn.disabled = false
           btn.textContent = 'Entrar'
         }
-      } catch (e) {
-        error.textContent = 'Error: ' + e.message
-        btn.disabled = false
-        btn.textContent = firstTime ? 'Listo' : 'Entrar'
       }
     }
 
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') btn.click()
+    document.getElementById('changeTokenLink')?.addEventListener('click', () => {
+      db.setToken('')
+      initLoginScreen()
     })
 
-    input.focus()
-
-    document.getElementById('resetPinBtn')?.addEventListener('click', () => {
-      if (confirm('¿Restablecer PIN? Se borrará todo el progreso de ESTE dispositivo.')) {
-        auth.clearPin()
-        db.resetAll()
-        localStorage.clear()
-        location.reload()
+    pinInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        if (mode === 'register') pin2Input.focus()
+        else btn.click()
       }
     })
+    pin2Input.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click() })
+    usernameInput.addEventListener('keydown', e => { if (e.key === 'Enter') pinInput.focus() })
+    usernameInput.focus()
   }
 
   function showToast(msg) {
@@ -125,26 +179,28 @@
   }
 
   function getTrainingCount() {
-    try { return JSON.parse(localStorage.getItem('gymapp_dates') || '[]').length } catch { return 0 }
+    return db.getTrainingDates().length
   }
 
   function recordTrainingDay() {
     const today = new Date().toISOString().split('T')[0]
-    try {
-      const arr = JSON.parse(localStorage.getItem('gymapp_dates') || '[]')
-      if (!arr.includes(today)) { arr.push(today); localStorage.setItem('gymapp_dates', JSON.stringify(arr)) }
-    } catch {}
+    const dates = db.getTrainingDates()
+    if (!dates.includes(today)) {
+      dates.push(today)
+      db.setTrainingDates(dates)
+    }
   }
 
   function initApp() {
     const wasReset = db.checkWeekReset()
-    if (wasReset) { refreshData(); showToast('🔄 Nueva semana — progreso reiniciado') }
+    if (wasReset) { showToast('🔄 Nueva semana — progreso reiniciado') }
     db.archiveCurrentWeek()
+
     let totalSets = 0
+    const progress = db.getProgress()
     for (const k in progress) { const d = progress[k]; if (d) for (const ek in d) totalSets += d[ek] || 0 }
     if (totalSets > 0) recordTrainingDay()
 
-    cloudReady = db.connected
     renderNav()
     renderDaySelector()
     renderWorkout(currentDay)
@@ -154,19 +210,8 @@
     renderSettings()
     setupTimer()
     setupVideo()
-    renderCloudStatus()
 
-    if (cloudReady) {
-      db.pullFromGist().then(() => {
-        refreshData()
-        renderDaySelector()
-        renderWorkout(currentDay)
-        renderProgress()
-      })
-    }
-
-    db.onUpdate((p, w) => {
-      refreshData()
+    db.onUpdate(() => {
       renderDaySelector()
       renderWorkout(currentDay)
       renderProgress()
@@ -175,18 +220,6 @@
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') hideTimer()
     })
-  }
-
-  function renderCloudStatus() {
-    let el = document.getElementById('cloudBadge')
-    if (!el) {
-      el = document.createElement('div')
-      el.id = 'cloudBadge'
-      el.className = 'cloud-badge'
-      document.querySelector('.header-inner').appendChild(el)
-    }
-    el.textContent = cloudReady ? '☁️ Seguro' : '🔒 Local'
-    el.className = 'cloud-badge' + (cloudReady ? ' cloud-ready' : ' cloud-local')
   }
 
   function renderNav() {
@@ -199,11 +232,30 @@
       document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'))
       document.getElementById(btn.dataset.tab).classList.remove('hidden')
     })
+
+    // Add logout button to header
+    const header = document.querySelector('.header-inner')
+    if (!document.getElementById('logoutBtn')) {
+      const lb = document.createElement('button')
+      lb.id = 'logoutBtn'
+      lb.textContent = '🚪'
+      lb.style.cssText = 'background:none;border:none;font-size:1.2rem;cursor:pointer;opacity:0.6;margin-left:auto;'
+      lb.title = 'Cerrar sesión'
+      lb.addEventListener('click', () => {
+        if (confirm('¿Cerrar sesión?')) {
+          db.logoutUser()
+          localStorage.removeItem('gymapp_pin')
+          location.reload()
+        }
+      })
+      header.appendChild(lb)
+    }
   }
 
   function renderDaySelector() {
     const grid = document.getElementById('dayGrid')
     grid.innerHTML = ''
+    const progress = db.getProgress()
     workoutPlan.days.forEach((d, i) => {
       const p = progress[i] || {}
       const completedSets = Object.values(p).reduce((a, b) => a + (b || 0), 0)
@@ -251,6 +303,8 @@
     const d = workoutPlan.days[dayIndex]
     if (!d) return
     const container = document.getElementById('workoutContent')
+    const progress = db.getProgress()
+    const weights = db.getWeights()
     const dayProgress = progress[dayIndex] || {}
 
     let html = [
@@ -343,8 +397,9 @@
     if (resetBtn) {
       resetBtn.addEventListener('click', () => {
         if (confirm('¿Reiniciar todas las series de este día?')) {
-          delete progress[dayIndex]
-          save()
+          const p = db.getProgress()
+          delete p[dayIndex]
+          db.setProgress(p)
           renderDaySelector()
           renderWorkout(dayIndex)
         }
@@ -357,6 +412,7 @@
     const day = parseInt(btn.dataset.day)
     const ex = parseInt(btn.dataset.ex)
     const setIdx = parseInt(btn.dataset.set)
+    const progress = db.getProgress()
 
     if (!progress[day]) progress[day] = {}
     const setsCompleted = progress[day][ex] || 0
@@ -373,7 +429,7 @@
     if (progress[day][ex] > maxSets) progress[day][ex] = maxSets
 
     if (progress[day][ex] > setsCompleted) recordTrainingDay()
-    save()
+    db.setProgress(progress)
     renderDaySelector()
     renderWorkout(day)
     renderProgress()
@@ -387,12 +443,13 @@
   function handleWeightChange(e) {
     const inp = e.currentTarget
     const key = inp.dataset.day + '-' + inp.dataset.ex
+    const weights = db.getWeights()
     if (inp.value) {
       weights[key] = inp.value
     } else {
       delete weights[key]
     }
-    save()
+    db.setWeights(weights)
   }
 
   function setupTimer() {
@@ -518,6 +575,7 @@
 
   function renderProgress() {
     const container = document.getElementById('progressContent')
+    const progress = db.getProgress()
     let totalSetsDone = 0
     let totalSets = 0
     let totalWorkouts = 0
@@ -617,8 +675,8 @@
 
     document.getElementById('resetAll')?.addEventListener('click', () => {
       if (confirm('¿Reiniciar TODO el progreso? Esta acción no se puede deshacer.')) {
-        db.resetAll()
-        refreshData()
+        db.setProgress({})
+        db.setWeights({})
         renderDaySelector()
         renderWorkout(currentDay)
         renderProgress()
@@ -629,7 +687,9 @@
   /* Diet */
   function renderDiet() {
     const container = document.getElementById('dietContent')
-    const plan = dietPlan.getMealPlan()
+    const profile = db.getProfile()
+    if (!profile) { container.innerHTML = '<p>Completa tu perfil en Ajustes para ver el plan de alimentación.</p>'; return }
+    const plan = dietPlan.getMealPlan(profile)
     const m = plan.macros
 
     let html = [
@@ -745,39 +805,40 @@
     const container = document.getElementById('settingsContent')
     const token = db.getToken()
     const hasToken = !!token
+    const profile = db.getProfile()
+    const username = db.getUsername()
 
-    const u = userProfile
-    const idealW = (182 - 100).toFixed(0)
+    if (!profile) { container.innerHTML = '<p>Cargando perfil...</p>'; return }
+
+    const idealW = (profile.heightCm - 100).toFixed(0)
 
     container.innerHTML = [
       '<h2>⚙️ Ajustes</h2>',
-
-      /* Profile card */
       '<div class="card">',
-      '<div class="card-title">👤 Tu Perfil</div>',
+      '<div class="card-title">👤 Tu Perfil — <span style="color:var(--primary)">' + esc(username) + '</span></div>',
+      '<div class="settings-edit-grid">',
+      '<label>Edad <input type="number" id="editAge" value="' + profile.age + '" min="10" max="120"></label>',
+      '<label>Altura (cm) <input type="number" id="editHeight" value="' + profile.heightCm + '" min="100" max="250"></label>',
+      '<label>Peso (lb) <input type="number" id="editWeight" value="' + profile.weightLb + '" min="50" max="500"></label>',
+      '<label>Género <select id="editGender"><option value="M"' + (profile.gender === 'M' ? ' selected' : '') + '>Masculino</option><option value="F"' + (profile.gender === 'F' ? ' selected' : '') + '>Femenino</option></select></label>',
+      '</div>',
+      '<button class="reset-btn" id="saveProfileBtn" style="margin-top:0.75rem;">Guardar Perfil</button>',
+      '<hr class="settings-divider">',
       '<div class="settings-profile-grid">',
-      '<div><span class="settings-field-label">Edad</span><strong class="settings-field-value">21 años</strong></div>',
-      '<div><span class="settings-field-label">Altura</span><strong class="settings-field-value">1.82 m</strong></div>',
-      '<div><span class="settings-field-label">Peso</span><strong class="settings-field-value">180 lb (' + u.weightKg + ' kg)</strong></div>',
-      '<div><span class="settings-field-label">BMI</span><strong class="settings-field-value">' + u.bmi + '</strong></div>',
+      '<div><span class="settings-field-label">Edad</span><strong class="settings-field-value" id="dispAge">' + profile.age + ' años</strong></div>',
+      '<div><span class="settings-field-label">Altura</span><strong class="settings-field-value" id="dispHeight">' + (profile.heightCm / 100).toFixed(2) + ' m</strong></div>',
+      '<div><span class="settings-field-label">Peso</span><strong class="settings-field-value" id="dispWeight">' + profile.weightLb + ' lb (' + profile.weightKg + ' kg)</strong></div>',
+      '<div><span class="settings-field-label">BMI</span><strong class="settings-field-value" id="dispBmi">' + profile.bmi + '</strong></div>',
       '</div>',
       '<hr class="settings-divider">',
       '<div class="settings-profile-grid">',
-      '<div><span class="settings-field-label">Metabolismo basal</span><strong class="settings-field-value">' + u.bmr + ' kcal/día</strong></div>',
-      '<div><span class="settings-field-label">Gasto diario (TDEE)</span><strong class="settings-field-value">' + u.tdee + ' kcal/día</strong></div>',
-      '<div><span class="settings-field-label settings-deficit">🔥 Déficit sugerido</span><strong class="settings-field-value settings-deficit-val">' + u.deficitCalories + ' kcal/día</strong></div>',
+      '<div><span class="settings-field-label">Metabolismo basal</span><strong class="settings-field-value" id="dispBmr">' + profile.bmr + ' kcal/día</strong></div>',
+      '<div><span class="settings-field-label">Gasto diario (TDEE)</span><strong class="settings-field-value" id="dispTdee">' + profile.tdee + ' kcal/día</strong></div>',
+      '<div><span class="settings-field-label settings-deficit">🔥 Déficit sugerido</span><strong class="settings-field-value settings-deficit-val" id="dispDeficit">' + profile.deficitCalories + ' kcal/día</strong></div>',
       '<div><span class="settings-field-label">Peso ideal aprox</span><strong class="settings-field-value">' + idealW + ' kg (' + Math.round(idealW * 2.205) + ' lb)</strong></div>',
       '</div>',
       '<p class="settings-diet-tip">',
-      '🍗 Come ~' + u.deficitCalories + ' kcal/día con alta proteína (1.6-2.2g/kg) para perder grasa sin perder músculo.</p>',
-      '</div>',
-
-      /* PIN section */
-      '<div class="card">',
-      '<div class="card-title">🔐 PIN de acceso</div>',
-      '<p class="settings-description">',
-      'La app está protegida con PIN. Los datos se encriptan con AES-256 antes de subirse a GitHub.</p>',
-      '<button class="reset-btn" id="changePinBtn">Cambiar PIN</button>',
+      '🍗 Come ~' + profile.deficitCalories + ' kcal/día con alta proteína (1.6-2.2g/kg) para perder grasa sin perder músculo.</p>',
       '</div>',
 
       /* Sync section */
@@ -794,12 +855,6 @@
       hasToken ? 'Actualizar' : 'Conectar', '</button>',
       '</div></div>',
       '<div id="syncStatus" class="settings-sync-status"></div>',
-      '<div class="settings-sync-actions">',
-      '<button id="syncPullBtn" class="reset-btn settings-pull-btn"',
-      hasToken ? '' : 'disabled', '>📥 Descargar de GitHub</button>',
-      '<button id="syncPushBtn" class="reset-btn settings-push-btn"',
-      hasToken ? '' : 'disabled', '>📤 Subir a GitHub</button>',
-      '</div>',
       '<p class="settings-gist-id">',
       'Gist ID: <code>' + db.gistId + '</code></p>',
       '</div>',
@@ -808,10 +863,8 @@
       '<div class="card">',
       '<div class="card-title">🛡️ Seguridad</div>',
       '<ul class="settings-security-list">',
-      '<li>🔒 Acceso protegido con PIN</li>',
       '<li>🔐 Datos encriptados con AES-256-GCM antes de subir</li>',
       '<li>📡 Comunicación HTTPS con GitHub API</li>',
-      '<li>🚫 Bloqueo tras 5 intentos fallidos</li>',
       '<li>🛡️ Content Security Policy activa</li>',
       '<li>💾 Token guardado solo en tu navegador</li>',
       '</ul>',
@@ -819,18 +872,19 @@
     ].join('')
 
     /* Event listeners */
-    document.getElementById('changePinBtn')?.addEventListener('click', () => {
-      if (confirm('¿Cambiar PIN? Se borrará el PIN actual.')) {
-        auth.clearPin()
-        localStorage.clear()
-        location.reload()
-      }
+    document.getElementById('saveProfileBtn')?.addEventListener('click', async () => {
+      const p = createDefaultProfile()
+      p.age = parseInt(document.getElementById('editAge').value) || 21
+      p.heightCm = parseInt(document.getElementById('editHeight').value) || 175
+      p.weightLb = parseInt(document.getElementById('editWeight').value) || 165
+      p.gender = document.getElementById('editGender').value
+      await db.setProfile(p)
+      renderSettings()
+      renderDiet()
     })
 
     const tokenInput = document.getElementById('tokenInput')
     const saveBtn = document.getElementById('saveTokenBtn')
-    const pullBtn = document.getElementById('syncPullBtn')
-    const pushBtn = document.getElementById('syncPushBtn')
     const syncStatus = document.getElementById('syncStatus')
 
     saveBtn?.addEventListener('click', async () => {
@@ -838,52 +892,11 @@
       if (!newToken) return
 
       db.setToken(newToken)
-      syncStatus.textContent = '🔄 Verificando token...'
-      syncStatus.style.color = 'var(--orange)'
-
-      const ok = await db.pullFromGist()
-      if (ok) {
-        cloudReady = true
-        renderCloudStatus()
-        refreshData()
-        renderDaySelector()
-        renderWorkout(currentDay)
-        renderProgress()
-        renderSettings()
-        syncStatus.textContent = '✅ Conectado. Datos sincronizados y encriptados.'
-        syncStatus.style.color = 'var(--green)'
-      } else {
-        syncStatus.innerHTML = '❌ Token guardado, pero los datos en el Gist están encriptados con otro PIN. Haz clic en <strong>📤 Subir a GitHub</strong> para sobrescribirlos con tu PIN actual.'
-        syncStatus.style.color = 'var(--orange)'
-      }
-    })
-
-    pullBtn?.addEventListener('click', async () => {
-      syncStatus.textContent = '🔄 Descargando datos encriptados...'
-      syncStatus.style.color = 'var(--orange)'
-      const ok = await db.pullFromGist()
-      if (ok) {
-        refreshData()
-        renderDaySelector()
-        renderWorkout(currentDay)
-        renderProgress()
-        syncStatus.textContent = '✅ Datos descargados y desencriptados'
-        syncStatus.style.color = 'var(--green)'
-      } else {
-        syncStatus.textContent = '❌ Error. ¿El PIN es el mismo que cuando se subió?'
-        syncStatus.style.color = 'var(--primary)'
-      }
-    })
-
-    pushBtn?.addEventListener('click', async () => {
-      syncStatus.textContent = '🔄 Encriptando y subiendo...'
-      syncStatus.style.color = 'var(--orange)'
-      await db.syncToGist()
-      syncStatus.textContent = '✅ Datos encriptados y subidos a GitHub'
+      syncStatus.textContent = '🔄 Token guardado. Los datos se subirán automáticamente.'
       syncStatus.style.color = 'var(--green)'
     })
   }
 
-  /* Start with lock screen */
-  initLockScreen()
+  /* Start with login screen */
+  initLoginScreen()
 })()

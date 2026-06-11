@@ -1,7 +1,4 @@
 ;(() => {
-  const PIN_HASH_KEY = 'gymapp_pin_hash'
-  const PIN_SALT_KEY = 'gymapp_pin_salt'
-
   async function sha256(message) {
     const encoder = new TextEncoder()
     const data = encoder.encode(message)
@@ -11,14 +8,6 @@
 
   function toHex(bytes) {
     return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
-  }
-
-  function fromHex(hex) {
-    const bytes = []
-    for (let i = 0; i < hex.length; i += 2) {
-      bytes.push(parseInt(hex.substring(i, i + 2), 16))
-    }
-    return new Uint8Array(bytes)
   }
 
   function base64ToBytes(b64) {
@@ -35,35 +24,6 @@
   }
 
   window.auth = {
-    async setPin(pin) {
-      const salt = crypto.getRandomValues(new Uint8Array(16))
-      const hash = await sha256(pin + toHex(salt))
-      localStorage.setItem(PIN_HASH_KEY, toHex(hash))
-      localStorage.setItem(PIN_SALT_KEY, toHex(salt))
-    },
-
-    async checkPin(pin) {
-      try {
-        const storedHash = fromHex(localStorage.getItem(PIN_HASH_KEY))
-        const storedSalt = fromHex(localStorage.getItem(PIN_SALT_KEY))
-        const hash = await sha256(pin + toHex(storedSalt))
-        if (hash.length !== storedHash.length) return false
-        for (let i = 0; i < hash.length; i++) {
-          if (hash[i] !== storedHash[i]) return false
-        }
-        return true
-      } catch { return false }
-    },
-
-    isLocked() {
-      return !!localStorage.getItem(PIN_HASH_KEY)
-    },
-
-    clearPin() {
-      localStorage.removeItem(PIN_HASH_KEY)
-      localStorage.removeItem(PIN_SALT_KEY)
-    },
-
     async encrypt(data, pin) {
       try {
         const salt = crypto.getRandomValues(new Uint8Array(16))

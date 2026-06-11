@@ -47,28 +47,15 @@
       return
     }
 
-    let users = []
-    try { users = await db.getUsers() } catch {}
-
-    const savedUser = localStorage.getItem('gymapp_current_user')
-    const savedPin = localStorage.getItem('gymapp_pin')
-
     box.innerHTML = `
       <h1>💪 <span>GYM</span>TRAINER</h1>
-      <div id="loginMode" style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1rem;"></div>
-      <div id="loginUsers" style="margin-bottom:1rem;${users.length === 0 ? 'display:none' : ''}">
-        <label style="font-size:0.75rem;color:var(--text-dim);display:block;text-align:left;margin-bottom:0.3rem;">Usuario existente:</label>
-        <div style="display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;">
-          ${users.map(u => `<button class="login-user-btn" data-user="${esc(u)}" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.4rem 0.8rem;border-radius:var(--radius-sm);cursor:pointer;font-size:0.85rem;">${esc(u)}</button>`).join('')}
-        </div>
-        <div style="margin:0.5rem 0;text-align:center;color:var(--text-dim);font-size:0.75rem;">— o nuevo usuario —</div>
-      </div>
+      <div id="loginMode" style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1rem;">Ingresa tu usuario y PIN</div>
       <input type="text" id="loginUsername" class="lock-input" placeholder="Usuario" autocomplete="username" style="letter-spacing:0;font-size:1rem;-webkit-text-security:none;">
       <input type="password" id="loginPin" class="lock-input" placeholder="PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password">
       <input type="password" id="loginPin2" class="lock-input" placeholder="Confirmar PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password" style="display:none;">
       <div class="lock-error" id="lockError"></div>
       <button class="lock-btn" id="lockBtn">Entrar</button>
-      <div class="lock-hint" style="margin-top:0.5rem;"><button id="changeTokenLink">Cambiar token de GitHub</button></div>
+      <div class="lock-hint" id="loginHint" style="margin-top:0.5rem;"></div>
     `
 
     const usernameInput = document.getElementById('loginUsername')
@@ -76,88 +63,62 @@
     const pin2Input = document.getElementById('loginPin2')
     const btn = document.getElementById('lockBtn')
     const error = document.getElementById('lockError')
-    const modeLabel = document.getElementById('loginMode')
-
+    const hint = document.getElementById('loginHint')
     let mode = 'login'
 
     function setMode(m) {
       mode = m
       if (mode === 'register') {
-        modeLabel.textContent = '🆕 Crear nuevo usuario'
         pin2Input.style.display = ''
         btn.textContent = 'Registrarse'
+        hint.innerHTML = '¿Ya tienes cuenta? <button id="switchLoginBtn" style="background:none;border:none;color:var(--primary);cursor:pointer;text-decoration:underline;font-size:0.75rem;">Inicia sesión</button>'
+        document.getElementById('switchLoginBtn')?.addEventListener('click', () => setMode('login'))
       } else {
-        modeLabel.textContent = '🔐 Inicia sesión'
         pin2Input.style.display = 'none'
         btn.textContent = 'Entrar'
+        hint.innerHTML = '¿Primera vez? <button id="switchRegisterBtn" style="background:none;border:none;color:var(--primary);cursor:pointer;text-decoration:underline;font-size:0.75rem;">Regístrate</button>'
+        document.getElementById('switchRegisterBtn')?.addEventListener('click', () => setMode('register'))
       }
     }
-    setMode(users.length === 0 ? 'register' : 'login')
+    setMode('login')
 
-    box.querySelectorAll('.login-user-btn').forEach(b => {
-      b.addEventListener('click', () => {
-        usernameInput.value = b.dataset.user
-        pinInput.focus()
-      })
-    })
-
-    if (savedUser && savedPin) {
-      usernameInput.value = savedUser
-      pinInput.value = savedPin
-      btn.click()
-      return
-    }
+    usernameInput.focus()
 
     btn.onclick = async () => {
       const username = usernameInput.value.trim().toLowerCase()
       const pin = pinInput.value.trim()
       const pin2 = pin2Input.value.trim()
-
       if (!username || !pin) { error.textContent = 'Completa todos los campos'; return }
 
+      btn.disabled = true
+
       if (mode === 'register') {
-        if (pin.length < 4) { error.textContent = 'PIN mínimo 4 dígitos'; return }
-        if (pin !== pin2) { error.textContent = 'Los PIN no coinciden'; return }
-        btn.disabled = true
+        if (pin.length < 4) { error.textContent = 'PIN mínimo 4 dígitos'; btn.disabled = false; return }
+        if (pin !== pin2) { error.textContent = 'Los PIN no coinciden'; btn.disabled = false; return }
         btn.textContent = 'Registrando...'
-        const result = await db.registerUser(username, pin, createDefaultProfile())
-        if (result.ok) {
-          screen.classList.add('hidden')
-          initApp()
-        } else {
-          error.textContent = result.error || 'Error al registrar'
-          btn.disabled = false
-          btn.textContent = 'Registrarse'
-        }
+        const r = await db.registerUser(username, pin, createDefaultProfile())
+        if (r.ok) { screen.classList.add('hidden'); initApp(); return }
+        error.textContent = r.error || 'Error'
+        btn.disabled = false; btn.textContent = 'Registrarse'
       } else {
-        btn.disabled = true
         btn.textContent = 'Entrando...'
-        const result = await db.loginUser(username, pin)
-        if (result.ok) {
-          screen.classList.add('hidden')
-          initApp()
+        const r = await db.loginUser(username, pin)
+        if (r.ok) { screen.classList.add('hidden'); initApp(); return }
+        if (r.error === 'Usuario no registrado') {
+          error.textContent = 'Usuario no existe. ¿Quieres registrarte?'
+          setMode('register')
         } else {
-          error.textContent = result.error
-          btn.disabled = false
-          btn.textContent = 'Entrar'
+          error.textContent = r.error
         }
+        btn.disabled = false; btn.textContent = 'Entrar'
       }
     }
 
-    document.getElementById('changeTokenLink')?.addEventListener('click', () => {
-      db.setToken('')
-      initLoginScreen()
-    })
-
     pinInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        if (mode === 'register') pin2Input.focus()
-        else btn.click()
-      }
+      if (e.key === 'Enter') { if (mode === 'register') pin2Input.focus(); else btn.click() }
     })
     pin2Input.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click() })
     usernameInput.addEventListener('keydown', e => { if (e.key === 'Enter') pinInput.focus() })
-    usernameInput.focus()
   }
 
   function showToast(msg) {

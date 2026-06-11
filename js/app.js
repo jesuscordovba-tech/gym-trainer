@@ -605,6 +605,7 @@
       '<div class="diet-macro"><span class="diet-macro-val fat">' + m.fat + ' g</span><span class="diet-macro-label">Grasas</span></div>',
       '</div>',
       '<p class="diet-subtext">Distribución basada en evidencia científica. Proteína ~2g/kg, Grasa ~0.9g/kg, resto carbohidratos.</p>',
+      '<p class="diet-rotation">🔄 Los ejemplos rotan automáticamente cada día — ' + esc(formatDate(new Date())) + '</p>',
     ].join('')
 
     plan.structure.forEach((meal, i) => {
@@ -646,29 +647,56 @@
   }
 
   function getMealExamples(mealIdx, protein, carbs, fat) {
-    const examples = [
+    const all = [
       [
         { name: 'Omelette de claras + avena', items: ['6 claras + 1 huevo', '70g avena', '100g arándanos'], macros: 'P~38g C~52g G~12g' },
         { name: 'Whey + yogurt griego', items: ['1 scoop whey', '200g yogurt griego 0%', '60g avena', '1 cda mantequilla de maní'], macros: 'P~42g C~48g G~14g' },
         { name: 'Tostadas integrales + huevos', items: ['2 rebanadas pan integral', '3 huevos revueltos', '1/2 aguacate'], macros: 'P~35g C~50g G~15g' },
+        { name: 'Panqueques de avena + whey', items: ['60g avena molida', '1 scoop whey', '2 huevos', '1 banana'], macros: 'P~40g C~55g G~13g' },
+        { name: 'Batido verde + tostadas', items: ['1 scoop whey', '200ml leche descremada', '30g espinaca', '1 rebanada pan integral', '1 cda mantequilla de maní'], macros: 'P~38g C~42g G~15g' },
+        { name: 'Huevos revueltos + papa', items: ['4 huevos', '150g papa cocida', '50g aguacate'], macros: 'P~36g C~30g G~22g' },
+        { name: 'Avena + claras + fruta', items: ['80g avena', '5 claras', '100g fresas'], macros: 'P~35g C~58g G~7g' },
+        { name: 'Tortilla de claras + queso', items: ['6 claras + 2 huevos', '30g queso bajo en grasa', '70g avena'], macros: 'P~42g C~45g G~14g' },
       ],
       [
         { name: 'Pollo + arroz + verduras', items: ['180g pechuga pollo', '200g arroz blanco cocido', '200g brócoli', '1 cda aceite oliva'], macros: 'P~50g C~58g G~18g' },
         { name: 'Carne molida + papa + espinaca', items: ['180g carne 93/7', '250g papa cocida', '150g espinaca salteada', '1 cda aceite oliva'], macros: 'P~48g C~55g G~20g' },
         { name: 'Salmón + quinoa + vegetales', items: ['170g salmón', '200g quinoa cocida', '150g espárragos', '1 cda aceite oliva'], macros: 'P~45g C~50g G~22g' },
+        { name: 'Pollo al curry + arroz', items: ['180g pechuga pollo', '200g arroz integral', '150g vegetales mixtos', '1 cda aceite coco'], macros: 'P~48g C~55g G~16g' },
+        { name: 'Atún + pasta integral', items: ['200g atún en agua', '200g pasta integral', '150g tomate cherry', '1 cda aceite oliva'], macros: 'P~52g C~52g G~15g' },
+        { name: 'Lomo de cerdo + batata', items: ['170g lomo de cerdo', '250g batata', '150g espárragos', '1 cda aceite oliva'], macros: 'P~44g C~55g G~18g' },
+        { name: 'Pollo teriyaki + arroz', items: ['180g pechuga pollo', '180g arroz jazmín', '150g brócoli', '1 cda salsa soja'], macros: 'P~50g C~60g G~12g' },
+        { name: 'Hamburguesa de pavo + papa', items: ['180g carne de pavo molida', '200g papa cocida', 'Ensalada verde', '1 cda aceite oliva'], macros: 'P~46g C~50g G~16g' },
       ],
       [
         { name: 'Yogurt + whey + frutos secos', items: ['200g yogurt griego', '1 scoop whey', '30g almendras', '1 manzana'], macros: 'P~38g C~28g G~16g' },
         { name: 'Batido proteico', items: ['1 scoop whey', '1 cda mantequilla de maní', '1 banana', '200ml leche descremada'], macros: 'P~35g C~40g G~14g' },
         { name: 'Requesón + fruta', items: ['200g requesón 0%', '100g piña/papaya', '20g nueces'], macros: 'P~32g C~30g G~12g' },
+        { name: 'Whey + avena + manzana', items: ['1 scoop whey', '50g avena', '1 manzana', '15g almendras'], macros: 'P~35g C~45g G~10g' },
+        { name: 'Yogurt + granola + frutos rojos', items: ['200g yogurt griego', '40g granola sin azúcar', '80g frutos rojos'], macros: 'P~26g C~35g G~12g' },
+        { name: 'Batido de caseína + peanut', items: ['1 scoop caseína', '1 cda mantequilla de maní', '200ml leche', '1/2 banana'], macros: 'P~38g C~25g G~15g' },
+        { name: 'Queso cottage + melocotón', items: ['200g cottage 0%', '1 melocotón', '20g nueces pecanas'], macros: 'P~30g C~20g G~14g' },
+        { name: 'Batido verde proteico', items: ['1 scoop whey', '200ml leche almendras', '30g espinaca', '1 cda semillas chía', '1/2 mango'], macros: 'P~32g C~30g G~12g' },
       ],
       [
         { name: 'Pollo + batata + verduras', items: ['170g pechuga pollo', '250g batata cocida', '150g brócoli', '1 cda aceite oliva'], macros: 'P~46g C~52g G~17g' },
         { name: 'Pescado + arroz + ensalada', items: ['180g tilapia/merluza', '180g arroz integral', 'Ensalada verde', '1 cda aceite oliva'], macros: 'P~44g C~48g G~16g' },
         { name: 'Tofu + pasta integral + vegetales', items: ['200g tofu firme', '200g pasta integral', '150g verduras salteadas', '1 cda aceite oliva'], macros: 'P~38g C~55g G~18g' },
+        { name: 'Pavo + quinoa + verduras', items: ['180g pechuga pavo', '200g quinoa', '150g calabacín', '1 cda aceite oliva'], macros: 'P~50g C~48g G~16g' },
+        { name: 'Carne + arroz + frijoles', items: ['150g carne molida 93/7', '150g arroz', '100g frijoles negros', '1 cda aceite oliva'], macros: 'P~44g C~58g G~17g' },
+        { name: 'Pollo al limón + papas', items: ['170g pechuga pollo', '200g papa asada', '150g espinaca', 'jugo de limón'], macros: 'P~46g C~45g G~14g' },
+        { name: 'Merluza + puré de papa', items: ['200g merluza', '250g papa', '1 cda aceite oliva', 'Eneldo'], macros: 'P~45g C~50g G~15g' },
+        { name: 'Wrap integral de pollo', items: ['170g pollo', '1 tortilla integral grande', '50g aguacate', 'Lechuga + tomate'], macros: 'P~44g C~40g G~18g' },
       ],
     ]
-    return examples[mealIdx] || []
+    const pool = all[mealIdx] || []
+    const day = new Date().getDate()
+    const start = (day % pool.length)
+    const shown = []
+    for (let i = 0; i < 3 && pool.length > 0; i++) {
+      shown.push(pool[(start + i) % pool.length])
+    }
+    return shown
   }
 
   /* Settings */

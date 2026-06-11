@@ -933,7 +933,13 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 .diet-subtext {
   font-size: 0.8rem;
   color: var(--text-dim);
+  margin-bottom: 0.5rem;
+}
+.diet-rotation {
+  font-size: 0.75rem;
+  color: var(--text-dim);
   margin-bottom: 1.5rem;
+  opacity: 0.7;
 }
 .diet-meal-card {
   background: var(--surface);

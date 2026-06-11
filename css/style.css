@@ -801,6 +801,12 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   white-space: nowrap;
 }
 
+/* Calorie section */
+.calorie-section { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 0.75rem; }
+.calorie-section h3 { font-size: 0.9rem; margin: 0 0 0.5rem; }
+.calorie-row { display: flex; align-items: center; gap: 0.5rem; }
+.cal-unit { font-size: 0.8rem; color: var(--text-dim); }
+
 /* Reset button */
 .reset-btn {
   background: rgba(233,69,96,0.1);

@@ -389,6 +389,11 @@
       '<div class="cardio-item"><strong>Protocolo</strong>' + esc(d.cardio.protocol) + '</div>',
       '</div></div>',
       '<div class="cooldown-box"><strong>🧘 Enfriamiento:</strong> ' + esc(d.cooldown) + '</div>',
+    ].join('') + (function() {
+      const today = new Date().toISOString().split('T')[0]
+      const cal = db.getCalories()
+      return '<div class="calorie-section"><h3>🔥 Calorías del entrenamiento</h3><div class="calorie-row"><input type="number" id="calInput" class="weight-input" value="' + (cal[today] || '') + '" placeholder="kcal" min="0" style="width:100px;"><span class="cal-unit">kcal</span><button class="reset-btn" id="saveCalBtn">Guardar</button></div><div id="calHistory" style="font-size:0.8rem;color:var(--text-dim);margin-top:0.5rem;"></div></div>'
+    })() + [
       '<div class="reset-day-wrap">',
       '<button class="reset-btn" id="resetDay">Reiniciar progreso del día</button>',
       '</div>',
@@ -440,6 +445,35 @@
         }
       })
     })
+    /* Calorie save handler */
+    document.getElementById('saveCalBtn')?.addEventListener('click', () => {
+      const today = new Date().toISOString().split('T')[0]
+      const val = parseInt(document.getElementById('calInput').value)
+      if (!val || val < 0) { showToast('⚠️ Ingresa un número válido'); return }
+      const cal = db.getCalories()
+      cal[today] = val
+      db.setCalories(cal)
+      showToast('🔥 ' + val + ' kcal guardadas')
+      renderWorkout(dayIndex)
+    })
+    /* Show calorie history for this week */
+    const calHistory = document.getElementById('calHistory')
+    if (calHistory) {
+      const cal = db.getCalories()
+      const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
+      const today = new Date()
+      const weekStart = new Date(today)
+      weekStart.setDate(today.getDate() - today.getDay() + 1)
+      let lines = [], total = 0
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(weekStart)
+        d.setDate(weekStart.getDate() + i)
+        const key = d.toISOString().split('T')[0]
+        const c = cal[key]
+        if (c) { total += c; lines.push('<span>' + days[d.getDay()] + ': ' + c + ' kcal</span>') }
+      }
+      calHistory.innerHTML = lines.length ? '📊 Esta semana: ' + total + ' kcal · ' + lines.join(' · ') : ''
+    }
   }
 
   function showVariants(e) {

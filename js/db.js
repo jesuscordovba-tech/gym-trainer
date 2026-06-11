@@ -146,10 +146,12 @@
         } catch {}
       }
 
+      startAutoSync()
       return { ok: true, data: decrypted }
     }
 
     async function logoutUser() {
+      stopAutoSync()
       if (_persistTimer) { clearTimeout(_persistTimer); _persistTimer = null }
       if (_gistTimer) { clearTimeout(_gistTimer); _gistTimer = null }
       // Save locally + push to Gist before clearing
@@ -213,6 +215,33 @@
         _gistTimer = null
         if (token && _username && _pin && data) pushToGist().catch(() => {})
       }, 5000)
+    }
+
+    let _autoPullTimer = null
+    let _visHandler = null
+
+    function startAutoSync() {
+      stopAutoSync()
+      // Pull from Gist every 30s to get changes from other devices
+      _autoPullTimer = setInterval(async () => {
+        if (token && _username && _pin && data) {
+          const old = JSON.stringify(data)
+          const ok = await syncFromGist()
+          if (ok && JSON.stringify(data) !== old) notify()
+        }
+      }, 30000)
+      // Also pull when tab becomes visible
+      _visHandler = () => {
+        if (!document.hidden && token && _username && _pin && data) {
+          syncFromGist().then(c => { if (c) notify() }).catch(() => {})
+        }
+      }
+      document.addEventListener('visibilitychange', _visHandler)
+    }
+
+    function stopAutoSync() {
+      if (_autoPullTimer) { clearInterval(_autoPullTimer); _autoPullTimer = null }
+      if (_visHandler) { document.removeEventListener('visibilitychange', _visHandler); _visHandler = null }
     }
 
     /* --- Gist sync (manual backup/restore) --- */
@@ -412,6 +441,7 @@
       getHistory, getHistoryWeek, getYearStats,
       checkWeekReset, archiveCurrentWeek,
       onUpdate, syncFromGist, pushToGist,
+      startAutoSync, stopAutoSync,
       getToken, setToken, hasToken, validateToken,
       get connected() { return hasToken() },
       get gistId() { return GIST_ID },

@@ -11,6 +11,7 @@
     let _username = ''
     let _pin = ''
     let _persistTimer = null
+    let _gistTimer = null
     let token = localStorage.getItem(TOKEN_KEY) || ''
     let listeners = []
 
@@ -114,15 +115,21 @@
       localStorage.setItem(CURRENT_USER_KEY, u)
       localStorage.setItem(PIN_KEY, pin)
 
+      // Silently pull latest from Gist (cross-device sync)
+      if (token) syncFromGist().catch(() => {})
+
       return { ok: true, data: decrypted }
     }
 
     async function logoutUser() {
       if (_persistTimer) { clearTimeout(_persistTimer); _persistTimer = null }
+      if (_gistTimer) { clearTimeout(_gistTimer); _gistTimer = null }
+      // Save locally + push to Gist before clearing
       if (data && _username && _pin) {
         try {
           const encrypted = await auth.encrypt(data, _pin)
           localStorage.setItem(userKey(_username), encrypted)
+          await pushToGist()
         } catch {}
       }
       data = null
@@ -166,7 +173,18 @@
       _persistTimer = setTimeout(async () => {
         _persistTimer = null
         await persistNow()
+        if (token) scheduleGistSync()
       }, 400)
+    }
+
+    /* --- Gist auto-sync (debounced, secondary) --- */
+
+    function scheduleGistSync() {
+      if (_gistTimer) clearTimeout(_gistTimer)
+      _gistTimer = setTimeout(() => {
+        _gistTimer = null
+        if (token && _username && _pin && data) pushToGist().catch(() => {})
+      }, 15000)
     }
 
     /* --- Gist sync (manual backup/restore) --- */

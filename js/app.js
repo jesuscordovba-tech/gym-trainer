@@ -646,6 +646,12 @@
     container.innerHTML = html
   }
 
+  function seededShuffle(arr, seed) {
+    const r = [...arr]; let s = seed
+    for (let i = r.length - 1; i > 0; i--) { s = (s * 16807) % 2147483647; const j = s % (i + 1); [r[i], r[j]] = [r[j], r[i]] }
+    return r
+  }
+
   function getMealExamples(mealIdx, protein, carbs, fat) {
     const all = [
       [
@@ -657,6 +663,7 @@
         { name: 'Huevos revueltos + papa', items: ['4 huevos', '150g papa cocida', '50g aguacate'], macros: 'P~36g C~30g G~22g' },
         { name: 'Avena + claras + fruta', items: ['80g avena', '5 claras', '100g fresas'], macros: 'P~35g C~58g G~7g' },
         { name: 'Tortilla de claras + queso', items: ['6 claras + 2 huevos', '30g queso bajo en grasa', '70g avena'], macros: 'P~42g C~45g G~14g' },
+        { name: 'Waffles proteicos + miel', items: ['60g avena', '1 scoop whey', '2 huevos', '1 cda miel'], macros: 'P~38g C~50g G~10g' },
       ],
       [
         { name: 'Pollo + arroz + verduras', items: ['180g pechuga pollo', '200g arroz blanco cocido', '200g brócoli', '1 cda aceite oliva'], macros: 'P~50g C~58g G~18g' },
@@ -667,6 +674,7 @@
         { name: 'Lomo de cerdo + batata', items: ['170g lomo de cerdo', '250g batata', '150g espárragos', '1 cda aceite oliva'], macros: 'P~44g C~55g G~18g' },
         { name: 'Pollo teriyaki + arroz', items: ['180g pechuga pollo', '180g arroz jazmín', '150g brócoli', '1 cda salsa soja'], macros: 'P~50g C~60g G~12g' },
         { name: 'Hamburguesa de pavo + papa', items: ['180g carne de pavo molida', '200g papa cocida', 'Ensalada verde', '1 cda aceite oliva'], macros: 'P~46g C~50g G~16g' },
+        { name: 'Pechuga empanizada al horno + arroz', items: ['170g pechuga empanizada', '180g arroz', '150g ensalada'], macros: 'P~48g C~55g G~15g' },
       ],
       [
         { name: 'Yogurt + whey + frutos secos', items: ['200g yogurt griego', '1 scoop whey', '30g almendras', '1 manzana'], macros: 'P~38g C~28g G~16g' },
@@ -677,6 +685,7 @@
         { name: 'Batido de caseína + peanut', items: ['1 scoop caseína', '1 cda mantequilla de maní', '200ml leche', '1/2 banana'], macros: 'P~38g C~25g G~15g' },
         { name: 'Queso cottage + melocotón', items: ['200g cottage 0%', '1 melocotón', '20g nueces pecanas'], macros: 'P~30g C~20g G~14g' },
         { name: 'Batido verde proteico', items: ['1 scoop whey', '200ml leche almendras', '30g espinaca', '1 cda semillas chía', '1/2 mango'], macros: 'P~32g C~30g G~12g' },
+        { name: 'Yogurt + fruta + granola', items: ['200g yogurt griego', '100g fruta mixta', '30g granola'], macros: 'P~24g C~38g G~10g' },
       ],
       [
         { name: 'Pollo + batata + verduras', items: ['170g pechuga pollo', '250g batata cocida', '150g brócoli', '1 cda aceite oliva'], macros: 'P~46g C~52g G~17g' },
@@ -687,16 +696,12 @@
         { name: 'Pollo al limón + papas', items: ['170g pechuga pollo', '200g papa asada', '150g espinaca', 'jugo de limón'], macros: 'P~46g C~45g G~14g' },
         { name: 'Merluza + puré de papa', items: ['200g merluza', '250g papa', '1 cda aceite oliva', 'Eneldo'], macros: 'P~45g C~50g G~15g' },
         { name: 'Wrap integral de pollo', items: ['170g pollo', '1 tortilla integral grande', '50g aguacate', 'Lechuga + tomate'], macros: 'P~44g C~40g G~18g' },
+        { name: 'Pollo + pasta + pesto', items: ['170g pollo', '200g pasta integral', '1 cda pesto', '150g tomate cherry'], macros: 'P~48g C~52g G~17g' },
       ],
     ]
     const pool = all[mealIdx] || []
-    const day = new Date().getDate()
-    const start = (day % pool.length)
-    const shown = []
-    for (let i = 0; i < 3 && pool.length > 0; i++) {
-      shown.push(pool[(start + i) % pool.length])
-    }
-    return shown
+    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
+    return seededShuffle(pool, dayOfYear * 100 + mealIdx).slice(0, 3)
   }
 
   /* Settings */

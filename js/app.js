@@ -446,8 +446,11 @@
       return '<div class="variant-item">' +
         '<div class="variant-name">' + esc(a.name) + (a.fromPool ? ' <span class="swapped-badge" style="font-size:0.6rem;">NUEVO</span>' : '') + '</div>' +
         '<div class="variant-meta">' + esc(m ? m.name : a.machine) + ' · ' + esc(a.muscle) + ' · ' + a.sets + '×' + esc(a.reps) + '</div>' +
+        '<div class="variant-actions">' +
         '<button class="variant-select-btn" data-idx="' + idx + '">Seleccionar</button>' +
-        (a.video ? '<a class="variant-video-link" href="https://www.youtube.com/watch?v=' + a.video + '" target="_blank" rel="noopener">▶ Ver video</a>' : '') +
+        (a.video ? '<span class="variant-video-btn" data-video="' + a.video + '">▶ Video</span>' : '') +
+        '</div>' +
+        (a.video ? '<div class="variant-video-container" id="vv-' + idx + '"></div>' : '') +
         '</div>'
     }).join('')
 
@@ -462,6 +465,17 @@
         overlay.classList.remove('show')
         showToast('✅ Ejercicio cambiado: ' + esc(src.name))
         renderWorkout(day)
+      })
+    })
+
+    list.querySelectorAll('.variant-video-btn').forEach(el => {
+      el.addEventListener('click', function (e) {
+        e.stopPropagation()
+        const id = this.dataset.video
+        const container = this.closest('.variant-item').querySelector('.variant-video-container')
+        if (!container || !id) return
+        if (container.querySelector('iframe')) return
+        container.innerHTML = '<div class="exercise-video" style="margin-top:0.5rem;"><iframe src="https://www.youtube.com/embed/' + id + '?mute=1&autoplay=1&controls=1&rel=0&loop=1" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe></div>'
       })
     })
 

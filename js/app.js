@@ -82,18 +82,6 @@
     }
     setMode('login')
 
-    // Auto-login if cached credentials exist
-    const savedUser = localStorage.getItem('gymapp_current_user')
-    const savedPin = localStorage.getItem('gymapp_pin')
-    if (savedUser && savedPin) {
-      usernameInput.value = savedUser
-      pinInput.value = savedPin
-      btn.click()
-      return
-    }
-
-    usernameInput.focus()
-
     btn.onclick = async () => {
       const username = usernameInput.value.trim().toLowerCase()
       const pin = pinInput.value.trim()
@@ -123,6 +111,18 @@
         btn.disabled = false; btn.textContent = 'Entrar'
       }
     }
+
+    // Auto-login if cached credentials exist — must be after onclick assignment
+    const savedUser = localStorage.getItem('gymapp_current_user')
+    const savedPin = localStorage.getItem('gymapp_pin')
+    if (savedUser && savedPin) {
+      usernameInput.value = savedUser
+      pinInput.value = savedPin
+      btn.click()
+      return
+    }
+
+    usernameInput.focus()
 
     pinInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') { if (mode === 'register') pin2Input.focus(); else btn.click() }

@@ -54,8 +54,12 @@
     function checkWeekReset() {
       const currentWeek = getWeekId()
       const storedWeek = localStorage.getItem(WEEK_KEY)
-      const hadProgress = Object.keys(progress).length > 0
-      if (!storedWeek || storedWeek !== currentWeek) {
+      if (!storedWeek) {
+        localStorage.setItem(WEEK_KEY, currentWeek)
+        return false
+      }
+      if (storedWeek !== currentWeek) {
+        const hadProgress = Object.keys(progress).length > 0
         progress = {}
         localStorage.setItem(WEEK_KEY, currentWeek)
         saveLocal()

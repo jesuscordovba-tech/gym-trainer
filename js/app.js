@@ -296,7 +296,8 @@
     h += '</div>'
     h += '<div class="weight-input-row">'
     h += '<label class="weight-label">Carga (kg):</label>'
-    h += '<input type="number" class="weight-input" value="' + weight + '" data-key="' + dataKey + '" placeholder="kg">'
+    h += '<input type="number" class="weight-input" value="' + weight + '" data-key="' + dataKey + '" data-muscle="' + esc(activeEx.muscle) + '" data-exname="' + esc(activeEx.name) + '" placeholder="kg">'
+    h += '<span class="wt-indicator"></span>'
     if (!weight && defaultKg) h += '<span class="weight-suggest">Inicia: ' + defaultKg + ' kg</span>'
     else if (nextW) h += '<span class="weight-rec">⬆ ' + nextW + ' kg</span>'
     h += '</div></div>'
@@ -535,6 +536,7 @@
     const inp = e.currentTarget
     const key = inp.dataset.key || inp.dataset.day + '-' + inp.dataset.ex
     const weights = db.getWeights()
+    const profile = db.getProfile()
     if (inp.value) {
       weights[key] = inp.value
     } else {
@@ -542,6 +544,43 @@
     }
     db.setWeights(weights)
     showToast('✅ Peso guardado: ' + inp.value + ' kg')
+    /* Show inline weight indicator */
+    const indicator = inp.parentNode.querySelector('.wt-indicator')
+    if (indicator && profile && inp.value) {
+      const kg = parseFloat(inp.value)
+      const bw = profile.weightKg
+      const muscle = (inp.dataset.muscle || '').toLowerCase()
+      const range = getWeightRange(muscle, bw)
+      if (range && kg > 0) {
+        const ratio = kg / bw
+        if (ratio > range.maxRatio * 1.15) indicator.textContent = '⚠️ Muy pesado'
+        else if (ratio > range.maxRatio) indicator.textContent = '⚡ Pesado'
+        else if (ratio < range.minRatio * 0.85) indicator.textContent = '🔼 Liviano'
+        else indicator.textContent = '✅'
+      }
+    }
+  }
+
+  /* Expected weight range by muscle group (ratio to body weight) */
+  function getWeightRange(muscle, bw) {
+    const ranges = [
+      { kw: ['pectoral','pecho','press banca','bench'], min: 0.5, max: 1.3 },
+      { kw: ['espalda','back','remo','pulldown','jalón','dorsal'], min: 0.5, max: 1.2 },
+      { kw: ['hombro','shoulder','press militar','overhead'], min: 0.25, max: 0.7 },
+      { kw: ['cuádriceps','quad','pierna','leg','sentadilla','squat','prensa'], min: 0.8, max: 2.2 },
+      { kw: ['isquiotibial','hamstring','femoral','curl pierna'], min: 0.3, max: 0.8 },
+      { kw: ['glúteo','glute'], min: 0.6, max: 1.5 },
+      { kw: ['bíceps','biceps'], min: 0.1, max: 0.3 },
+      { kw: ['tríceps','triceps'], min: 0.12, max: 0.35 },
+      { kw: ['abdominal','core','abs'], min: 0.1, max: 0.3 },
+      { kw: ['trapecio','trap','encogimiento'], min: 0.3, max: 0.8 },
+      { kw: ['gemelo','calf','pantorrilla'], min: 0.5, max: 1.2 },
+      { kw: ['general','peso libre'], min: 0.3, max: 0.8 },
+    ]
+    for (const r of ranges) {
+      if (r.kw.some(k => muscle.includes(k))) return { minRatio: r.min, maxRatio: r.max }
+    }
+    return null
   }
 
   function setupTimer() {

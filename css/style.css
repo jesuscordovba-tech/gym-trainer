@@ -794,6 +794,13 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   opacity: 0.6;
 }
 
+/* Weight inline indicator */
+.wt-indicator {
+  font-size: 0.7rem;
+  margin-left: 0.3rem;
+  white-space: nowrap;
+}
+
 /* Reset button */
 .reset-btn {
   background: rgba(233,69,96,0.1);

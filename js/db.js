@@ -12,6 +12,7 @@
     let _pin = ''
     let _persistTimer = null
     let _gistTimer = null
+    let _pushingGist = false
     let token = localStorage.getItem(TOKEN_KEY) || ''
     let listeners = []
 
@@ -115,8 +116,27 @@
       localStorage.setItem(CURRENT_USER_KEY, u)
       localStorage.setItem(PIN_KEY, pin)
 
-      // Silently pull latest from Gist (cross-device sync)
-      if (token) syncFromGist().catch(() => {})
+      // Pull latest from Gist — ensures cross-device data is synced
+      if (token) {
+        try {
+          const gist = await fetchGist()
+          if (gist) {
+            const raw = gist.files['gymapp_data.json']?.content
+            if (raw) {
+              const gdata = JSON.parse(raw)
+              if (gdata[u]) {
+                const fresh = await auth.decrypt(gdata[u], pin)
+                if (fresh) {
+                  data = fresh
+                  localStorage.setItem(userKey(u), gdata[u])
+                  // Merge local users from Gist
+                  if (gdata.users) { localStorage.setItem(USERS_KEY, JSON.stringify(gdata.users)) }
+                }
+              }
+            }
+          }
+        } catch {}
+      }
 
       return { ok: true, data: decrypted }
     }
@@ -184,7 +204,7 @@
       _gistTimer = setTimeout(() => {
         _gistTimer = null
         if (token && _username && _pin && data) pushToGist().catch(() => {})
-      }, 15000)
+      }, 5000)
     }
 
     /* --- Gist sync (manual backup/restore) --- */
@@ -231,19 +251,21 @@
 
     async function pushToGist() {
       if (!_username || !_pin || !data || !token) return false
+      if (_pushingGist) return true  // already in-flight
+      _pushingGist = true
       try {
         const encrypted = await auth.encrypt(data, _pin)
-        let gdata = { users: [] }
         const gist = await fetchGist()
-        if (gist) {
-          try { gdata = JSON.parse(gist.files['gymapp_data.json']?.content || '{}') } catch {}
-        }
+        if (!gist) return false  // don't overwrite Gist if we can't read it
+        let gdata = { users: [] }
+        try { gdata = JSON.parse(gist.files['gymapp_data.json']?.content || '{}') } catch {}
         if (!gdata.users) gdata.users = []
         if (!gdata.users.includes(_username)) gdata.users.push(_username)
         gdata[_username] = encrypted
         await updateGist(gdata)
         return true
       } catch { return false }
+      finally { _pushingGist = false }
     }
 
     /* --- Local helpers --- */

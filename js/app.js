@@ -82,6 +82,16 @@
     }
     setMode('login')
 
+    // Auto-login if cached credentials exist
+    const savedUser = localStorage.getItem('gymapp_current_user')
+    const savedPin = localStorage.getItem('gymapp_pin')
+    if (savedUser && savedPin) {
+      usernameInput.value = savedUser
+      pinInput.value = savedPin
+      btn.click()
+      return
+    }
+
     usernameInput.focus()
 
     btn.onclick = async () => {
@@ -199,7 +209,6 @@
       lb.addEventListener('click', () => {
         if (confirm('¿Cerrar sesión?')) {
           db.logoutUser()
-          localStorage.removeItem('gymapp_pin')
           location.reload()
         }
       })

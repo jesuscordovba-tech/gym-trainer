@@ -159,17 +159,12 @@
     }
 
     function logoutUser() {
+      if (_persistTimer) clearTimeout(_persistTimer)
+      _persistTimer = null
       data = null
       _username = ''
-      _pin = ''
       _lastGistData = null
-      localStorage.removeItem(CURRENT_USER_KEY)
-      localStorage.removeItem(PIN_KEY)
-      localStorage.removeItem('gymapp_week')
-      localStorage.removeItem('gymapp_progress')
-      localStorage.removeItem('gymapp_weights')
-      localStorage.removeItem('gymapp_history')
-      localStorage.removeItem('gymapp_dates')
+      // Don't clear _pin or localStorage — next login reuses cached PIN
     }
 
     function isLoggedIn() { return !!data }

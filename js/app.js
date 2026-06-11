@@ -34,9 +34,18 @@
         <button class="lock-btn" id="tokenSetupBtn">Guardar Token</button>
       `
 
-      document.getElementById('tokenSetupBtn').onclick = () => {
+      document.getElementById('tokenSetupBtn').onclick = async () => {
         const t = document.getElementById('tokenSetupInput').value.trim()
         if (!t) { document.getElementById('lockError').textContent = 'Ingresa un token'; return }
+        document.getElementById('tokenSetupBtn').disabled = true
+        document.getElementById('tokenSetupBtn').textContent = 'Validando...'
+        const valid = await db.validateToken(t)
+        if (!valid) {
+          document.getElementById('lockError').textContent = '❌ Token inválido o expirado — genera uno nuevo en GitHub con scope gist'
+          document.getElementById('tokenSetupBtn').disabled = false
+          document.getElementById('tokenSetupBtn').textContent = 'Guardar Token'
+          return
+        }
         db.setToken(t)
         initLoginScreen()
       }
@@ -56,6 +65,7 @@
       <div class="lock-error" id="lockError"></div>
       <button class="lock-btn" id="lockBtn">Entrar</button>
       <div class="lock-hint" id="loginHint" style="margin-top:0.5rem;"></div>
+      <div style="margin-top:0.75rem;font-size:0.75rem;text-align:center;"><button id="resetTokenBtn" style="background:none;border:none;color:var(--primary);cursor:pointer;text-decoration:underline;">Cambiar token de GitHub</button></div>
     `
 
     const usernameInput = document.getElementById('loginUsername')
@@ -65,6 +75,10 @@
     const error = document.getElementById('lockError')
     const hint = document.getElementById('loginHint')
     let mode = 'login'
+    document.getElementById('resetTokenBtn')?.addEventListener('click', () => {
+      db.setToken('')
+      initLoginScreen()
+    })
 
     function setMode(m) {
       mode = m
@@ -1015,6 +1029,16 @@
       const newToken = tokenInput.value.trim()
       if (!newToken) return
 
+      saveBtn.disabled = true
+      saveBtn.textContent = 'Validando...'
+      const valid = await db.validateToken(newToken)
+      if (!valid) {
+        syncStatus.textContent = '❌ Token inválido o expirado'
+        syncStatus.style.color = 'var(--primary)'
+        saveBtn.disabled = false
+        saveBtn.textContent = hasToken ? 'Actualizar' : 'Conectar'
+        return
+      }
       db.setToken(newToken)
       showToast('✅ Token de GitHub guardado')
       renderSettings()

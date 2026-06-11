@@ -108,7 +108,15 @@
         }
       }
 
-      if (!decrypted) return { ok: false, error: 'Usuario o PIN incorrecto' }
+      if (!decrypted) {
+        if (token) {
+          try {
+            const res = await fetch(getGistUrl(), { headers: { 'Authorization': `Bearer ${token}` } })
+            if (res.status === 401) return { ok: false, error: 'Token de GitHub inválido o expirado — ve a Ajustes' }
+          } catch {}
+        }
+        return { ok: false, error: 'Usuario o PIN incorrecto' }
+      }
 
       _username = u
       _pin = pin
@@ -386,6 +394,15 @@
     function getToken() { return token }
     function setToken(t) { token = t; localStorage.setItem(TOKEN_KEY, t) }
     function hasToken() { return !!token }
+    async function validateToken(t) {
+      const saved = token
+      token = t
+      try {
+        const res = await fetch(getGistUrl(), { headers: { 'Authorization': `Bearer ${t}` } })
+        return res.status !== 401
+      } catch { return false }
+      finally { token = saved }
+    }
 
     return {
       getUsers, registerUser, loginUser, logoutUser, isLoggedIn, getUsername, getProfile, setProfile,
@@ -395,7 +412,7 @@
       getHistory, getHistoryWeek, getYearStats,
       checkWeekReset, archiveCurrentWeek,
       onUpdate, syncFromGist, pushToGist,
-      getToken, setToken, hasToken,
+      getToken, setToken, hasToken, validateToken,
       get connected() { return hasToken() },
       get gistId() { return GIST_ID },
     }

@@ -359,6 +359,7 @@
     save()
     renderDaySelector()
     renderWorkout(day)
+    renderProgress()
 
     const restBtn = e.currentTarget.closest('.exercise-item').querySelector('.rest-timer-btn')
     if (restBtn && (progress[day][ex] || 0) > 0 && (progress[day][ex] || 0) < maxSets) {

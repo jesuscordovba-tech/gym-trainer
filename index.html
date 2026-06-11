@@ -338,9 +338,36 @@
     </div>
   </div>
 
-  <script src="js/data.js?v=14"></script>
-  <script src="js/auth.js?v=14"></script>
-  <script src="js/db.js?v=14"></script>
-  <script src="js/app.js?v=14"></script>
+  <!-- Add custom exercise overlay -->
+  <div class="variant-overlay" id="addExOverlay">
+    <div class="variant-modal">
+      <div class="variant-modal-header">
+        <span class="variant-modal-title">➕ Ejercicio personalizado</span>
+        <button class="variant-close" id="addExClose">✕</button>
+      </div>
+      <div id="addExForm">
+        <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.25rem;">Nombre del ejercicio</label>
+        <input type="text" id="addExName" class="lock-input" placeholder="Ej: Press con Mancuernas" style="letter-spacing:0;font-size:1rem;-webkit-text-security:none;margin-bottom:0.75rem;">
+        <div class="settings-edit-grid">
+          <label>Máquina
+            <select id="addExMachine" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.5rem;border-radius:var(--radius-sm);font-size:0.9rem;"></select>
+          </label>
+          <label>Series <input type="number" id="addExSets" class="lock-input" value="3" min="1" max="10" style="letter-spacing:0;font-size:1rem;-webkit-text-security:none;"></label>
+          <label>Reps <input type="text" id="addExReps" class="lock-input" value="10-12" style="letter-spacing:0;font-size:1rem;-webkit-text-security:none;"></label>
+          <label>Descanso (s) <input type="number" id="addExRest" class="lock-input" value="60" min="0" max="300" style="letter-spacing:0;font-size:1rem;-webkit-text-security:none;"></label>
+          <label>RIR <input type="number" id="addExRir" class="lock-input" value="1" min="0" max="5" style="letter-spacing:0;font-size:1rem;-webkit-text-security:none;"></label>
+          <label>Músculo <input type="text" id="addExMuscle" class="lock-input" value="" placeholder="Ej: Pectoral mayor" style="letter-spacing:0;font-size:1rem;-webkit-text-security:none;"></label>
+        </div>
+        <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.25rem;margin-top:0.75rem;">Video (ID de YouTube, opcional)</label>
+        <input type="text" id="addExVideo" class="lock-input" placeholder="Ej: SHhVpIi3Fk0" style="letter-spacing:0;font-size:1rem;-webkit-text-security:none;margin-bottom:1rem;">
+        <button class="lock-btn" id="addExSave">Agregar ejercicio</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js?v=15"></script>
+  <script src="js/auth.js?v=15"></script>
+  <script src="js/db.js?v=15"></script>
+  <script src="js/app.js?v=15"></script>
 </body>
 </html>

@@ -253,6 +253,55 @@
     return Math.round((w + inc) * 10) / 10
   }
 
+  function renderExercise(dayIndex, exKey, activeEx, setsCompleted, weight, defaultKg, nextW, dataKey, isSwapped, isCustom) {
+    const machine = gymData.getMachineById(activeEx.machine)
+    let h = '<div class="exercise-item' + (isCustom ? ' custom-exercise' : '') + '" data-day="' + dayIndex + '" data-ex="' + exKey + '">'
+    h += '<div class="exercise-top">'
+    h += '<div class="exercise-info">'
+    h += '<div class="exercise-name">' + esc(activeEx.name)
+    if (activeEx.supersetWith) h += '<span class="superset-badge">SUPERSET</span>'
+    if (isSwapped) h += '<span class="swapped-badge">↻</span>'
+    if (isCustom) h += '<span class="swapped-badge" style="background:var(--green);">✚</span>'
+    h += '</div>'
+    h += '<div class="exercise-meta">'
+    h += '<span>🔁 ' + activeEx.sets + '×' + esc(activeEx.reps) + '</span>'
+    h += '<span>⏱ ' + activeEx.rest + 's</span>'
+    h += '<span>📌 RIR ' + activeEx.rir + '</span>'
+    h += '</div>'
+    h += '<div>'
+    h += '<span class="machine-badge">' + esc(machine ? machine.name : activeEx.machine) + '</span>'
+    h += '<span class="muscle-badge">' + esc(activeEx.muscle) + '</span>'
+    h += '</div>'
+    h += '<div class="weight-input-row">'
+    h += '<label class="weight-label">Carga (kg):</label>'
+    h += '<input type="number" class="weight-input" value="' + weight + '" data-key="' + dataKey + '" placeholder="kg">'
+    if (!weight && defaultKg) h += '<span class="weight-suggest">Inicia: ' + defaultKg + ' kg</span>'
+    else if (nextW) h += '<span class="weight-rec">⬆ ' + nextW + ' kg</span>'
+    h += '</div></div>'
+    h += '<div class="exercise-controls">'
+    h += '<div class="set-tracker">'
+    for (let s = 0; s < activeEx.sets; s++) {
+      h += '<button class="set-dot ' +
+        (s < setsCompleted ? 'completed' : s === setsCompleted ? 'current' : '') +
+        '" data-day="' + dayIndex + '" data-ex="' + exKey + '" data-set="' + s + '">' +
+        (s + 1) + '</button>'
+    }
+    h += '</div>'
+    h += '<button class="rest-timer-btn" data-rest="' + activeEx.rest + '">⏱ ' + activeEx.rest + 's</button>'
+    if (!isCustom) {
+      h += '<button class="swap-btn" data-day="' + dayIndex + '" data-ex="' + exKey + '" title="Cambiar ejercicio">↻</button>'
+    }
+    if (isCustom) {
+      h += '<button class="remove-ex-btn" data-day="' + dayIndex + '" data-idx="' + exKey.replace(dayIndex + '-custom-', '') + '" title="Eliminar ejercicio" style="background:none;border:1px solid var(--primary);color:var(--primary);border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:1rem;">✕</button>'
+    }
+    h += '</div></div>'
+    if (activeEx.video) {
+      h += '<div class="exercise-video-placeholder" data-video="' + esc(activeEx.video) + '"><span>▶</span></div>'
+    }
+    h += '</div>'
+    return h
+  }
+
   function renderWorkout(dayIndex) {
     const d = workoutPlan.days[dayIndex]
     if (!d) return
@@ -290,45 +339,23 @@
       const defaultKg = getDefaultKg(activeEx.machine)
       const nextW = recommendWeight(activeEx, weight, allDone)
 
-      html += '<div class="exercise-item" data-day="' + dayIndex + '" data-ex="' + exIdx + '">'
-      html += '<div class="exercise-top">'
-      html += '<div class="exercise-info">'
-      html += '<div class="exercise-name">' + esc(activeEx.name)
-      if (activeEx.supersetWith) html += '<span class="superset-badge">SUPERSET</span>'
-      if (swapped) html += '<span class="swapped-badge">↻</span>'
-      html += '</div>'
-      html += '<div class="exercise-meta">'
-      html += '<span>🔁 ' + activeEx.sets + '×' + esc(activeEx.reps) + '</span>'
-      html += '<span>⏱ ' + activeEx.rest + 's</span>'
-      html += '<span>📌 RIR ' + activeEx.rir + '</span>'
-      html += '</div>'
-      html += '<div>'
-      html += '<span class="machine-badge">' + esc(machine ? machine.name : activeEx.machine) + '</span>'
-      html += '<span class="muscle-badge">' + esc(activeEx.muscle) + '</span>'
-      html += '</div>'
-      html += '<div class="weight-input-row">'
-      html += '<label class="weight-label">Carga (kg):</label>'
-      html += '<input type="number" class="weight-input" value="' + weight + '" data-key="' + swapKey + '" placeholder="kg">'
-      if (!weight && defaultKg) html += '<span class="weight-suggest">Inicia: ' + defaultKg + ' kg</span>'
-      else if (nextW) html += '<span class="weight-rec">⬆ ' + nextW + ' kg</span>'
-      html += '</div></div>'
-      html += '<div class="exercise-controls">'
-      html += '<div class="set-tracker">'
-      for (let s = 0; s < activeEx.sets; s++) {
-        html += '<button class="set-dot ' +
-          (s < setsCompleted ? 'completed' : s === setsCompleted ? 'current' : '') +
-          '" data-day="' + dayIndex + '" data-ex="' + exIdx + '" data-set="' + s + '">' +
-          (s + 1) + '</button>'
-      }
-      html += '</div>'
-      html += '<button class="rest-timer-btn" data-rest="' + activeEx.rest + '">⏱ ' + activeEx.rest + 's</button>'
-      html += '<button class="swap-btn" data-day="' + dayIndex + '" data-ex="' + exIdx + '" title="Cambiar ejercicio">↻</button>'
-      html += '</div></div>'
-      if (activeEx.video) {
-        html += '<div class="exercise-video-placeholder" data-video="' + esc(activeEx.video) + '"><span>▶</span></div>'
-      }
-      html += '</div>'
+      html += renderExercise(dayIndex, exIdx, activeEx, setsCompleted, weight, defaultKg, nextW, swapKey, swapped)
     })
+
+    // Custom exercises for this day
+    const customExs = db.getCustomExercises()[dayIndex] || []
+    customExs.forEach((ex, ci) => {
+      const ck = dayIndex + '-custom-' + ci
+      const setsCompleted = dayProgress[ck] || 0
+      const allDone = setsCompleted >= ex.sets
+      const weight = weights[ck] || ''
+      const defaultKg = getDefaultKg(ex.machine)
+      const nextW = recommendWeight(ex, weight, allDone)
+
+      html += renderExercise(dayIndex, ck, ex, setsCompleted, weight, defaultKg, nextW, ck, false, true)
+    })
+
+    html += '<button class="reset-btn add-ex-btn" id="addCustomEx" style="margin-bottom:1rem;width:100%;">➕ Agregar ejercicio personalizado</button>'
 
     html += [
       '<div class="cardio-card">',
@@ -377,6 +404,19 @@
         }
       })
     }
+    document.getElementById('addCustomEx')?.addEventListener('click', () => showAddCustomForm(dayIndex))
+    container.querySelectorAll('.remove-ex-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = parseInt(btn.dataset.day)
+        const idx = parseInt(btn.dataset.idx)
+        if (confirm('¿Eliminar este ejercicio personalizado?')) {
+          const ce = db.getCustomExercises()
+          if (ce[d]) { ce[d].splice(idx, 1); if (!ce[d].length) delete ce[d] }
+          db.setCustomExercises(ce)
+          renderWorkout(d)
+        }
+      })
+    })
   }
 
   function showVariants(e) {
@@ -387,21 +427,20 @@
     const list = document.getElementById('variantList')
     if (!overlay || !list || !alts.length) return
 
-    list.innerHTML = alts.map(a => {
+    list.innerHTML = alts.map((a, idx) => {
       const m = gymData.getMachineById(a.machine)
-      return '<div class="variant-item" data-day="' + a.day + '" data-ex="' + a.ex + '">' +
-        '<div class="variant-name">' + esc(a.name) + '</div>' +
+      return '<div class="variant-item">' +
+        '<div class="variant-name">' + esc(a.name) + (a.fromPool ? ' <span class="swapped-badge" style="font-size:0.6rem;">NUEVO</span>' : '') + '</div>' +
         '<div class="variant-meta">' + esc(m ? m.name : a.machine) + ' · ' + esc(a.muscle) + ' · ' + a.sets + '×' + esc(a.reps) + '</div>' +
-        '<button class="variant-select-btn" data-day="' + a.day + '" data-ex="' + a.ex + '">Seleccionar</button>' +
+        '<button class="variant-select-btn" data-idx="' + idx + '">Seleccionar</button>' +
         (a.video ? '<a class="variant-video-link" href="https://www.youtube.com/watch?v=' + a.video + '" target="_blank" rel="noopener">▶ Ver video</a>' : '') +
         '</div>'
     }).join('')
 
     list.querySelectorAll('.variant-select-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const srcDay = parseInt(btn.dataset.day)
-        const srcEx = parseInt(btn.dataset.ex)
-        const src = workoutPlan.days[srcDay]?.exercises[srcEx]
+        const idx = parseInt(btn.dataset.idx)
+        const src = alts[idx]
         if (!src) return
         const cw = db.getCustomWorkout()
         cw[day + '-' + ex] = { name: src.name, machine: src.machine, sets: src.sets, reps: src.reps, rest: src.rest, rir: src.rir, muscle: src.muscle, video: src.video }
@@ -419,26 +458,31 @@
   function handleSetClick(e) {
     const btn = e.currentTarget
     const day = parseInt(btn.dataset.day)
-    const ex = parseInt(btn.dataset.ex)
+    const rawEx = btn.dataset.ex
     const setIdx = parseInt(btn.dataset.set)
+    const isCustom = btn.closest('.exercise-item')?.classList.contains('custom-exercise')
     const progress = db.getProgress()
 
     if (!progress[day]) progress[day] = {}
-    const setsCompleted = progress[day][ex] || 0
+    const setsCompleted = progress[day][rawEx] || 0
 
     if (setIdx < setsCompleted) {
-      progress[day][ex] = setIdx
+      progress[day][rawEx] = setIdx
     } else if (setIdx === setsCompleted) {
-      progress[day][ex] = (progress[day][ex] || 0) + 1
+      progress[day][rawEx] = (progress[day][rawEx] || 0) + 1
     } else {
       return
     }
 
-    const maxSets = workoutPlan.days[day].exercises[ex].sets
-    if (progress[day][ex] > maxSets) progress[day][ex] = maxSets
+    const activeEx = isCustom
+      ? (db.getCustomExercises()[day] || [])[parseInt(rawEx.split('-custom-')[1])]
+      : (workoutPlan.days[day].exercises[rawEx])
+    if (!activeEx) return
+    const maxSets = activeEx.sets
+    if (progress[day][rawEx] > maxSets) progress[day][rawEx] = maxSets
 
-    if (progress[day][ex] > setsCompleted) recordTrainingDay()
-    const wasMilestone = progress[day][ex] >= maxSets && setsCompleted < maxSets
+    if (progress[day][rawEx] > setsCompleted) recordTrainingDay()
+    const wasMilestone = progress[day][rawEx] >= maxSets && setsCompleted < maxSets
     db.setProgress(progress)
     if (wasMilestone) showToast('✅ Ejercicio completado — ' + maxSets + '/' + maxSets + ' series')
     renderDaySelector()
@@ -446,7 +490,7 @@
     renderProgress()
 
     const restBtn = e.currentTarget.closest('.exercise-item').querySelector('.rest-timer-btn')
-    if (restBtn && (progress[day][ex] || 0) > 0 && (progress[day][ex] || 0) < maxSets) {
+    if (restBtn && (progress[day][rawEx] || 0) > 0 && (progress[day][rawEx] || 0) < maxSets) {
       startTimer.call(restBtn)
     }
   }
@@ -521,6 +565,61 @@
     document.getElementById('timerOverlay').classList.remove('show')
     document.getElementById('timerDisplay').style.color = ''
   }
+
+  /* === Add Custom Exercise === */
+  let _addExDay = -1
+
+  function showAddCustomForm(day) {
+    _addExDay = day
+    const overlay = document.getElementById('addExOverlay')
+    const sel = document.getElementById('addExMachine')
+    // Populate machine dropdown
+    const cats = gymData.categories || Object.keys(gymData.machines)
+    sel.innerHTML = '<option value="">— Ninguna —</option>'
+    cats.forEach(cat => {
+      const machines = gymData.machines[cat]
+      if (!machines) return
+      machines.forEach(m => {
+        sel.innerHTML += '<option value="' + esc(m.id) + '">' + esc(m.name) + '</option>'
+      })
+    })
+    document.getElementById('addExName').value = ''
+    document.getElementById('addExSets').value = '3'
+    document.getElementById('addExReps').value = '10-12'
+    document.getElementById('addExRest').value = '60'
+    document.getElementById('addExRir').value = '1'
+    document.getElementById('addExMuscle').value = ''
+    document.getElementById('addExVideo').value = ''
+    overlay.classList.add('show')
+  }
+
+  document.getElementById('addExClose')?.addEventListener('click', () => {
+    document.getElementById('addExOverlay').classList.remove('show')
+  })
+  document.getElementById('addExOverlay')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) document.getElementById('addExOverlay').classList.remove('show')
+  })
+  document.getElementById('addExSave')?.addEventListener('click', async () => {
+    const name = document.getElementById('addExName').value.trim()
+    if (!name) { showToast('⚠️ Escribe un nombre para el ejercicio'); return }
+    const ex = {
+      name,
+      machine: document.getElementById('addExMachine').value,
+      sets: parseInt(document.getElementById('addExSets').value) || 3,
+      reps: document.getElementById('addExReps').value.trim() || '10-12',
+      rest: parseInt(document.getElementById('addExRest').value) || 60,
+      rir: parseInt(document.getElementById('addExRir').value) || 0,
+      muscle: document.getElementById('addExMuscle').value.trim() || 'General',
+      video: document.getElementById('addExVideo').value.trim() || '',
+    }
+    const ce = db.getCustomExercises()
+    if (!ce[_addExDay]) ce[_addExDay] = []
+    ce[_addExDay].push(ex)
+    await db.setCustomExercises(ce)
+    document.getElementById('addExOverlay').classList.remove('show')
+    showToast('✅ Ejercicio agregado: ' + esc(ex.name))
+    renderWorkout(_addExDay)
+  })
 
   /* === Video Modal === */
   function setupVideo() {

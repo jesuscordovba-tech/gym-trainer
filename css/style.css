@@ -1056,3 +1056,22 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   color: var(--green);
   font-weight: 600;
 }
+
+/* Custom exercises */
+.custom-exercise {
+  border-left: 3px solid var(--green) !important;
+}
+.add-ex-btn {
+  font-size: 0.85rem;
+  border: 2px dashed var(--border) !important;
+  background: transparent !important;
+  color: var(--text-dim) !important;
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+.add-ex-btn:hover {
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}

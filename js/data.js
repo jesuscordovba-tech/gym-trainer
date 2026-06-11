@@ -317,6 +317,41 @@ const workoutPlan = {
     },
   ],
 
+  pool: [
+    /* Pectoral */
+    { name: 'Aperturas en Polea Alta (Cruce de Poleas)', machine: 'polea-alta', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Pectoral mayor', video: 'I8p7wHj-dx4' },
+    { name: 'Press de Pecho con Mancuernas', machine: 'mancuernas', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Pectoral mayor', video: 'SHhVpIi3Fk0' },
+    /* Deltoides */
+    { name: 'Face Pull en Polea', machine: 'polea-alta', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Deltoides posterior', video: 'tUpZTLgQH2U' },
+    { name: 'Press Arnold con Mancuernas', machine: 'mancuernas', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Deltoides', video: '6Z15u1DcVgQ' },
+    /* Tríceps */
+    { name: 'Press Francés con Barra EZ', machine: 'barra-ez', sets: 3, reps: '10-12', rest: 45, rir: 0, muscle: 'Tríceps', video: 'd_KZxkY_2cM' },
+    { name: 'Patada de Tríceps con Mancuernas', machine: 'mancuernas', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Tríceps', video: 'V6FzBO4LhCs' },
+    /* Bíceps */
+    { name: 'Curl con Barra EZ', machine: 'barra-ez', sets: 3, reps: '10-12', rest: 45, rir: 0, muscle: 'Bíceps', video: 'kwG2ipFRg3w' },
+    { name: 'Curl Martillo con Mancuernas', machine: 'mancuernas', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Bíceps', video: 'zC3nLlEvin4' },
+    /* Espalda */
+    { name: 'Remo con Mancuernas a Una Mano', machine: 'mancuernas', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Dorsales', video: 'roCP6wCXPqo' },
+    { name: 'Peso Muerto en Polea Baja', machine: 'polea-baja', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Espalda baja + Glúteos', video: 'D_pM00Q05AQ' },
+    { name: 'Pull-Up Lastre (si sabes hacer dominadas)', machine: 'power-rack', sets: 3, reps: '8-10', rest: 90, rir: 1, muscle: 'Dorsales + Bíceps', video: 'eGo4IYp5yWY' },
+    /* Piernas — Glúteos */
+    { name: 'Hip Thrust en Máquina', machine: 'hip-thrust', sets: 4, reps: '10-12', rest: 90, rir: 1, muscle: 'Glúteos', video: 'n0PL58RcGqU' },
+    { name: 'Patada de Glúteo en Polea', machine: 'patada-gluteo', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Glúteos', video: 'I4pZ1FkZnTQ' },
+    { name: 'Sentadilla Búlgara con Mancuernas', machine: 'mancuernas', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Cuádriceps + Glúteos', video: '2C-uNgGsSTE' },
+    /* Piernas — Femorales */
+    { name: 'Curl Femoral de Pie', machine: 'curl-femoral-pie', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Femorales', video: '1Tq3QdY5M0g' },
+    { name: 'Pull Through en Polea', machine: 'pull-through', sets: 3, reps: '12-15', rest: 60, rir: 0, muscle: 'Femorales + Glúteos', video: '2cjHyc5LFto' },
+    /* Piernas — Quads */
+    { name: 'Sentadilla en Rack', machine: 'rack-sentadillas', sets: 4, reps: '8-10', rest: 120, rir: 1, muscle: 'Cuádriceps + Glúteos', video: 'ultWZbUMPL8' },
+    { name: 'Zancadas con Mancuernas', machine: 'mancuernas', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Cuádriceps + Glúteos', video: 'D7KaRcUTQeE' },
+    /* Pantorrillas */
+    { name: 'Pantorrillas en Prensa 45°', machine: 'pantorrillas-prensa', sets: 4, reps: '15-20', rest: 30, rir: 0, muscle: 'Gemelos + Sóleo', video: 'gHesUlQljFY' },
+    /* Abdominales */
+    { name: 'Crunch en Polea (Cable Crunch)', machine: 'polea-crunch', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Abdominales', video: 'ACDo_1fbjgo' },
+    { name: 'Giro Ruso con Balón Medicinal', machine: 'balones-medicinales', sets: 3, reps: '12-15', rest: 30, rir: 0, muscle: 'Abdominales oblicuos', video: 'r4qoNzQHj5M' },
+    { name: 'Plancha con TRX', machine: 'trx', sets: 3, reps: '30-45s', rest: 30, rir: 0, muscle: 'Core', video: 'xvQ7vqXzSMs' },
+  ],
+
   getDefaultKg(machineId, profile) {
     const BASE = {
       'press-pecho-sentado': 30, 'press-hombros-sentado': 20, 'press-inclinado-sentado': 25, 'press-declinado-sentado': 25,
@@ -331,12 +366,17 @@ const workoutPlan = {
       'elevacion-lateral-maquina': 12, 'polea-elevaciones-laterales': 10,
       'crunch-maquina': 20, 'elevacion-piernas': 15, 'silla-romana': 15,
       'aductores': 30, 'smith-sentadillas': 30,
+      'polea-alta': 20, 'mancuernas': 25, 'barra-ez': 20,
+      'hip-thrust': 40, 'patada-gluteo': 20, 'pull-through': 20,
+      'curl-femoral-pie': 25, 'rack-sentadillas': 30, 'pantorrillas-prensa': 50,
+      'polea-crunch': 15, 'power-rack': 30, 'trx': 10, 'balones-medicinales': 8,
     }
     let kg = BASE[machineId] || 20
     const isUpper = ['press-', 'pec-', 'jalon', 'remo', 'dominadas', 'reverse', 'pullover',
-                     'curl-', 'polea-baja', 'extension-triceps', 'fondos', 'maquina-fondos',
+                     'curl-', 'polea-baja', 'polea-alta', 'extension-triceps', 'fondos', 'maquina-fondos',
                      'elevacion-lateral', 'polea-elevaciones', 'crunch', 'elevacion-piernas',
-                     'silla-romana', 'aductores'].some(p => machineId.startsWith(p))
+                     'silla-romana', 'aductores', 'mancuernas', 'barra-ez', 'kettlebell',
+                     'trx', 'balones', 'banco-declinado'].some(p => machineId.startsWith(p))
     if (profile.gender === 'F') {
       kg = isUpper ? Math.round(kg * 0.45) : Math.round(kg * 0.7)
     }
@@ -369,8 +409,15 @@ const workoutPlan = {
         }
       })
     })
+    // Add pool exercises matching the same muscle
+    this.pool.forEach(ex => {
+      const pm = ex.muscle.split(' + ')[0].split(' (')[0].trim()
+      if (pm === mainMuscle || ex.muscle.includes(mainMuscle) || current.muscle.includes(pm)) {
+        alts.push({ ...ex, fromPool: true })
+      }
+    })
     const seen = new Set()
-    return alts.filter(a => { const k = a.machine; if (seen.has(k)) return false; seen.add(k); return true })
+    return alts.filter(a => { const k = a.machine + a.name; if (seen.has(k)) return false; seen.add(k); return true })
   },
 
   validateWorkout(profile) {

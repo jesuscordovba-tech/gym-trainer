@@ -319,37 +319,37 @@ const workoutPlan = {
 
   pool: [
     /* Pectoral */
-    { name: 'Aperturas en Polea Alta (Cruce de Poleas)', machine: 'polea-alta', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Pectoral mayor', video: 'I8p7wHj-dx4' },
-    { name: 'Press de Pecho con Mancuernas', machine: 'mancuernas', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Pectoral mayor', video: 'SHhVpIi3Fk0' },
+    { name: 'Aperturas en Polea Alta (Cruce de Poleas)', machine: 'polea-alta', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Pectoral mayor', video: 'Iwe6AmxVf7o' },
+    { name: 'Press de Pecho con Mancuernas', machine: 'mancuernas', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Pectoral mayor', video: 'ES_3VKNKRAA' },
     /* Deltoides */
-    { name: 'Face Pull en Polea', machine: 'polea-alta', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Deltoides posterior', video: 'tUpZTLgQH2U' },
-    { name: 'Press Arnold con Mancuernas', machine: 'mancuernas', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Deltoides', video: '6Z15u1DcVgQ' },
+    { name: 'Face Pull en Polea', machine: 'polea-alta', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Deltoides posterior', video: 'tIuXc_X8T4I' },
+    { name: 'Press Arnold con Mancuernas', machine: 'mancuernas', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Deltoides', video: 'V8GcUp4COLg' },
     /* Tríceps */
-    { name: 'Press Francés con Barra EZ', machine: 'barra-ez', sets: 3, reps: '10-12', rest: 45, rir: 0, muscle: 'Tríceps', video: 'd_KZxkY_2cM' },
-    { name: 'Patada de Tríceps con Mancuernas', machine: 'mancuernas', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Tríceps', video: 'V6FzBO4LhCs' },
+    { name: 'Press Francés con Barra EZ', machine: 'barra-ez', sets: 3, reps: '10-12', rest: 45, rir: 0, muscle: 'Tríceps', video: '2azK5QfuWFk' },
+    { name: 'Patada de Tríceps con Mancuernas', machine: 'mancuernas', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Tríceps', video: '6SS6K3lAwZ8' },
     /* Bíceps */
-    { name: 'Curl con Barra EZ', machine: 'barra-ez', sets: 3, reps: '10-12', rest: 45, rir: 0, muscle: 'Bíceps', video: 'kwG2ipFRg3w' },
+    { name: 'Curl con Barra EZ', machine: 'barra-ez', sets: 3, reps: '10-12', rest: 45, rir: 0, muscle: 'Bíceps', video: 'zG2xJ0Q5QtI' },
     { name: 'Curl Martillo con Mancuernas', machine: 'mancuernas', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Bíceps', video: 'zC3nLlEvin4' },
     /* Espalda */
     { name: 'Remo con Mancuernas a Una Mano', machine: 'mancuernas', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Dorsales', video: 'roCP6wCXPqo' },
-    { name: 'Peso Muerto en Polea Baja', machine: 'polea-baja', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Espalda baja + Glúteos', video: 'D_pM00Q05AQ' },
-    { name: 'Pull-Up Lastre (si sabes hacer dominadas)', machine: 'power-rack', sets: 3, reps: '8-10', rest: 90, rir: 1, muscle: 'Dorsales + Bíceps', video: 'eGo4IYp5yWY' },
+    { name: 'Peso Muerto en Polea Baja', machine: 'polea-baja', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Espalda baja + Glúteos', video: 'KZOF1CXz09w' },
+    { name: 'Pull-Up Lastre (si sabes hacer dominadas)', machine: 'power-rack', sets: 3, reps: '8-10', rest: 90, rir: 1, muscle: 'Dorsales + Bíceps', video: 'wsP_5P4MbGQ' },
     /* Piernas — Glúteos */
-    { name: 'Hip Thrust en Máquina', machine: 'hip-thrust', sets: 4, reps: '10-12', rest: 90, rir: 1, muscle: 'Glúteos', video: 'n0PL58RcGqU' },
-    { name: 'Patada de Glúteo en Polea', machine: 'patada-gluteo', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Glúteos', video: 'I4pZ1FkZnTQ' },
-    { name: 'Sentadilla Búlgara con Mancuernas', machine: 'mancuernas', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Cuádriceps + Glúteos', video: '2C-uNgGsSTE' },
+    { name: 'Hip Thrust en Máquina', machine: 'hip-thrust', sets: 4, reps: '10-12', rest: 90, rir: 1, muscle: 'Glúteos', video: '8xJ0Vxjv0sw' },
+    { name: 'Patada de Glúteo en Polea', machine: 'patada-gluteo', sets: 3, reps: '12-15', rest: 45, rir: 0, muscle: 'Glúteos', video: 'vHY4JUtKiFc' },
+    { name: 'Sentadilla Búlgara con Mancuernas', machine: 'mancuernas', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Cuádriceps + Glúteos', video: 'K5S8xKIcgSM' },
     /* Piernas — Femorales */
-    { name: 'Curl Femoral de Pie', machine: 'curl-femoral-pie', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Femorales', video: '1Tq3QdY5M0g' },
-    { name: 'Pull Through en Polea', machine: 'pull-through', sets: 3, reps: '12-15', rest: 60, rir: 0, muscle: 'Femorales + Glúteos', video: '2cjHyc5LFto' },
+    { name: 'Curl Femoral de Pie', machine: 'curl-femoral-pie', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Femorales', video: 'b2t0LN9NiJQ' },
+    { name: 'Pull Through en Polea', machine: 'pull-through', sets: 3, reps: '12-15', rest: 60, rir: 0, muscle: 'Femorales + Glúteos', video: '4oZ_0_bQcOg' },
     /* Piernas — Quads */
     { name: 'Sentadilla en Rack', machine: 'rack-sentadillas', sets: 4, reps: '8-10', rest: 120, rir: 1, muscle: 'Cuádriceps + Glúteos', video: 'ultWZbUMPL8' },
     { name: 'Zancadas con Mancuernas', machine: 'mancuernas', sets: 3, reps: '10-12', rest: 60, rir: 1, muscle: 'Cuádriceps + Glúteos', video: 'D7KaRcUTQeE' },
     /* Pantorrillas */
-    { name: 'Pantorrillas en Prensa 45°', machine: 'pantorrillas-prensa', sets: 4, reps: '15-20', rest: 30, rir: 0, muscle: 'Gemelos + Sóleo', video: 'gHesUlQljFY' },
+    { name: 'Pantorrillas en Prensa 45°', machine: 'pantorrillas-prensa', sets: 4, reps: '15-20', rest: 30, rir: 0, muscle: 'Gemelos + Sóleo', video: 'q4W4_VJbKW0' },
     /* Abdominales */
-    { name: 'Crunch en Polea (Cable Crunch)', machine: 'polea-crunch', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Abdominales', video: 'ACDo_1fbjgo' },
-    { name: 'Giro Ruso con Balón Medicinal', machine: 'balones-medicinales', sets: 3, reps: '12-15', rest: 30, rir: 0, muscle: 'Abdominales oblicuos', video: 'r4qoNzQHj5M' },
-    { name: 'Plancha con TRX', machine: 'trx', sets: 3, reps: '30-45s', rest: 30, rir: 0, muscle: 'Core', video: 'xvQ7vqXzSMs' },
+    { name: 'Crunch en Polea (Cable Crunch)', machine: 'polea-crunch', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Abdominales', video: '21u4gR7O3Sk' },
+    { name: 'Giro Ruso con Balón Medicinal', machine: 'balones-medicinales', sets: 3, reps: '12-15', rest: 30, rir: 0, muscle: 'Abdominales oblicuos', video: 'WOlddRbzsBs' },
+    { name: 'Plancha con TRX', machine: 'trx', sets: 3, reps: '30-45s', rest: 30, rir: 0, muscle: 'Core', video: 'eFLvktkGCVE' },
   ],
 
   getDefaultKg(machineId, profile) {

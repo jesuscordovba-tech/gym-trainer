@@ -768,9 +768,11 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
           throw new Error('HTTP ' + res.status + (detail ? ' — ' + detail : ''))
         }
         const data = await res.json()
-        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.choices?.[0]?.message?.content || '⚠️ No pude generar respuesta.'
-        addCoachMsg('🤖 Coach', reply)
+        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.choices?.[0]?.message?.content
+        if (reply) { addCoachMsg('🤖 Coach', reply) }
+        else { console.warn('Coach: respuesta inesperada', data); addCoachMsg('🤖 Coach', '⚠️ No pude generar respuesta — revisa la consola (F12) para más detalles.') }
       } catch (e) {
+        console.warn('Coach error:', e)
         addCoachMsg('🤖 Coach', '⚠️ Error: ' + (e.message.includes('429') ? 'Demasiadas solicitudes — espera un minuto y vuelve a intentar.\n\n💡 Ve a https://aistudio.google.com/apikey, checa tu cuota o genera una key nueva.' : e.message.includes('403') ? 'API key inválida — ve a Ajustes y actualiza tu key' : e.message))
       }
       coachSend.disabled = false; coachSend.textContent = 'Enviar'

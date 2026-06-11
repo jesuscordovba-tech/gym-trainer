@@ -722,25 +722,58 @@
         const progress = db.getProgress()
         const weights = db.getWeights()
         const username = db.getUsername()
+        const customEx = db.getCustomExercises()
         const fullPlan = workoutPlan.days.map((d, i) =>
           `${d.name}:\n${d.exercises.map(e => `  - ${e.name} (${e.machine}) · ${e.sets}x${e.reps} · RIR ${e.rir} · ${e.muscle}`).join('\n')}`
         ).join('\n\n')
+
+        /* Build weight log string */
+        const weightLines = []
+        for (const key of Object.keys(weights || {})) {
+          const [d, ...rest] = key.split('-')
+          const dayIdx = parseInt(d)
+          const day = workoutPlan.days[dayIdx]
+          if (!day) continue
+          const exIdx = parseInt(rest.join('-'))
+          let exName
+          if (rest.join('-').startsWith('custom-')) {
+            const ci = parseInt(rest.join('-').replace('custom-', ''))
+            const cex = (customEx[dayIdx] || [])[ci]
+            if (!cex) continue
+            exName = cex.name + ' ✚'
+          } else if (day.exercises[exIdx]) {
+            exName = day.exercises[exIdx].name
+          } else continue
+          weightLines.push(`  - Día ${dayIdx + 1} (${day.name}): ${exName} → ${weights[key]} kg`)
+        }
+        const weightStr = weightLines.length ? weightLines.join('\n') : '  (sin pesos registrados aún)'
+
+        /* Build progress summary */
+        let totalSetsDone = 0, totalSets = 0
+        workoutPlan.days.forEach((d, i) => {
+          const p = progress[i] || {}
+          d.exercises.forEach((ex, exIdx) => { totalSetsDone += p[exIdx] || 0; totalSets += ex.sets })
+        })
 
         const systemPrompt = `Eres un entrenador personal experto en fuerza e hipertrofia. Tu nombre es Coach IA.
 Contexto del usuario:
 - Nombre: ${username || 'Desconocido'}
 - Edad: ${profile?.age || '?'} años
 - Altura: ${profile?.heightCm || '?'} cm
-- Peso: ${profile?.weightKg || '?'} kg
+- Peso corporal: ${profile?.weightKg || '?'} kg
 - Género: ${profile?.gender === 'F' ? 'Femenino' : 'Masculino'}
-- BMR: ${profile?.bmr || '?'} kcal
-- TDEE: ${profile?.tdee || '?'} kcal
-- Déficit: ${profile?.deficitCalories || '?'} kcal
+- BMR: ${profile?.bmr || '?'} kcal/día
+- TDEE: ${profile?.tdee || '?'} kcal/día
+- Déficit calórico: ${profile?.deficitCalories || '?'} kcal/día
+- Progreso semanal: ${totalSetsDone}/${totalSets} series completadas
 
 Plan de entrenamiento (${workoutPlan.days.length} días):
 ${fullPlan}
 
-Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, progresión de pesos, nutrición básica, y recuperación. Si no sabes algo, dilo honestamente.`
+Pesos registrados por el usuario (carga que usa en cada ejercicio):
+${weightStr}
+
+Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, progresión de pesos (subir/bajar según RIR y rendimiento), nutrición básica y recuperación. Si ves que un peso es demasiado alto o bajo para el nivel del usuario, indícalo. Si no sabes algo, dilo honestamente.`
 
         let body, headers, url
         if (aiProvider === 'gemini') {

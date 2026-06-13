@@ -1041,7 +1041,17 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
 
   function renderProgress() {
     const container = document.getElementById('progressContent')
-    const progress = db.getProgress()
+    let progress = db.getProgress()
+    const now = new Date()
+    const weekNum = getISOWeek(now)
+    const weekId = now.getFullYear() + '-W' + String(weekNum).padStart(2, '0')
+    const hasLiveData = Object.keys(progress).length > 0
+    if (!hasLiveData) {
+      const snapshot = db.getHistoryWeek(weekId)
+      if (snapshot && snapshot.progress && Object.keys(snapshot.progress).length > 0) {
+        progress = snapshot.progress
+      }
+    }
     let totalSetsDone = 0
     let totalSets = 0
     let totalWorkouts = 0
@@ -1062,8 +1072,6 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
 
     const pct = totalSets > 0 ? Math.round((totalSetsDone / totalSets) * 100) : 0
 
-    const now = new Date()
-    const weekNum = getISOWeek(now)
     const trainingDays = getTrainingCount()
 
     let html = [

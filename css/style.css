@@ -252,23 +252,80 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   flex-shrink: 0;
 }
 
-/* Video play button in exercise card */
+/* Video thumbnail button */
 .ex-video-btn {
-  background: rgba(255,77,109,0.1);
-  border: 1px solid rgba(255,77,109,0.3);
-  color: var(--primary);
-  padding: 0.2rem 0.55rem;
-  border-radius: var(--radius-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: none;
   cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 700;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  font-family: var(--font);
-  line-height: 1.6;
-  margin-top: 0.25rem;
+  padding: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  transition: transform 0.15s;
 }
 .ex-video-btn:hover {
-  background: rgba(255,77,109,0.2);
+  transform: scale(1.03);
+}
+.ex-video-btn:active {
+  transform: scale(0.97);
+}
+.ex-video-btn img {
+  display: block;
+  width: 100px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.ex-video-btn .vid-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.3);
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.ex-video-btn:hover .vid-play {
+  background: rgba(0,0,0,0.15);
+}
+.ex-video-btn .vid-play-inner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(233,69,96,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #fff;
+  transition: transform 0.15s;
+}
+.ex-video-btn:hover .vid-play-inner {
+  transform: scale(1.1);
+}
+.ex-video-btn.no-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(233,69,96,0.1);
+  border: 1px solid rgba(233,69,96,0.3);
+  justify-content: center;
+}
+.ex-video-btn.no-thumb img { display: none; }
+.ex-video-btn.no-thumb .vid-play {
+  position: static;
+  background: none;
+}
+.ex-video-btn.no-thumb .vid-play-inner {
+  width: 36px;
+  height: 36px;
+  font-size: 0.8rem;
 }
 
 .set-tracker {

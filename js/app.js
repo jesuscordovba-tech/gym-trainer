@@ -342,7 +342,10 @@
     }
     h += '</div></div>'
     if (activeEx.video) {
-      h += '<button class="ex-video-btn" data-video="' + esc(activeEx.video) + '" title="Ver demostración">▶ Video</button>'
+      h += '<button class="ex-video-btn" data-video="' + esc(activeEx.video) + '" data-name="' + esc(activeEx.name) + '" title="Ver demostración">'
+      h += '<img src="https://img.youtube.com/vi/' + esc(activeEx.video) + '/mqdefault.jpg" alt="" loading="lazy" onerror="this.parentElement.classList.add(\'no-thumb\');this.style.display=\'none\'">'
+      h += '<span class="vid-play"><span class="vid-play-inner">▶</span></span>'
+      h += '</button>'
     }
     h += '</div></div>'
     return h
@@ -881,9 +884,10 @@
     const url = this.dataset.video
     if (!url) return
     const iframe = document.getElementById('videoIframe')
-    if (!iframe) { console.warn('Video error: no iframe'); return }
-    const embedUrl = url.match(/^https?:\/\//) ? url : 'https://www.youtube.com/embed/' + url + '?autoplay=1&controls=1&rel=0'
-    document.getElementById('videoModalTitle').textContent = '📺 Demostración'
+    if (!iframe) return
+    const name = this.dataset.name || 'Demostración'
+    const embedUrl = url.match(/^https?:\/\//) ? url : 'https://www.youtube.com/embed/' + url + '?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1'
+    document.getElementById('videoModalTitle').textContent = '📺 ' + name
     iframe.src = embedUrl
     document.getElementById('videoOverlay').classList.add('show')
   }

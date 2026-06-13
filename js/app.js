@@ -179,6 +179,10 @@
     if (wasReset) { showToast('Nueva semana — progreso reiniciado') }
     db.archiveCurrentWeek()
 
+    if (localStorage.getItem('gymapp_notif_enabled') === 'true' && Notification.permission !== 'granted') {
+      Notification.requestPermission()
+    }
+
     let totalSets = 0
     const progress = db.getProgress()
     for (const k in progress) { const d = progress[k]; if (d) for (const ek in d) totalSets += d[ek] || 0 }
@@ -209,6 +213,27 @@
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') hideTimer()
     })
+
+    /* Schedule daily workout reminder */
+    let _notifInterval
+    function checkNotif() {
+      if (localStorage.getItem('gymapp_notif_enabled') !== 'true') return
+      if (Notification.permission !== 'granted') { Notification.requestPermission(); return }
+      const now = new Date()
+      const today = now.toISOString().split('T')[0]
+      const lastSent = localStorage.getItem('gymapp_notif_last')
+      if (lastSent === today) return
+      const targetTime = localStorage.getItem('gymapp_notif_time') || '18:00'
+      const [h, m] = targetTime.split(':').map(Number)
+      const target = new Date(); target.setHours(h, m, 0, 0)
+      if (now >= target) {
+        localStorage.setItem('gymapp_notif_last', today)
+        new Notification('GYM TRAINER', { body: 'Hora de entrenar! Tu rutina te espera.', icon: '/icon.svg' })
+      }
+    }
+    if (_notifInterval) clearInterval(_notifInterval)
+    _notifInterval = setInterval(checkNotif, 30000)
+    checkNotif()
 
     updateCoachFab()
 
@@ -1134,6 +1159,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<div class="stat-card"><div class="stat-value">' + totalWorkouts + '/' + workoutPlan.days.length + '</div><div class="stat-label">Entrenos iniciados</div></div>',
       '<div class="stat-card"><div class="stat-value">' + daysCompleted + '</div><div class="stat-label">Días completados</div></div>',
       '</div>',
+      (typeof navigator.share === 'function' ? '<div style="text-align:center;margin-bottom:1rem;"><button class="reset-btn" id="shareProgressBtn" style="background:var(--surface);border-color:var(--border);color:var(--text);">Compartir Progreso</button></div>' : ''),
       '<h3>Detalle por día</h3>',
     ].join('')
 
@@ -1217,6 +1243,12 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
         renderDaySelector()
         renderWorkout(currentDay)
         renderProgress()
+      }
+    })
+    document.getElementById('shareProgressBtn')?.addEventListener('click', () => {
+      const text = 'Mi progreso esta semana: ' + pct + '% global, ' + totalSetsDone + ' series completadas, ' + daysCompleted + ' días completados.'
+      if (navigator.share) {
+        navigator.share({ title: 'GYM TRAINER - Mi Progreso', text, url: location.href }).catch(() => {})
       }
     })
     document.getElementById('restoreFromHistory')?.addEventListener('click', () => {
@@ -1995,6 +2027,23 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '</p>',
       '</div>',
 
+      /* Notifications */
+      '<div class="card">',
+      '<div class="card-title">Recordatorios</div>',
+      '<p class="settings-description">Recibe notificaciones para no saltarte entrenamientos.</p>',
+      '<div class="settings-token-section">',
+      '<label class="settings-token-label" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">',
+      '<input type="checkbox" id="notifToggle"' + (localStorage.getItem('gymapp_notif_enabled') === 'true' ? ' checked' : '') + ' style="width:18px;height:18px;accent-color:var(--primary);">',
+      'Notificaciones activadas',
+      '</label>',
+      '</div>',
+      '<div class="settings-token-section" id="notifTimeSection"' + (localStorage.getItem('gymapp_notif_enabled') !== 'true' ? ' style="display:none"' : '') + '>',
+      '<label class="settings-token-label">Hora del recordatorio:</label>',
+      '<input type="time" id="notifTime" value="' + (localStorage.getItem('gymapp_notif_time') || '18:00') + '" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.5rem;border-radius:var(--radius-sm);font-size:0.9rem;width:100%;margin-top:0.25rem;">',
+      '</div>',
+      '<button class="reset-btn" id="testNotifBtn" style="margin-top:0.5rem;">Probar notificación</button>',
+      '</div>',
+
       /* Export */
       '<div class="card">',
       '<div class="card-title">Exportar Datos</div>',
@@ -2145,6 +2194,27 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n')
       downloadFile(csv, 'gym-trainer-weights.csv', 'text/csv')
       showToast('Pesos exportados como CSV')
+    })
+
+    /* Notifications toggle */
+    const notifToggle = document.getElementById('notifToggle')
+    const notifTimeSection = document.getElementById('notifTimeSection')
+    notifToggle?.addEventListener('change', () => {
+      localStorage.setItem('gymapp_notif_enabled', notifToggle.checked)
+      notifTimeSection.style.display = notifToggle.checked ? '' : 'none'
+      if (notifToggle.checked) Notification.requestPermission()
+    })
+    document.getElementById('testNotifBtn')?.addEventListener('click', () => {
+      if (Notification.permission === 'granted') {
+        new Notification('GYM TRAINER', { body: 'Recordatorio configurado correctamente', icon: '/icon.svg' })
+      } else {
+        Notification.requestPermission().then(p => {
+          if (p === 'granted') new Notification('GYM TRAINER', { body: 'Notificaciones activadas', icon: '/icon.svg' })
+        })
+      }
+    })
+    document.getElementById('notifTime')?.addEventListener('change', function () {
+      localStorage.setItem('gymapp_notif_time', this.value)
     })
   }
 

@@ -87,10 +87,7 @@ New feature classes (lock screen, variant overlay, settings edit grid, swap/edit
 Each exercise has a ▶ Video button. On click, opens a full overlay/modal with YouTube iframe (autoplay, controls).
 
 ### Exercise History
-Each exercise shows a 📈 button. Displays historical weight progression for that exercise in a popup overlay.
-
-### Supersets
-Toggle superset mode per exercise (↔ button). Superset exercises highlighted with `.superset-item` class. Data persisted via `db.getSupersets()`.
+Each exercise shows a Hist button. Displays historical weight progression for that exercise in a popup overlay.
 
 ### Workout Timer
 Session timer (⏱ button in workout header). Tracks total elapsed time. Right-click to reset. Persisted via `db.getTimer()` and restored on page load.

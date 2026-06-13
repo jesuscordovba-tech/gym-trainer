@@ -435,7 +435,12 @@ const workoutPlan = {
     msgs.push(totalEx + ' ejercicios en la semana')
 
     if (profile.gender === 'F') {
-      const glute = (counts['Cuádriceps'] || 0) + (counts['Glúteos'] || 0)
+      let glute = (counts['Glúteos'] || 0)
+      this.days.forEach(day => {
+        day.exercises.forEach(ex => {
+          if (ex.muscle.toLowerCase().includes('glúteo') || ex.muscle.toLowerCase().includes('glute')) glute++
+        })
+      })
       msgs.push(glute >= 6 ? 'Buen volumen de piernas/glúteos' : 'Considera añadir más ejercicios de cadena posterior')
       msgs.push('Trabaja upper body con más frecuencia (3+ días/sem) para tono')
     } else {

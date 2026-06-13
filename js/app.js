@@ -1209,6 +1209,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       }
       showToast('No hay datos de progreso en el historial')
     }
+    updatePlateauAlerts()
   }
 
   /* === Charts === */

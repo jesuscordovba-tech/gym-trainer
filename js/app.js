@@ -319,13 +319,10 @@
     const machine = gymData.getMachineById(activeEx.machine)
     const notes = db.getNotes()
     const exNotes = notes[dataKey] || []
-    const supersets = db.getSupersets()
-    const isSuperset = !!supersets[dataKey]
-    let h = '<div class="exercise-item' + (isCustom ? ' custom-exercise' : '') + (isSuperset ? ' superset-item' : '') + '" data-day="' + dayIndex + '" data-ex="' + exKey + '">'
+    let h = '<div class="exercise-item' + (isCustom ? ' custom-exercise' : '') + '" data-day="' + dayIndex + '" data-ex="' + exKey + '">'
     h += '<div class="exercise-top">'
     h += '<div class="exercise-info">'
     h += '<div class="exercise-name"><button class="ex-history-btn" data-key="' + dataKey + '" data-name="' + esc(activeEx.name) + '" title="Ver historial">Hist</button> ' + esc(activeEx.name)
-    if (activeEx.supersetWith) h += '<span class="superset-badge">SUPERSET</span>'
     if (isSwapped) h += '<span class="swapped-badge">↻</span>'
     if (isCustom) h += '<span class="swapped-badge" style="background:var(--green);">✚</span>'
     h += '</div>'
@@ -357,7 +354,6 @@
     h += '</div>'
     h += '<div class="ex-controls-row">'
     h += '<button class="rest-timer-btn" data-rest="' + activeEx.rest + '">⏱ ' + activeEx.rest + 's</button>'
-    h += '<button class="superset-toggle' + (isSuperset ? ' superset-active' : '') + '" data-key="' + dataKey + '" title="Alternar superset">↔</button>'
     if (!isCustom) {
       h += '<button class="swap-btn" data-day="' + dayIndex + '" data-ex="' + exKey + '" title="Cambiar ejercicio">↻</button>'
     }
@@ -551,14 +547,6 @@
         showExHistory(key, name)
       })
     })
-
-    /* Superset toggle */
-    container.querySelectorAll('.superset-toggle').forEach(btn => {
-      btn.addEventListener('click', function () {
-        const key = this.dataset.key
-        setupSuperset(key, this)
-      })
-    })
   }
 
   function showVariants(e) {
@@ -644,10 +632,6 @@
     db.setProgress(progress)
     if (wasMilestone) showToast('Ejercicio completado — ' + maxSets + '/' + maxSets + ' series')
 
-    // Show RIR logging overlay
-    const dataKey = btn.closest('.exercise-item')?.querySelector('.weight-input')?.dataset?.key || day + '-' + rawEx
-    setTimeout(() => showRirPrompt(day, rawEx, setIdx, dataKey), 200)
-
     const restBtn = e.currentTarget.closest('.exercise-item')?.querySelector('.rest-timer-btn')
     if (restBtn && (progress[day][rawEx] || 0) > 0 && (progress[day][rawEx] || 0) < maxSets) {
       startTimer.call(restBtn)
@@ -706,51 +690,6 @@
   }
 
   /* === RIR / Notes per set === */
-  let _rirDay = -1, _rirEx = '', _rirSet = -1, _rirKey = ''
-
-  function showRirPrompt(day, ex, setIdx, dataKey) {
-    _rirDay = day; _rirEx = ex; _rirSet = setIdx; _rirKey = dataKey
-    const overlay = document.getElementById('rirOverlay')
-    const select = document.getElementById('rirSelect')
-    const notes = db.getNotes()
-    const exNotes = notes[dataKey] || []
-    const current = exNotes[setIdx] || {}
-    document.getElementById('rirNote').value = current.note || ''
-    select.innerHTML = ''
-    for (let r = 0; r <= 5; r++) {
-      const lbl = r === 0 ? '0 (al fallo)' : r === 1 ? '1 (muy justo)' : r === 2 ? '2 (justo)' : r === 3 ? '3 (controlado)' : r === 4 ? '4 (fácil)' : '5 (muy fácil)'
-      const btn = document.createElement('button')
-      btn.textContent = r
-      btn.title = lbl
-      btn.style.cssText = 'flex:1;padding:0.5rem;border-radius:var(--radius-sm);border:2px solid var(--border);background:' + (current.rir === r ? 'var(--primary)' : 'transparent') + ';color:' + (current.rir === r ? '#fff' : 'var(--text)') + ';font-weight:700;cursor:pointer;font-size:1rem;min-height:44px;transition:all 0.2s;'
-      btn.addEventListener('click', () => {
-        select.querySelectorAll('button').forEach(b => { b.style.background = 'transparent'; b.style.color = 'var(--text)' })
-        btn.style.background = 'var(--primary)'; btn.style.color = '#fff'
-        btn.dataset.selected = 'true'
-      })
-      select.appendChild(btn)
-    }
-    overlay.classList.add('show')
-  }
-
-  document.getElementById('rirClose')?.addEventListener('click', () => document.getElementById('rirOverlay').classList.remove('show'))
-  document.getElementById('rirOverlay')?.addEventListener('click', e => {
-    if (e.target === e.currentTarget) document.getElementById('rirOverlay').classList.remove('show')
-  })
-  document.getElementById('rirSave')?.addEventListener('click', () => {
-    const overlay = document.getElementById('rirOverlay')
-    const selected = document.querySelector('#rirSelect button[data-selected]')
-    const rir = selected ? parseInt(selected.textContent, 10) : -1
-    if (rir < 0) { showToast('Selecciona un RIR'); return }
-    const note = document.getElementById('rirNote').value.trim()
-    const notes = db.getNotes()
-    if (!notes[_rirKey]) notes[_rirKey] = []
-    notes[_rirKey][_rirSet] = { rir, note }
-    db.setNotes(notes)
-    overlay.classList.remove('show')
-    showToast('Serie registrada — RIR ' + rir + (note ? ' · ' + note : ''))
-    renderWorkout(_rirDay)
-  })
 
   function setupTimer() {
     document.getElementById('timerOverlay').addEventListener('click', e => {
@@ -1811,21 +1750,6 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
         if (h2) h2.insertAdjacentHTML('afterend', html)
       }
     }
-  }
-
-  /* === Superset Mode === */
-  function setupSuperset(exKey, btn) {
-    const supersets = db.getSupersets()
-    if (supersets[exKey]) {
-      delete supersets[exKey]
-      btn.classList.remove('superset-active')
-      showToast('Superset desactivado')
-    } else {
-      supersets[exKey] = true
-      btn.classList.add('superset-active')
-      showToast('Superset activado — completa las series y alterna')
-    }
-    db.setSupersets(supersets)
   }
 
   /* Diet */

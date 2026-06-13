@@ -302,7 +302,7 @@ const workoutPlan = {
         { name: 'Smith Machine para Sentadillas', machine: 'smith-sentadillas', sets: 4, reps: '10-12', rest: 90, rir: 1, muscle: 'Cuádriceps + Glúteos', video: '4r9o_rqFZX4' },
         { name: 'Curl Femoral Sentado', machine: 'curl-femoral-sentado', sets: 3, reps: '12-15', rest: 60, rir: 0, muscle: 'Femorales', video: 'JpSOljujzOY' },
         { name: 'Prensa Horizontal', machine: 'prensa-horizontal', sets: 3, reps: '12-15', rest: 60, rir: 1, muscle: 'Cuádriceps + Glúteos', video: '7II31GoNjSo' },
-        { name: 'Aductores + Abductores (superset)', machine: 'aductores', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Aductores / Abductores', supersetWith: 'abductores', video: 'dycKfaquQWo' },
+        { name: 'Aductores + Abductores', machine: 'aductores', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Aductores / Abductores', video: 'dycKfaquQWo' },
         { name: 'Elevación de Pantorrillas de Pie', machine: 'pantorrillas-pie', sets: 4, reps: '12-15', rest: 30, rir: 0, muscle: 'Gemelos', video: 'R9eS_1An8L0' },
         { name: 'Crunch Abdominal en Máquina', machine: 'crunch-maquina', sets: 3, reps: '15-20', rest: 30, rir: 0, muscle: 'Abdominales', video: 'wTlHC-JIprc' },
         { name: 'Elevación de Piernas', machine: 'elevacion-piernas', sets: 3, reps: '12-15', rest: 30, rir: 0, muscle: 'Abdominales inferiores', video: '-0dplV01cIQ' },

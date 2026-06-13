@@ -224,10 +224,6 @@
     function getTimer() { return data ? (data.workoutTimer || null) : null }
     async function setTimer(t) { if (data) { data.workoutTimer = t; schedulePersist() } }
 
-    /* --- Supersets --- */
-    function getSupersets() { return data ? (data.supersets || {}) : {} }
-    async function setSupersets(s) { if (data) { data.supersets = s; schedulePersist() } }
-
     /* --- Persist (localStorage) --- */
 
     async function setProgress(p) { if (data) { data.progress = p; notify(); archiveCurrentWeek(); schedulePersist() } }
@@ -540,7 +536,6 @@
       getPhotos, setPhotos,
       getMeasurements, setMeasurements,
       getTimer, setTimer,
-      getSupersets, setSupersets,
       getHistory, getHistoryWeek, getYearStats,
       checkWeekReset, archiveCurrentWeek, restoreLastWeek,
       onUpdate, syncFromGist, pushToGist,

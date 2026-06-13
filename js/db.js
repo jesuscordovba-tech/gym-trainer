@@ -182,12 +182,12 @@
     function getCustomExercises() { return data ? (data.customExercises || {}) : {} }
     function getCalories() { return data ? (data.caloriesBurned || {}) : {} }
     function getNotes() { return data ? (data.notes || {}) : {} }
-    async function setNotes(n) { if (data) { data.notes = n; schedulePersist() } }
+    async function setNotes(n) { if (data) { data.notes = n; archiveCurrentWeek(); schedulePersist() } }
 
     /* --- Persist (localStorage) --- */
 
-    async function setProgress(p) { if (data) { data.progress = p; notify(); schedulePersist() } }
-    async function setWeights(w) { if (data) { data.weights = w; schedulePersist() } }
+    async function setProgress(p) { if (data) { data.progress = p; notify(); archiveCurrentWeek(); schedulePersist() } }
+    async function setWeights(w) { if (data) { data.weights = w; archiveCurrentWeek(); schedulePersist() } }
     async function setTrainingDates(d) { if (data) { data.trainingDates = d; schedulePersist() } }
     async function setProfile(p) { if (data) { data.profile = p; schedulePersist() } }
     async function setCustomWorkout(cw) { if (data) { data.customWorkout = cw; schedulePersist() } }
@@ -348,27 +348,9 @@
       const hasData = Object.keys(p).length > 0 || Object.keys(w).length > 0
       if (!hasData) return
       const hist = data.history || {}
-      if (hist[weekId]) {
-        let changed = false
-        for (const dk of Object.keys(p)) {
-          const day = parseInt(dk); if (isNaN(day)) continue
-          if (!hist[weekId].progress[day]) { hist[weekId].progress[day] = {}; changed = true }
-          for (const ek of Object.keys(p[dk])) {
-            const ex = parseInt(ek); if (isNaN(ex)) continue
-            if ((p[dk][ek] || 0) > (hist[weekId].progress[day][ex] || 0)) {
-              hist[weekId].progress[day][ex] = p[dk][ek]; changed = true
-            }
-          }
-        }
-        for (const k of Object.keys(w)) {
-          if (!hist[weekId].weights[k] && w[k]) { hist[weekId].weights[k] = w[k]; changed = true }
-        }
-        if (!changed) return
-      } else {
-        hist[weekId] = {
-          progress: JSON.parse(JSON.stringify(p)),
-          weights: JSON.parse(JSON.stringify(w))
-        }
+      hist[weekId] = {
+        progress: JSON.parse(JSON.stringify(p)),
+        weights: JSON.parse(JSON.stringify(w))
       }
       data.history = hist
       schedulePersist()

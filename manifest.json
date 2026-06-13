@@ -1,0 +1,14 @@
+{
+  "name": "GYM TRAINER",
+  "short_name": "GYM",
+  "description": "App de entrenamiento personal — rutinas, progreso y dieta",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f0f0f",
+  "theme_color": "#e94560",
+  "icons": [
+    { "src": "icon.svg", "sizes": "192x192", "type": "image/svg+xml" },
+    { "src": "icon.svg", "sizes": "512x512", "type": "image/svg+xml" }
+  ]
+}

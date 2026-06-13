@@ -207,6 +207,17 @@
     })
 
     updateCoachFab()
+
+    /* Re-draw charts on resize */
+    let _resizeTimer
+    window.addEventListener('resize', () => {
+      clearTimeout(_resizeTimer)
+      _resizeTimer = setTimeout(() => {
+        if (!document.getElementById('progressTab').classList.contains('hidden')) {
+          renderProgress()
+        }
+      }, 300)
+    })
   }
 
   function renderNav() {
@@ -277,6 +288,8 @@
 
   function renderExercise(dayIndex, exKey, activeEx, setsCompleted, weight, defaultKg, nextW, dataKey, isSwapped, isCustom) {
     const machine = gymData.getMachineById(activeEx.machine)
+    const notes = db.getNotes()
+    const exNotes = notes[dataKey] || []
     let h = '<div class="exercise-item' + (isCustom ? ' custom-exercise' : '') + '" data-day="' + dayIndex + '" data-ex="' + exKey + '">'
     h += '<div class="exercise-top">'
     h += '<div class="exercise-info">'
@@ -304,17 +317,20 @@
     h += '<div class="exercise-controls">'
     h += '<div class="set-tracker">'
     for (let s = 0; s < activeEx.sets; s++) {
+      const note = exNotes[s]
       h += '<button class="set-dot ' +
         (s < setsCompleted ? 'completed' : s === setsCompleted ? 'current' : '') +
-        '" data-day="' + dayIndex + '" data-ex="' + exKey + '" data-set="' + s + '">' +
+        '" data-day="' + dayIndex + '" data-ex="' + exKey + '" data-set="' + s + '" title="' + (note ? esc(note.rir !== undefined ? 'RIR ' + note.rir : '') : '') + '">' +
         (s + 1) + '</button>'
     }
     h += '</div>'
+    h += '<div class="ex-controls-row">'
     h += '<button class="rest-timer-btn" data-rest="' + activeEx.rest + '">⏱ ' + activeEx.rest + 's</button>'
     if (!isCustom) {
       h += '<button class="swap-btn" data-day="' + dayIndex + '" data-ex="' + exKey + '" title="Cambiar ejercicio">↻</button>'
     }
     if (isCustom) {
+      h += '<button class="edit-ex-btn" data-day="' + dayIndex + '" data-idx="' + exKey.replace(dayIndex + '-custom-', '') + '" title="Editar ejercicio" style="background:none;border:1px solid var(--green);color:var(--green);border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:1rem;">✎</button>'
       h += '<button class="remove-ex-btn" data-day="' + dayIndex + '" data-idx="' + exKey.replace(dayIndex + '-custom-', '') + '" title="Eliminar ejercicio" style="background:none;border:1px solid var(--primary);color:var(--primary);border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:1rem;">✕</button>'
     }
     h += '</div></div>'
@@ -433,6 +449,13 @@
       })
     }
     document.getElementById('addCustomEx')?.addEventListener('click', () => showAddCustomForm(dayIndex))
+    container.querySelectorAll('.edit-ex-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = parseInt(btn.dataset.day)
+        const idx = parseInt(btn.dataset.idx)
+        showAddCustomForm(d, idx)
+      })
+    })
     container.querySelectorAll('.remove-ex-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const d = parseInt(btn.dataset.day)
@@ -539,6 +562,11 @@
 
     if (setIdx < setsCompleted) {
       progress[day][rawEx] = setIdx
+      db.setProgress(progress)
+      renderDaySelector()
+      renderWorkout(day)
+      renderProgress()
+      return
     } else if (setIdx === setsCompleted) {
       progress[day][rawEx] = (progress[day][rawEx] || 0) + 1
     } else {
@@ -559,6 +587,10 @@
     renderDaySelector()
     renderWorkout(day)
     renderProgress()
+
+    // Show RIR logging overlay
+    const dataKey = btn.closest('.exercise-item')?.querySelector('.weight-input')?.dataset?.key || day + '-' + rawEx
+    setTimeout(() => showRirPrompt(day, rawEx, setIdx, dataKey), 200)
 
     const restBtn = e.currentTarget.closest('.exercise-item').querySelector('.rest-timer-btn')
     if (restBtn && (progress[day][rawEx] || 0) > 0 && (progress[day][rawEx] || 0) < maxSets) {
@@ -616,6 +648,53 @@
     }
     return null
   }
+
+  /* === RIR / Notes per set === */
+  let _rirDay = -1, _rirEx = '', _rirSet = -1, _rirKey = ''
+
+  function showRirPrompt(day, ex, setIdx, dataKey) {
+    _rirDay = day; _rirEx = ex; _rirSet = setIdx; _rirKey = dataKey
+    const overlay = document.getElementById('rirOverlay')
+    const select = document.getElementById('rirSelect')
+    const notes = db.getNotes()
+    const exNotes = notes[dataKey] || []
+    const current = exNotes[setIdx] || {}
+    document.getElementById('rirNote').value = current.note || ''
+    select.innerHTML = ''
+    for (let r = 0; r <= 5; r++) {
+      const lbl = r === 0 ? '0 (al fallo)' : r === 1 ? '1 (muy justo)' : r === 2 ? '2 (justo)' : r === 3 ? '3 (controlado)' : r === 4 ? '4 (fácil)' : '5 (muy fácil)'
+      const btn = document.createElement('button')
+      btn.textContent = r
+      btn.title = lbl
+      btn.style.cssText = 'flex:1;padding:0.5rem;border-radius:var(--radius-sm);border:2px solid var(--border);background:' + (current.rir === r ? 'var(--primary)' : 'transparent') + ';color:' + (current.rir === r ? '#fff' : 'var(--text)') + ';font-weight:700;cursor:pointer;font-size:1rem;min-height:44px;transition:all 0.2s;'
+      btn.addEventListener('click', () => {
+        select.querySelectorAll('button').forEach(b => { b.style.background = 'transparent'; b.style.color = 'var(--text)' })
+        btn.style.background = 'var(--primary)'; btn.style.color = '#fff'
+        btn.dataset.selected = 'true'
+      })
+      select.appendChild(btn)
+    }
+    overlay.classList.add('show')
+  }
+
+  document.getElementById('rirClose')?.addEventListener('click', () => document.getElementById('rirOverlay').classList.remove('show'))
+  document.getElementById('rirOverlay')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) document.getElementById('rirOverlay').classList.remove('show')
+  })
+  document.getElementById('rirSave')?.addEventListener('click', () => {
+    const overlay = document.getElementById('rirOverlay')
+    const selected = document.querySelector('#rirSelect button[data-selected]')
+    const rir = selected ? parseInt(selected.textContent) : -1
+    if (rir < 0) { showToast('⚠️ Selecciona un RIR'); return }
+    const note = document.getElementById('rirNote').value.trim()
+    const notes = db.getNotes()
+    if (!notes[_rirKey]) notes[_rirKey] = []
+    notes[_rirKey][_rirSet] = { rir, note }
+    db.setNotes(notes)
+    overlay.classList.remove('show')
+    showToast('📝 Serie registrada — RIR ' + rir + (note ? ' · ' + note : ''))
+    renderWorkout(_rirDay)
+  })
 
   function setupTimer() {
     document.getElementById('timerOverlay').addEventListener('click', e => {
@@ -675,14 +754,15 @@
     document.getElementById('timerDisplay').style.color = ''
   }
 
-  /* === Add Custom Exercise === */
+  /* === Add / Edit Custom Exercise === */
   let _addExDay = -1
+  let _editExIdx = -1
 
-  function showAddCustomForm(day) {
+  function showAddCustomForm(day, editIdx) {
     _addExDay = day
+    _editExIdx = editIdx !== undefined ? editIdx : -1
     const overlay = document.getElementById('addExOverlay')
     const sel = document.getElementById('addExMachine')
-    // Populate machine dropdown
     const cats = gymData.categories || Object.keys(gymData.machines)
     sel.innerHTML = '<option value="">— Ninguna —</option>'
     cats.forEach(cat => {
@@ -692,13 +772,30 @@
         sel.innerHTML += '<option value="' + esc(m.id) + '">' + esc(m.name) + '</option>'
       })
     })
-    document.getElementById('addExName').value = ''
-    document.getElementById('addExSets').value = '3'
-    document.getElementById('addExReps').value = '10-12'
-    document.getElementById('addExRest').value = '60'
-    document.getElementById('addExRir').value = '1'
-    document.getElementById('addExMuscle').value = ''
-    document.getElementById('addExVideo').value = ''
+    const saveBtn = document.getElementById('addExSave')
+    if (_editExIdx >= 0) {
+      const ex = (db.getCustomExercises()[day] || [])[_editExIdx]
+      if (ex) {
+        document.getElementById('addExName').value = ex.name
+        document.getElementById('addExMachine').value = ex.machine
+        document.getElementById('addExSets').value = ex.sets
+        document.getElementById('addExReps').value = ex.reps
+        document.getElementById('addExRest').value = ex.rest
+        document.getElementById('addExRir').value = ex.rir
+        document.getElementById('addExMuscle').value = ex.muscle
+        document.getElementById('addExVideo').value = ex.video
+        saveBtn.textContent = 'Guardar cambios'
+      }
+    } else {
+      document.getElementById('addExName').value = ''
+      document.getElementById('addExSets').value = '3'
+      document.getElementById('addExReps').value = '10-12'
+      document.getElementById('addExRest').value = '60'
+      document.getElementById('addExRir').value = '1'
+      document.getElementById('addExMuscle').value = ''
+      document.getElementById('addExVideo').value = ''
+      saveBtn.textContent = 'Agregar ejercicio'
+    }
     overlay.classList.add('show')
   }
 
@@ -723,10 +820,17 @@
     }
     const ce = db.getCustomExercises()
     if (!ce[_addExDay]) ce[_addExDay] = []
-    ce[_addExDay].push(ex)
-    await db.setCustomExercises(ce)
-    document.getElementById('addExOverlay').classList.remove('show')
-    showToast('✅ Ejercicio agregado: ' + esc(ex.name))
+    if (_editExIdx >= 0) {
+      ce[_addExDay][_editExIdx] = ex
+      await db.setCustomExercises(ce)
+      document.getElementById('addExOverlay').classList.remove('show')
+      showToast('✅ Ejercicio actualizado: ' + esc(ex.name))
+    } else {
+      ce[_addExDay].push(ex)
+      await db.setCustomExercises(ce)
+      document.getElementById('addExOverlay').classList.remove('show')
+      showToast('✅ Ejercicio agregado: ' + esc(ex.name))
+    }
     renderWorkout(_addExDay)
   })
 
@@ -788,7 +892,7 @@
       if (!text) return
       coachInput.value = ''
       addCoachMsg('Tú', text)
-      coachSend.disabled = true; coachSend.textContent = '...'
+      coachSend.disabled = true; coachSend.innerHTML = '<span class="spinner" style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;"></span>'
 
       try {
         const profile = db.getProfile()
@@ -992,6 +1096,15 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       html += dayDone + '/' + daySets + ' series</span></div>'
     })
 
+    /* === Charts === */
+    html += [
+      '<h3 style="margin-top:2rem;">📈 Volumen semanal</h3>',
+      '<div class="chart-container"><canvas id="volumeChart" width="800" height="300"></canvas></div>',
+      '<h3 style="margin-top:1.5rem;">📊 Progresión de pesos</h3>',
+      '<p class="settings-description">Últimos pesos registrados por ejercicio</p>',
+      '<div class="chart-container"><canvas id="weightChart" width="800" height="300"></canvas></div>',
+    ].join('')
+
     html += [
       '<div class="reset-day-wrap">',
       '<button class="reset-btn" id="resetAll">Reiniciar todo el progreso</button>',
@@ -1035,6 +1148,10 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
 
     container.innerHTML = html
 
+    /* Draw charts */
+    drawVolumeChart(progress)
+    drawWeightChart()
+
     document.getElementById('resetAll')?.addEventListener('click', () => {
       if (confirm('¿Reiniciar TODO el progreso? Esta acción no se puede deshacer.')) {
         db.setProgress({})
@@ -1043,6 +1160,114 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
         renderWorkout(currentDay)
         renderProgress()
       }
+    })
+  }
+
+  /* === Charts === */
+  function drawVolumeChart(progress) {
+    const canvas = document.getElementById('volumeChart')
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    const dpr = window.devicePixelRatio || 1
+    const rect = canvas.getBoundingClientRect()
+    canvas.width = rect.width * dpr
+    canvas.height = rect.height * dpr
+    ctx.scale(dpr, dpr)
+    const w = rect.width, h = rect.height
+    const pad = { top: 20, bottom: 30, left: 40, right: 20 }
+    const chartW = w - pad.left - pad.right
+    const chartH = h - pad.top - pad.bottom
+
+    ctx.clearRect(0, 0, w, h)
+    ctx.fillStyle = '#888'
+    ctx.font = '11px system-ui'
+    ctx.textAlign = 'center'
+
+    const daySets = workoutPlan.days.map((d, i) => {
+      const p = progress[i] || {}
+      let done = 0
+      d.exercises.forEach((ex, exIdx) => { done += p[exIdx] || 0 })
+      return done
+    })
+    const maxVal = Math.max(...daySets, 1)
+    const barW = Math.min(40, chartW / daySets.length - 6)
+
+    daySets.forEach((val, i) => {
+      const x = pad.left + (chartW / daySets.length) * i + (chartW / daySets.length - barW) / 2
+      const barH = (val / maxVal) * chartH
+      const y = pad.top + chartH - barH
+      ctx.fillStyle = val >= workoutPlan.days[i].exercises.reduce((a, ex) => a + ex.sets, 0) ? '#2ecc71' : '#e94560'
+      ctx.beginPath()
+      ctx.moveTo(x + 4, y)
+      ctx.lineTo(x + barW - 4, y)
+      ctx.quadraticCurveTo(x + barW, y, x + barW, y + 4)
+      ctx.lineTo(x + barW, y + barH)
+      ctx.lineTo(x, y + barH)
+      ctx.lineTo(x, y + 4)
+      ctx.quadraticCurveTo(x, y, x + 4, y)
+      ctx.closePath()
+      ctx.fill()
+      ctx.fillStyle = '#888'
+      ctx.textAlign = 'center'
+      ctx.fillText(DAY_LABELS[i] || 'D' + (i + 1), x + barW / 2, h - 8)
+      ctx.fillStyle = '#f0f0f0'
+      ctx.font = 'bold 11px system-ui'
+      ctx.fillText(val, x + barW / 2, y - 6)
+    })
+  }
+
+  function drawWeightChart() {
+    const canvas = document.getElementById('weightChart')
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    const dpr = window.devicePixelRatio || 1
+    const rect = canvas.getBoundingClientRect()
+    canvas.width = rect.width * dpr
+    canvas.height = rect.height * dpr
+    ctx.scale(dpr, dpr)
+    const w = rect.width, h = rect.height
+    const pad = { top: 20, bottom: 30, left: 40, right: 20 }
+    const chartW = w - pad.left - pad.right
+    const chartH = h - pad.top - pad.bottom
+
+    ctx.clearRect(0, 0, w, h)
+    const weights = db.getWeights()
+    const entries = Object.entries(weights).filter(([, v]) => v && parseFloat(v) > 0)
+    if (!entries.length) {
+      ctx.fillStyle = '#888'
+      ctx.font = '13px system-ui'
+      ctx.textAlign = 'center'
+      ctx.fillText('Registra pesos en tus entrenamientos para ver la gráfica', w / 2, h / 2)
+      return
+    }
+    const recent = entries.slice(-10)
+    const values = recent.map(([, v]) => parseFloat(v))
+    const labels = recent.map(([k]) => { const p = k.split('-'); return 'E' + p[0] + '-' + p[1] })
+    const min = Math.min(...values) * 0.9
+    const max = Math.max(...values) * 1.1
+    const range = max - min || 1
+
+    ctx.strokeStyle = '#e94560'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    recent.forEach(([, v], i) => {
+      const x = pad.left + (chartW / (recent.length - 1 || 1)) * i
+      const y = pad.top + chartH - ((parseFloat(v) - min) / range) * chartH
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y)
+    })
+    ctx.stroke()
+
+    recent.forEach(([, v], i) => {
+      const x = pad.left + (chartW / (recent.length - 1 || 1)) * i
+      const y = pad.top + chartH - ((parseFloat(v) - min) / range) * chartH
+      ctx.fillStyle = '#e94560'
+      ctx.beginPath()
+      ctx.arc(x, y, 4, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#888'
+      ctx.font = '10px system-ui'
+      ctx.textAlign = 'center'
+      if (i % 2 === 0 || recent.length <= 6) ctx.fillText(labels[i], x, h - 8)
     })
   }
 
@@ -1245,6 +1470,16 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '</p>',
       '</div>',
 
+      /* Export */
+      '<div class="card">',
+      '<div class="card-title">📤 Exportar datos</div>',
+      '<p class="settings-description">Descarga tus datos como JSON (completo) o CSV (progresión de pesos).</p>',
+      '<div class="settings-sync-actions">',
+      '<button class="reset-btn" id="exportJsonBtn">⬇ Exportar JSON</button>',
+      '<button class="reset-btn" id="exportCsvBtn">⬇ Exportar CSV (pesos)</button>',
+      '</div>',
+      '</div>',
+
       /* Security info */
       '<div class="card">',
       '<div class="card-title">🛡️ Seguridad</div>',
@@ -1343,6 +1578,60 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       document.getElementById('aiUrlLabel').style.display = isOpenAI ? '' : 'none'
       document.getElementById('aiModelLabel').style.display = isOpenAI ? '' : 'none'
     })
+
+    /* Export handlers */
+    document.getElementById('exportJsonBtn')?.addEventListener('click', () => {
+      const data = {
+        username: db.getUsername(),
+        profile: db.getProfile(),
+        progress: db.getProgress(),
+        weights: db.getWeights(),
+        history: db.getHistory(),
+        customExercises: db.getCustomExercises(),
+        trainingDates: db.getTrainingDates(),
+        notes: db.getNotes(),
+        exportedAt: new Date().toISOString(),
+      }
+      downloadFile(JSON.stringify(data, null, 2), 'gym-trainer-backup.json', 'application/json')
+      showToast('✅ Datos exportados como JSON')
+    })
+    document.getElementById('exportCsvBtn')?.addEventListener('click', () => {
+      const weights = db.getWeights()
+      const profile = db.getProfile()
+      const rows = [['Ejercicio', 'Día', 'Peso (kg)', 'Músculo', 'Fecha de exportación']]
+      for (const key of Object.keys(weights)) {
+        const [d, ...rest] = key.split('-')
+        const dayIdx = parseInt(d)
+        const day = workoutPlan.days[dayIdx]
+        if (!day) continue
+        const exIdx = rest.join('-')
+        let exName, muscle
+        if (exIdx.startsWith('custom-')) {
+          const ci = parseInt(exIdx.replace('custom-', ''))
+          const cex = (db.getCustomExercises()[dayIdx] || [])[ci]
+          if (!cex) continue
+          exName = cex.name; muscle = cex.muscle
+        } else if (day.exercises[parseInt(exIdx)]) {
+          const ex = day.exercises[parseInt(exIdx)]
+          exName = ex.name; muscle = ex.muscle
+        } else continue
+        rows.push([exName, day.name, weights[key], muscle, new Date().toISOString().split('T')[0]])
+      }
+      const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n')
+      downloadFile(csv, 'gym-trainer-weights.csv', 'text/csv')
+      showToast('✅ Pesos exportados como CSV')
+    })
+  }
+
+  function downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   /* Start with login screen */

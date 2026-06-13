@@ -181,6 +181,8 @@
     function getCustomWorkout() { return data ? (data.customWorkout || {}) : {} }
     function getCustomExercises() { return data ? (data.customExercises || {}) : {} }
     function getCalories() { return data ? (data.caloriesBurned || {}) : {} }
+    function getNotes() { return data ? (data.notes || {}) : {} }
+    async function setNotes(n) { if (data) { data.notes = n; schedulePersist() } }
 
     /* --- Persist (localStorage) --- */
 
@@ -192,16 +194,28 @@
     async function setCustomExercises(ce) { if (data) { data.customExercises = ce; schedulePersist() } }
     async function setCalories(c) { if (data) { data.caloriesBurned = c; schedulePersist() } }
 
+    function showSyncIndicator() {
+      const el = document.getElementById('syncIndicator')
+      if (el) el.classList.add('show')
+    }
+    function hideSyncIndicator() {
+      const el = document.getElementById('syncIndicator')
+      if (el) el.classList.remove('show')
+    }
+
     async function persistNow() {
       if (!_username || !_pin || !data) return
+      showSyncIndicator()
       try {
         const encrypted = await auth.encrypt(data, _pin)
         localStorage.setItem(userKey(_username), encrypted)
-      } catch (e) { console.warn('Persist error:', e) }
+        setTimeout(hideSyncIndicator, 300)
+      } catch (e) { console.warn('Persist error:', e); hideSyncIndicator() }
     }
 
     function schedulePersist() {
       if (_persistTimer) clearTimeout(_persistTimer)
+      showSyncIndicator()
       _persistTimer = setTimeout(async () => {
         _persistTimer = null
         await persistNow()
@@ -441,6 +455,7 @@
       getTrainingDates, setTrainingDates, getCustomWorkout, setCustomWorkout,
       getCustomExercises, setCustomExercises,
       getCalories, setCalories,
+      getNotes, setNotes,
       getHistory, getHistoryWeek, getYearStats,
       checkWeekReset, archiveCurrentWeek,
       onUpdate, syncFromGist, pushToGist,

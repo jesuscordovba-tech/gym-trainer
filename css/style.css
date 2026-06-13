@@ -640,6 +640,38 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   color: var(--orange);
 }
 
+/* Tab transitions */
+.tab-content {
+  animation: tabFadeIn 0.25s ease;
+}
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Sync indicator */
+.sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-left: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.sync-indicator.show { opacity: 1; }
+.sync-indicator .spinner {
+  width: 10px; height: 10px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Hidden */
 .hidden { display: none !important; }
 
@@ -1087,4 +1119,32 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 .add-ex-btn:hover {
   border-color: var(--primary) !important;
   color: var(--primary) !important;
+}
+
+/* Charts */
+.chart-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+.chart-container canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+}
+
+/* Exercise control row */
+.ex-controls-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+/* RIR select buttons */
+#rirSelect button:hover {
+  border-color: var(--primary) !important;
 }

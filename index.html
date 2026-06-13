@@ -21,6 +21,9 @@
                base-uri 'self';
                form-action 'none';">
   <title>GYM TRAINER — Definición 21y</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
   <link rel="stylesheet" href="css/style.css">
   <style>
     /* Lock screen */
@@ -273,6 +276,7 @@
   <header class="app-header">
     <div class="header-inner">
       <div class="logo">💪 <span>GYM</span>TRAINER</div>
+      <span class="sync-indicator" id="syncIndicator"><span class="spinner"></span>Guardando...</span>
       <nav class="main-nav" id="mainNav">
         <button data-tab="workoutTab" class="active">Entreno</button>
         <button data-tab="progressTab">Progreso</button>
@@ -346,6 +350,23 @@
     </div>
   </div>
 
+  <!-- RIR / Notes per set overlay -->
+  <div class="variant-overlay" id="rirOverlay">
+    <div class="variant-modal">
+      <div class="variant-modal-header">
+        <span class="variant-modal-title">📝 Registrar serie</span>
+        <button class="variant-close" id="rirClose">✕</button>
+      </div>
+      <div id="rirForm">
+        <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.25rem;">RIR (repeticiones en reserva)</label>
+        <div id="rirSelect" style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;"></div>
+        <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.25rem;">Nota (opcional)</label>
+        <input type="text" id="rirNote" class="lock-input" placeholder="Ej: Pesado, buena técnica..." style="letter-spacing:0;font-size:0.9rem;-webkit-text-security:none;margin-bottom:1rem;">
+        <button class="lock-btn" id="rirSave">Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Add custom exercise overlay -->
   <div class="variant-overlay" id="addExOverlay">
     <div class="variant-modal">
@@ -395,5 +416,10 @@
   <script src="js/auth.js?v=25"></script>
   <script src="js/db.js?v=25"></script>
   <script src="js/app.js?v=25"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {})
+    }
+  </script>
 </body>
 </html>

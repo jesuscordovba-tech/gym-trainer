@@ -1,5 +1,7 @@
 # GYM TRAINER — App Documentation
 
+> **Ubicación del proyecto:** `/Users/jesus/app gym jesus/`
+
 ## Stack
 - Vanilla JS (no frameworks), CSS3, HTML5
 - Hosted on GitHub Pages: https://jesuscordovba-tech.github.io/gym-trainer
@@ -92,6 +94,34 @@ Requires GitHub personal token with `gist` scope. Data is AES-256-GCM encrypted 
 ### Progressive Overload Philosophy
 The app does NOT auto-increase weights. It RECOMMENDS increases when all sets are completed. The user decides whether to accept. This matches real training: you complete the prescribed reps/sets, then add weight next session.
 
+### RIR / Notes per Set
+After tapping a set dot, a prompt appears to log the RIR (0-5) and an optional text note. Stored per-set in `db.getNotes()`. Displayed as tooltip on set dots.
+
+### Edit Custom Exercises
+Custom exercises can be edited (✎ button) in addition to being removed. Reuses the same overlay form pre-filled with existing values.
+
+### Charts
+- **Volume chart**: Bar chart showing completed sets per day in the current week (green = all sets done, red = partial).
+- **Weight chart**: Line chart showing the last 10 weight recordings, with exercise labels.
+
+### Export
+- **JSON export**: Downloads all user data (profile, progress, weights, history, custom exercises, notes) as a JSON file.
+- **CSV export**: Downloads weight progression data as a CSV file (exercise, day, kg, muscle).
+
+### PWA (Progressive Web App)
+- `manifest.json` — allows installation to home screen on mobile/desktop.
+- `sw.js` — service worker caches static assets for offline access.
+- `icon.svg` — scalable icon used for manifest and favicon.
+- Service worker registration in `index.html`.
+
+### Sync Indicator
+A small spinner ("Guardando...") appears in the header whenever data is being persisted locally, giving visual feedback.
+
+### UI/UX Improvements
+- Tab content fades in with a smooth animation.
+- Charts resize on window resize.
+- Loading spinners on coach chat requests.
+- Touch-friendly RIR selector buttons.
+
 ## Build/Deploy
 No build step. Push to `main` branch, GitHub Pages serves from root.
-No service worker, no PWA manifest (future enhancement).

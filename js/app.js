@@ -343,8 +343,7 @@
     h += '</div></div>'
     if (activeEx.video) {
       h += '<button class="ex-video-btn" data-video="' + esc(activeEx.video) + '" data-name="' + esc(activeEx.name) + '" title="Ver demostración">'
-      h += '<img src="https://img.youtube.com/vi/' + esc(activeEx.video) + '/mqdefault.jpg" alt="" loading="lazy" onerror="this.parentElement.classList.add(\'no-thumb\');this.style.display=\'none\'">'
-      h += '<span class="vid-play"><span class="vid-play-inner">▶</span></span>'
+      h += '<span class="vid-icon">▶</span> Video'
       h += '</button>'
     }
     h += '</div></div>'

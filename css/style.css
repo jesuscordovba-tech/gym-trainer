@@ -252,80 +252,31 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   flex-shrink: 0;
 }
 
-/* Video thumbnail button */
+/* Video button — clean icon + text */
 .ex-video-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
+  gap: 0.3rem;
+  background: rgba(233,69,96,0.08);
+  border: 1px solid rgba(233,69,96,0.2);
+  color: var(--primary);
+  padding: 0.3rem 0.6rem;
   border-radius: 6px;
-  overflow: hidden;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s;
   flex-shrink: 0;
-  position: relative;
-  transition: transform 0.15s;
 }
 .ex-video-btn:hover {
-  transform: scale(1.03);
+  background: rgba(233,69,96,0.16);
+  border-color: rgba(233,69,96,0.4);
 }
 .ex-video-btn:active {
-  transform: scale(0.97);
+  background: rgba(233,69,96,0.22);
 }
-.ex-video-btn img {
-  display: block;
-  width: 100px;
-  height: 56px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.08);
-}
-.ex-video-btn .vid-play {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.3);
-  border-radius: 6px;
-  transition: background 0.15s;
-}
-.ex-video-btn:hover .vid-play {
-  background: rgba(0,0,0,0.15);
-}
-.ex-video-btn .vid-play-inner {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(233,69,96,0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.ex-video-btn .vid-icon {
   font-size: 0.65rem;
-  color: #fff;
-  transition: transform 0.15s;
-}
-.ex-video-btn:hover .vid-play-inner {
-  transform: scale(1.1);
-}
-.ex-video-btn.no-thumb {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(233,69,96,0.1);
-  border: 1px solid rgba(233,69,96,0.3);
-  justify-content: center;
-}
-.ex-video-btn.no-thumb img { display: none; }
-.ex-video-btn.no-thumb .vid-play {
-  position: static;
-  background: none;
-}
-.ex-video-btn.no-thumb .vid-play-inner {
-  width: 36px;
-  height: 36px;
-  font-size: 0.8rem;
 }
 
 .set-tracker {

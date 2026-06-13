@@ -252,104 +252,23 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   flex-shrink: 0;
 }
 
-/* Video thumbnail button */
+/* Video play button in exercise card */
 .ex-video-btn {
-  display: block;
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  border: 1px solid var(--border);
-  background: #111;
+  background: rgba(255,77,109,0.1);
+  border: 1px solid rgba(255,77,109,0.3);
+  color: var(--primary);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-xs);
   cursor: pointer;
-  margin-top: 0.5rem;
-  transition: transform 0.2s, box-shadow 0.2s;
+  font-size: 0.72rem;
+  font-weight: 700;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: var(--font);
+  line-height: 1.6;
+  margin-top: 0.25rem;
 }
 .ex-video-btn:hover {
-  transform: scale(1.01);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
-.ex-video-btn:active {
-  transform: scale(0.99);
-}
-.ex-video-btn img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.ex-video-btn .play-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.35);
-  transition: background 0.2s;
-}
-.ex-video-btn:hover .play-overlay {
-  background: rgba(0,0,0,0.2);
-}
-.ex-video-btn .play-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: rgba(233,69,96,0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  color: #fff;
-  transition: transform 0.2s;
-}
-.ex-video-btn:hover .play-icon {
-  transform: scale(1.1);
-}
-.ex-video-btn .vid-duration {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  background: rgba(0,0,0,0.75);
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  letter-spacing: 0.5px;
-}
-.ex-video-btn .vid-label {
-  position: absolute;
-  bottom: 6px;
-  left: 6px;
-  background: rgba(0,0,0,0.75);
-  color: #fff;
-  font-size: 0.65rem;
-  font-weight: 600;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-}
-/* Fallback when thumbnail fails to load */
-.ex-video-btn.no-thumb {
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 80px;
-}
-.ex-video-btn.no-thumb img { display: none; }
-.ex-video-btn.no-thumb .play-overlay {
-  position: static;
-  background: none;
-}
-/* Playing state — iframe fills the container */
-.ex-video-btn.playing {
-  border: none;
-  cursor: default;
-}
-.ex-video-btn.playing:hover {
-  transform: none;
-  box-shadow: none;
+  background: rgba(255,77,109,0.2);
 }
 
 .set-tracker {
@@ -873,46 +792,31 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   color: #fff;
 }
 
-/* Video overlay — professional player */
+/* Video overlay */
 .video-overlay {
-  display: flex;
+  display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0);
-  backdrop-filter: blur(0px);
-  -webkit-backdrop-filter: blur(0px);
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   z-index: 1000;
   align-items: center;
   justify-content: center;
   padding: 1rem;
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.video-overlay.show {
-  opacity: 1;
-  pointer-events: auto;
-  background: rgba(0,0,0,0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
+.video-overlay.show { display: flex; }
 
 .video-modal {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   width: 100%;
-  max-width: 800px;
+  max-width: 720px;
   overflow: hidden;
-  box-shadow: 0 8px 60px rgba(0,0,0,0.6);
-  transform: scale(0.92) translateY(20px);
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.video-overlay.show .video-modal {
-  transform: scale(1) translateY(0);
+  box-shadow: var(--shadow-lg);
 }
 
 .video-modal-header {
@@ -926,9 +830,6 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 .video-modal-title {
   font-weight: 700;
   font-size: 0.9rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .video-close {
@@ -944,7 +845,6 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  flex-shrink: 0;
 }
 
 .video-close:hover {
@@ -956,7 +856,6 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   position: relative;
   width: 100%;
   padding-top: 56.25%;
-  background: #000;
 }
 
 .video-wrapper iframe {
@@ -964,40 +863,6 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   inset: 0;
   width: 100%;
   height: 100%;
-}
-
-/* Video loading spinner */
-.video-loader {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  background: #000;
-  z-index: 1;
-  transition: opacity 0.3s;
-}
-.video-loader.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-.video-loader .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255,255,255,0.15);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: vidSpin 0.7s linear infinite;
-}
-@keyframes vidSpin {
-  to { transform: rotate(360deg); }
-}
-.video-loader .loader-text {
-  font-size: 0.75rem;
-  color: rgba(255,255,255,0.5);
-  font-weight: 500;
 }
 
 /* Exercise video */
@@ -1369,24 +1234,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   max-height: 300px;
 }
 
-/* Variant video thumbnail */
-.variant-video-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.75rem;
-  color: var(--primary);
-  cursor: pointer;
-  font-weight: 600;
-  padding: 0.3rem 0.6rem;
-  border-radius: var(--radius-xs);
-  background: rgba(233,69,96,0.08);
-  transition: background 0.2s;
-}
-.variant-video-btn:hover {
-  background: rgba(233,69,96,0.18);
-}
-
+/* Variant video container */
 .variant-video-container {
   margin-top: 0.5rem;
   border-radius: var(--radius-sm);

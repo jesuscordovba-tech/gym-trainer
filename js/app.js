@@ -342,11 +342,7 @@
     }
     h += '</div></div>'
     if (activeEx.video) {
-      h += '<div class="ex-video-btn" data-video="' + esc(activeEx.video) + '" data-name="' + esc(activeEx.name) + '" title="Ver demostración: ' + esc(activeEx.name) + '">'
-      h += '<img src="https://img.youtube.com/vi/' + esc(activeEx.video) + '/mqdefault.jpg" alt="" loading="lazy" onerror="this.parentElement.classList.add(\'no-thumb\')">'
-      h += '<div class="play-overlay"><div class="play-icon">▶</div></div>'
-      h += '<span class="vid-label">' + esc(activeEx.name) + '</span>'
-      h += '</div>'
+      h += '<button class="ex-video-btn" data-video="' + esc(activeEx.video) + '" title="Ver demostración">▶ Video</button>'
     }
     h += '</div></div>'
     return h
@@ -444,13 +440,8 @@
     container.querySelectorAll('.swap-btn').forEach(btn => {
       btn.addEventListener('click', showVariants)
     })
-    container.querySelectorAll('.ex-video-btn').forEach(el => {
-      el.addEventListener('click', function () {
-        const id = this.dataset.video
-        if (!id || this.querySelector('iframe')) return
-        this.classList.add('playing')
-        this.innerHTML = '<iframe src="https://www.youtube.com/embed/' + id + '?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" style="display:block;width:100%;height:100%;position:absolute;inset:0;"></iframe>'
-      })
+    container.querySelectorAll('.ex-video-btn').forEach(btn => {
+      btn.addEventListener('click', openVideo)
     })
     const resetBtn = document.getElementById('resetDay')
     if (resetBtn) {
@@ -875,71 +866,31 @@
     renderWorkout(_addExDay)
   })
 
-  /* === Video Modal — Professional Player === */
-  let _currentVideoName = ''
-
+  /* === Video Modal === */
   function setupVideo() {
-    const overlay = document.getElementById('videoOverlay')
-    overlay.addEventListener('click', e => {
+    document.getElementById('videoOverlay').addEventListener('click', e => {
       if (e.target === e.currentTarget) closeVideo()
     })
     document.getElementById('videoClose').addEventListener('click', closeVideo)
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') closeVideo()
     })
-    const iframe = document.getElementById('videoIframe')
-    iframe.addEventListener('load', () => {
-      document.getElementById('videoLoader').classList.add('hidden')
-    })
-    let startY = 0, currentY = 0, isDragging = false
-    overlay.addEventListener('touchstart', e => {
-      if (e.target === overlay) {
-        startY = e.touches[0].clientY
-        isDragging = true
-      }
-    }, { passive: true })
-    overlay.addEventListener('touchmove', e => {
-      if (!isDragging) return
-      currentY = e.touches[0].clientY
-      const diff = currentY - startY
-      if (diff > 0) {
-        overlay.style.transform = 'translateY(' + Math.min(diff * 0.5, 100) + 'px)'
-        overlay.style.opacity = 1 - Math.min(diff / 400, 0.5)
-      }
-    }, { passive: true })
-    overlay.addEventListener('touchend', () => {
-      if (!isDragging) return
-      isDragging = false
-      const diff = currentY - startY
-      if (diff > 80) {
-        closeVideo()
-      }
-      overlay.style.transform = ''
-      overlay.style.opacity = ''
-    }, { passive: true })
   }
 
   function openVideo() {
     const url = this.dataset.video
     if (!url) return
-    _currentVideoName = this.dataset.name || 'Demostración'
     const iframe = document.getElementById('videoIframe')
-    if (!iframe) return
-    const loader = document.getElementById('videoLoader')
-    loader.classList.remove('hidden')
-    const embedUrl = url.match(/^https?:\/\//) ? url : 'https://www.youtube.com/embed/' + url + '?autoplay=1&controls=1&rel=0&modestbranding=1'
-    document.getElementById('videoModalTitle').textContent = '📺 ' + _currentVideoName
+    if (!iframe) { console.warn('Video error: no iframe'); return }
+    const embedUrl = url.match(/^https?:\/\//) ? url : 'https://www.youtube.com/embed/' + url + '?autoplay=1&controls=1&rel=0'
+    document.getElementById('videoModalTitle').textContent = '📺 Demostración'
     iframe.src = embedUrl
     document.getElementById('videoOverlay').classList.add('show')
   }
 
   function closeVideo() {
-    const overlay = document.getElementById('videoOverlay')
-    const iframe = document.getElementById('videoIframe')
-    overlay.classList.remove('show')
-    iframe.src = ''
-    document.getElementById('videoLoader').classList.add('hidden')
-    _currentVideoName = ''
+    document.getElementById('videoOverlay').classList.remove('show')
+    document.getElementById('videoIframe').src = ''
   }
 
   /* === Variant Overlay === */

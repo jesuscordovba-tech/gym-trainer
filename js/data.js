@@ -120,10 +120,10 @@ const dietPlan = {
   ],
 
   mealStructure: [
-    { name: 'Desayuno', pct: 0.25, icon: '🌅' },
-    { name: 'Almuerzo', pct: 0.35, icon: '🍗' },
-    { name: 'Merienda', pct: 0.15, icon: '🥜' },
-    { name: 'Cena', pct: 0.25, icon: '🌙' },
+    { name: 'Desayuno', pct: 0.25, icon: '' },
+    { name: 'Almuerzo', pct: 0.35, icon: '' },
+    { name: 'Merienda', pct: 0.15, icon: '' },
+    { name: 'Cena', pct: 0.25, icon: '' },
   ],
 
   foods: {

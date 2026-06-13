@@ -275,7 +275,7 @@
   <!-- Header -->
   <header class="app-header">
     <div class="header-inner">
-      <div class="logo">💪 <span>GYM</span>TRAINER</div>
+      <div class="logo"><span>GYM</span>TRAINER</div>
       <span class="sync-indicator" id="syncIndicator"><span class="spinner"></span>Guardando...</span>
       <nav class="main-nav" id="mainNav">
         <button data-tab="workoutTab" class="active">Entreno</button>
@@ -306,7 +306,7 @@
     </div>
 
     <div id="machinesTab" class="tab-content hidden">
-      <h2 style="margin-bottom:1.25rem;font-size:1.2rem;">🏋️ Máquinas del Gym</h2>
+      <h2 style="margin-bottom:1.25rem;font-size:1.2rem;">Máquinas del Gym</h2>
       <div id="machinesContent"></div>
     </div>
 
@@ -328,7 +328,7 @@
   <div class="video-overlay" id="videoOverlay">
     <div class="video-modal">
       <div class="video-modal-header">
-        <span class="video-modal-title" id="videoModalTitle">📺 Demostración</span>
+        <span class="video-modal-title" id="videoModalTitle">Demostración</span>
         <button class="video-close" id="videoClose">✕</button>
       </div>
       <div class="video-wrapper">
@@ -353,7 +353,7 @@
   <div class="variant-overlay" id="variantOverlay">
     <div class="variant-modal">
       <div class="variant-modal-header">
-        <span class="variant-modal-title">🔄 Cambiar ejercicio</span>
+        <span class="variant-modal-title">Cambiar ejercicio</span>
         <button class="variant-close" id="variantClose">✕</button>
       </div>
       <div class="variant-list" id="variantList"></div>
@@ -364,7 +364,7 @@
   <div class="variant-overlay" id="rirOverlay">
     <div class="variant-modal">
       <div class="variant-modal-header">
-        <span class="variant-modal-title">📝 Registrar serie</span>
+        <span class="variant-modal-title">Registrar serie</span>
         <button class="variant-close" id="rirClose">✕</button>
       </div>
       <div id="rirForm">
@@ -408,7 +408,7 @@
   <div class="variant-overlay" id="coachOverlay">
     <div class="variant-modal" style="width:420px;max-width:92vw;height:70vh;display:flex;flex-direction:column;">
       <div class="variant-modal-header">
-        <span class="variant-modal-title">🤖 Coach IA</span>
+        <span class="variant-modal-title">Coach IA</span>
         <button class="variant-close" id="coachClose">✕</button>
       </div>
       <div id="coachMessages" style="flex:1;overflow-y:auto;padding:0.5rem 0;font-size:0.85rem;line-height:1.4;white-space:pre-wrap;"></div>
@@ -423,7 +423,7 @@
   <div class="variant-overlay" id="exHistoryOverlay">
     <div class="variant-modal" style="width:400px;max-width:92vw;">
       <div class="variant-modal-header">
-        <span class="variant-modal-title">📈 Historial del ejercicio</span>
+        <span class="variant-modal-title">Historial del ejercicio</span>
         <button class="variant-close" id="exHistoryClose">✕</button>
       </div>
       <div id="exHistoryContent"></div>
@@ -431,12 +431,12 @@
   </div>
 
   <!-- Floating coach button -->
-  <button id="coachFab" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;width:56px;height:56px;border-radius:50%;background:var(--primary);color:#fff;border:none;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:none;">🤖</button>
+  <button id="coachFab" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;width:56px;height:56px;border-radius:50%;background:var(--primary);color:#fff;border:none;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:none;">C</button>
 
-  <script src="js/data.js?v=29"></script>
-  <script src="js/auth.js?v=29"></script>
-  <script src="js/db.js?v=29"></script>
-  <script src="js/app.js?v=29"></script>
+  <script src="js/data.js?v=30"></script>
+  <script src="js/auth.js?v=30"></script>
+  <script src="js/db.js?v=30"></script>
+  <script src="js/app.js?v=30"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {})

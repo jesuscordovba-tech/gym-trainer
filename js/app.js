@@ -30,7 +30,7 @@
 
     if (!hasToken) {
       box.innerHTML = `
-        <h1>💪 <span>GYM</span>TRAINER</h1>
+        <h1><span>GYM</span>TRAINER</h1>
         <p style="color:var(--text-dim);font-size:0.85rem;margin-bottom:1.25rem;">
           Para usar la app necesitas un token de GitHub con scope <strong>gist</strong>.
         </p>
@@ -46,7 +46,7 @@
         document.getElementById('tokenSetupBtn').textContent = 'Validando...'
         const valid = await db.validateToken(t)
         if (!valid) {
-          document.getElementById('lockError').textContent = '❌ Token inválido o expirado — genera uno nuevo en GitHub con scope gist'
+          document.getElementById('lockError').textContent = 'Token inválido o expirado — genera uno nuevo en GitHub con scope gist'
           document.getElementById('tokenSetupBtn').disabled = false
           document.getElementById('tokenSetupBtn').textContent = 'Guardar Token'
           return
@@ -62,7 +62,7 @@
     }
 
     box.innerHTML = `
-      <h1>💪 <span>GYM</span>TRAINER</h1>
+      <h1><span>GYM</span>TRAINER</h1>
       <div id="loginMode" style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1rem;">Ingresa tu usuario y PIN</div>
       <input type="text" id="loginUsername" class="lock-input" placeholder="Usuario" autocomplete="username" style="letter-spacing:0;font-size:1rem;-webkit-text-security:none;">
       <input type="password" id="loginPin" class="lock-input" placeholder="PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password">
@@ -114,13 +114,13 @@
         if (pin !== pin2) { error.textContent = 'Los PIN no coinciden'; btn.disabled = false; return }
         btn.textContent = 'Registrando...'
         const r = await db.registerUser(username, pin, createDefaultProfile())
-        if (r.ok) { screen.classList.add('hidden'); showToast('🎉 Usuario registrado correctamente'); initApp(); return }
+        if (r.ok) { screen.classList.add('hidden'); showToast('Usuario registrado correctamente'); initApp(); return }
         error.textContent = r.error || 'Error'
         btn.disabled = false; btn.textContent = 'Registrarse'
       } else {
         btn.textContent = 'Entrando...'
         const r = await db.loginUser(username, pin)
-        if (r.ok) { screen.classList.add('hidden'); showToast('👋 Bienvenido, ' + esc(username)); initApp(); return }
+        if (r.ok) { screen.classList.add('hidden'); showToast('Bienvenido, ' + esc(username)); initApp(); return }
         if (r.error === 'Usuario no registrado') {
           error.textContent = 'Usuario no existe. ¿Quieres registrarte?'
           setMode('register')
@@ -176,7 +176,7 @@
 
   function initApp() {
     const wasReset = db.checkWeekReset()
-    if (wasReset) { showToast('🔄 Nueva semana — progreso reiniciado') }
+    if (wasReset) { showToast('Nueva semana — progreso reiniciado') }
     db.archiveCurrentWeek()
 
     let totalSets = 0
@@ -240,8 +240,8 @@
     if (!document.getElementById('logoutBtn')) {
       const lb = document.createElement('button')
       lb.id = 'logoutBtn'
-      lb.textContent = '🚪'
-      lb.style.cssText = 'background:none;border:none;font-size:1.1rem;cursor:pointer;opacity:0.5;margin-left:auto;padding:0.25rem 0.4rem;transition:opacity 0.2s;'
+      lb.textContent = 'Salir'
+      lb.style.cssText = 'background:none;border:none;font-size:0.8rem;cursor:pointer;opacity:0.6;margin-left:auto;padding:0.25rem 0.5rem;transition:opacity 0.2s;color:var(--text-dim);'
       lb.title = 'Cerrar sesión'
       lb.addEventListener('click', async () => {
         if (confirm('¿Cerrar sesión?')) {
@@ -299,15 +299,15 @@
     let h = '<div class="exercise-item' + (isCustom ? ' custom-exercise' : '') + (isSuperset ? ' superset-item' : '') + '" data-day="' + dayIndex + '" data-ex="' + exKey + '">'
     h += '<div class="exercise-top">'
     h += '<div class="exercise-info">'
-    h += '<div class="exercise-name"><button class="ex-history-btn" data-key="' + dataKey + '" data-name="' + esc(activeEx.name) + '" title="Ver historial">📈</button> ' + esc(activeEx.name)
+    h += '<div class="exercise-name"><button class="ex-history-btn" data-key="' + dataKey + '" data-name="' + esc(activeEx.name) + '" title="Ver historial">Hist</button> ' + esc(activeEx.name)
     if (activeEx.supersetWith) h += '<span class="superset-badge">SUPERSET</span>'
     if (isSwapped) h += '<span class="swapped-badge">↻</span>'
     if (isCustom) h += '<span class="swapped-badge" style="background:var(--green);">✚</span>'
     h += '</div>'
     h += '<div class="exercise-meta">'
-    h += '<span>🔁 ' + activeEx.sets + '×' + esc(activeEx.reps) + '</span>'
-    h += '<span>⏱ ' + activeEx.rest + 's</span>'
-    h += '<span>📌 RIR ' + activeEx.rir + '</span>'
+    h += '<span>' + activeEx.sets + '×' + esc(activeEx.reps) + '</span>'
+    h += '<span>' + activeEx.rest + 's</span>'
+    h += '<span>RIR ' + activeEx.rir + '</span>'
     h += '</div>'
     h += '<div>'
     h += '<span class="machine-badge">' + esc(machine ? machine.name : activeEx.machine) + '</span>'
@@ -318,7 +318,7 @@
     h += '<input type="number" class="weight-input" value="' + weight + '" data-key="' + dataKey + '" data-muscle="' + esc(activeEx.muscle) + '" data-exname="' + esc(activeEx.name) + '" placeholder="kg">'
     h += '<span class="wt-indicator"></span>'
     if (!weight && defaultKg) h += '<span class="weight-suggest">Inicia: ' + defaultKg + ' kg</span>'
-    else if (nextW) h += '<span class="weight-rec">⬆ ' + nextW + ' kg</span>'
+    else if (nextW) h += '<span class="weight-rec">' + nextW + ' kg</span>'
     h += '</div></div>'
     h += '<div class="exercise-controls">'
     h += '<div class="set-tracker">'
@@ -361,7 +361,7 @@
     const botMsgs = profile ? workoutPlan.validateWorkout(profile) : []
     let html = [
       '<div class="bot-card">',
-      '<div class="bot-card-title">🤖 Coach — Análisis de tu rutina</div>',
+      '<div class="bot-card-title">Coach — Análisis de tu rutina</div>',
       botMsgs.map(m => '<div class="bot-msg">' + m + '</div>').join(''),
       '</div>',
     ].join('') + [
@@ -373,7 +373,7 @@
       '<div class="focus">' + esc(d.focus) + '</div>',
       '<div class="focus-note">' + esc(workoutPlan.getFocusNote(profile)) + '</div>',
       '</div>',
-      '<div class="warmup-box"><strong>🔥 Calentamiento:</strong> ' + esc(d.warmup) + '</div>',
+      '<div class="warmup-box"><strong>Calentamiento:</strong> ' + esc(d.warmup) + '</div>',
     ].join('')
 
     d.exercises.forEach((ex, exIdx) => {
@@ -407,17 +407,17 @@
 
     html += [
       '<div class="cardio-card">',
-      '<h3>🏃 Cardio — ' + esc(d.cardio.type) + '</h3>',
+      '<h3>Cardio — ' + esc(d.cardio.type) + '</h3>',
       '<div class="cardio-detail">',
       '<div class="cardio-item"><strong>Máquina</strong>' + esc(gymData.getMachineById(d.cardio.machine)?.name || d.cardio.machine) + '</div>',
       '<div class="cardio-item"><strong>Duración</strong>' + esc(d.cardio.duration) + '</div>',
       '<div class="cardio-item"><strong>Protocolo</strong>' + esc(d.cardio.protocol) + '</div>',
       '</div></div>',
-      '<div class="cooldown-box"><strong>🧘 Enfriamiento:</strong> ' + esc(d.cooldown) + '</div>',
+      '<div class="cooldown-box"><strong>Enfriamiento:</strong> ' + esc(d.cooldown) + '</div>',
     ].join('') + (function() {
       const today = new Date().toISOString().split('T')[0]
       const cal = db.getCalories()
-      return '<div class="calorie-section"><h3>🔥 Calorías del entrenamiento</h3><div class="calorie-row"><input type="number" id="calInput" class="weight-input" value="' + (cal[today] || '') + '" placeholder="kcal" min="0" style="width:100px;"><span class="cal-unit">kcal</span><button class="reset-btn" id="saveCalBtn">Guardar</button></div><div id="calHistory" style="font-size:0.8rem;color:var(--text-dim);margin-top:0.5rem;"></div></div>'
+      return '<div class="calorie-section"><h3>Calorías del Entrenamiento</h3><div class="calorie-row"><input type="number" id="calInput" class="weight-input" value="' + (cal[today] || '') + '" placeholder="kcal" min="0" style="width:100px;"><span class="cal-unit">kcal</span><button class="reset-btn" id="saveCalBtn">Guardar</button></div><div id="calHistory" style="font-size:0.8rem;color:var(--text-dim);margin-top:0.5rem;"></div></div>'
     })() + [
       '<div class="reset-day-wrap">',
       '<button class="reset-btn" id="resetDay">Reiniciar progreso del día</button>',
@@ -478,11 +478,11 @@
     document.getElementById('saveCalBtn')?.addEventListener('click', () => {
       const today = new Date().toISOString().split('T')[0]
       const val = parseInt(document.getElementById('calInput').value, 10)
-      if (!val || val < 0) { showToast('⚠️ Ingresa un número válido'); return }
+      if (!val || val < 0) { showToast('Ingresa un número válido'); return }
       const cal = db.getCalories()
       cal[today] = val
       db.setCalories(cal)
-      showToast('🔥 ' + val + ' kcal guardadas')
+      showToast(val + ' kcal guardadas')
       renderWorkout(dayIndex)
     })
     /* Show calorie history for this week */
@@ -501,7 +501,7 @@
         const c = cal[key]
         if (c) { total += c; lines.push('<span>' + days[d.getDay()] + ': ' + c + ' kcal</span>') }
       }
-      calHistory.innerHTML = lines.length ? '📊 Esta semana: ' + total + ' kcal · ' + lines.join(' · ') : ''
+      calHistory.innerHTML = lines.length ? 'Esta semana: ' + total + ' kcal · ' + lines.join(' · ') : ''
     }
 
     /* Timer button */
@@ -566,7 +566,7 @@
         cw[day + '-' + ex] = { name: src.name, machine: src.machine, sets: src.sets, reps: src.reps, rest: src.rest, rir: src.rir, muscle: src.muscle, video: src.video }
         db.setCustomWorkout(cw)
         overlay.classList.remove('show')
-        showToast('✅ Ejercicio cambiado: ' + esc(src.name))
+        showToast('Ejercicio cambiado: ' + esc(src.name))
         renderWorkout(day)
       })
     })
@@ -617,7 +617,7 @@
     if (progress[day][rawEx] > setsCompleted) recordTrainingDay()
     const wasMilestone = progress[day][rawEx] >= maxSets && setsCompleted < maxSets
     db.setProgress(progress)
-    if (wasMilestone) showToast('✅ Ejercicio completado — ' + maxSets + '/' + maxSets + ' series')
+    if (wasMilestone) showToast('Ejercicio completado — ' + maxSets + '/' + maxSets + ' series')
 
     // Show RIR logging overlay
     const dataKey = btn.closest('.exercise-item')?.querySelector('.weight-input')?.dataset?.key || day + '-' + rawEx
@@ -640,7 +640,7 @@
       delete weights[key]
     }
     db.setWeights(weights)
-    showToast('✅ Peso guardado: ' + inp.value + ' kg')
+    showToast('Peso guardado: ' + inp.value + ' kg')
     /* Show inline weight indicator */
     const indicator = inp.parentNode.querySelector('.wt-indicator')
     if (indicator && profile && inp.value) {
@@ -650,10 +650,10 @@
       const range = getWeightRange(muscle, bw)
       if (range && kg > 0) {
         const ratio = kg / bw
-        if (ratio > range.maxRatio * 1.15) indicator.textContent = '⚠️ Muy pesado'
-        else if (ratio > range.maxRatio) indicator.textContent = '⚡ Pesado'
-        else if (ratio < range.minRatio * 0.85) indicator.textContent = '🔼 Liviano'
-        else indicator.textContent = '✅'
+        if (ratio > range.maxRatio * 1.15) indicator.textContent = 'Muy pesado'
+        else if (ratio > range.maxRatio) indicator.textContent = 'Pesado'
+        else if (ratio < range.minRatio * 0.85) indicator.textContent = 'Liviano'
+        else indicator.textContent = '✓'
       }
     }
   }
@@ -716,14 +716,14 @@
     const overlay = document.getElementById('rirOverlay')
     const selected = document.querySelector('#rirSelect button[data-selected]')
     const rir = selected ? parseInt(selected.textContent, 10) : -1
-    if (rir < 0) { showToast('⚠️ Selecciona un RIR'); return }
+    if (rir < 0) { showToast('Selecciona un RIR'); return }
     const note = document.getElementById('rirNote').value.trim()
     const notes = db.getNotes()
     if (!notes[_rirKey]) notes[_rirKey] = []
     notes[_rirKey][_rirSet] = { rir, note }
     db.setNotes(notes)
     overlay.classList.remove('show')
-    showToast('📝 Serie registrada — RIR ' + rir + (note ? ' · ' + note : ''))
+    showToast('Serie registrada — RIR ' + rir + (note ? ' · ' + note : ''))
     renderWorkout(_rirDay)
   })
 
@@ -838,7 +838,7 @@
   })
   document.getElementById('addExSave')?.addEventListener('click', async () => {
     const name = document.getElementById('addExName').value.trim()
-    if (!name) { showToast('⚠️ Escribe un nombre para el ejercicio'); return }
+    if (!name) { showToast('Escribe un nombre para el ejercicio'); return }
     const ex = {
       name,
       machine: document.getElementById('addExMachine').value,
@@ -855,12 +855,12 @@
       ce[_addExDay][_editExIdx] = ex
       await db.setCustomExercises(ce)
       document.getElementById('addExOverlay').classList.remove('show')
-      showToast('✅ Ejercicio actualizado: ' + esc(ex.name))
+      showToast('Ejercicio actualizado: ' + esc(ex.name))
     } else {
       ce[_addExDay].push(ex)
       await db.setCustomExercises(ce)
       document.getElementById('addExOverlay').classList.remove('show')
-      showToast('✅ Ejercicio agregado: ' + esc(ex.name))
+      showToast('Ejercicio agregado: ' + esc(ex.name))
     }
     renderWorkout(_addExDay)
   })
@@ -883,7 +883,7 @@
     if (!iframe) return
     const name = this.dataset.name || 'Demostración'
     const embedUrl = url.match(/^https?:\/\//) ? url : 'https://www.youtube.com/embed/' + url + '?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1'
-    document.getElementById('videoModalTitle').textContent = '📺 ' + name
+    document.getElementById('videoModalTitle').textContent = name
     iframe.src = embedUrl
     document.getElementById('videoOverlay').classList.add('show')
   }
@@ -909,7 +909,7 @@
 
     document.getElementById('coachFab')?.addEventListener('click', () => {
       document.getElementById('coachOverlay').classList.add('show')
-      if (!coachMessages.children.length) addCoachMsg('🤖 Coach', '¡Hola! Soy tu coach con IA. Pregúntame sobre tu rutina, pesos, técnica, o cualquier duda de entrenamiento.')
+      if (!coachMessages.children.length) addCoachMsg('Coach', '¡Hola! Soy tu coach con IA. Pregúntame sobre tu rutina, pesos, técnica, o cualquier duda de entrenamiento.')
       coachInput.focus()
     })
     document.getElementById('coachClose')?.addEventListener('click', () => document.getElementById('coachOverlay').classList.remove('show'))
@@ -1012,11 +1012,11 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
         }
         const data = await res.json()
         const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.choices?.[0]?.message?.content
-        if (reply) { addCoachMsg('🤖 Coach', reply) }
-        else { console.error('Coach respuesta cruda:', JSON.stringify(data)); addCoachMsg('🤖 Coach', '⚠️ No pude generar respuesta — revisa la consola (F12) para más detalles.') }
+        if (reply) { addCoachMsg('Coach', reply) }
+        else { console.error('Coach respuesta cruda:', JSON.stringify(data)); addCoachMsg('Coach', 'No pude generar respuesta — revisa la consola (F12) para más detalles.') }
       } catch (e) {
         console.warn('Coach error:', e)
-        addCoachMsg('🤖 Coach', '⚠️ Error: ' + (e.message.includes('429') ? 'Demasiadas solicitudes — espera un minuto y vuelve a intentar.\n\n💡 Ve a https://aistudio.google.com/apikey, checa tu cuota o genera una key nueva.' : e.message.includes('403') ? 'API key inválida — ve a Ajustes y actualiza tu key' : e.message))
+        addCoachMsg('Coach', 'Error: ' + (e.message.includes('429') ? 'Demasiadas solicitudes — espera un minuto y vuelve a intentar.\n\nVe a https://aistudio.google.com/apikey, checa tu cuota o genera una key nueva.' : e.message.includes('403') ? 'API key inválida — ve a Ajustes y actualiza tu key' : e.message))
       }
       coachSend.disabled = false; coachSend.textContent = 'Enviar'
     }
@@ -1045,16 +1045,16 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
   function renderMachines() {
     const container = document.getElementById('machinesContent')
     const categories = [
-      { key: 'cardio', label: 'Cardio', icon: '🏃' },
-      { key: 'pecho', label: 'Pecho', icon: '💪' },
-      { key: 'espalda', label: 'Espalda', icon: '🔙' },
-      { key: 'hombros', label: 'Hombros', icon: '🏋️' },
-      { key: 'biceps', label: 'Bíceps', icon: '💪' },
-      { key: 'triceps', label: 'Tríceps', icon: '💪' },
-      { key: 'piernas', label: 'Piernas', icon: '🦵' },
-      { key: 'abdominales', label: 'Abdominales', icon: '🧠' },
-      { key: 'pesoLibre', label: 'Peso Libre', icon: '🏋️' },
-      { key: 'funcional', label: 'Funcional', icon: '⚡' },
+      { key: 'cardio', label: 'Cardio' },
+      { key: 'pecho', label: 'Pecho' },
+      { key: 'espalda', label: 'Espalda' },
+      { key: 'hombros', label: 'Hombros' },
+      { key: 'biceps', label: 'Bíceps' },
+      { key: 'triceps', label: 'Tríceps' },
+      { key: 'piernas', label: 'Piernas' },
+      { key: 'abdominales', label: 'Abdominales' },
+      { key: 'pesoLibre', label: 'Peso Libre' },
+      { key: 'funcional', label: 'Funcional' },
     ]
 
     let html = ''
@@ -1062,7 +1062,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const machines = gymData.machines[cat.key]
       if (!machines || !machines.length) return
       html += '<div class="category-section">'
-      html += '<div class="category-title">' + cat.icon + ' ' + esc(cat.label) + '</div>'
+      html += '<div class="category-title">' + esc(cat.label) + '</div>'
       html += '<div class="machine-grid">'
       machines.forEach(m => {
         html += '<div class="machine-item">' + esc(m.name) + '</div>'
@@ -1121,13 +1121,13 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const trainingDays = getTrainingCount()
 
     let html = [
-      '<h2>📊 Tu Progreso</h2>',
+      '<h2>Tu Progreso</h2>',
       '<div class="week-info-bar">',
-      '<span>📅 ' + esc(formatDate(now)) + '</span>',
-      '<span>📆 Semana ' + weekNum + ' de ' + now.getFullYear() + '</span>',
-      '<span>🏋️ ' + trainingDays + ' día' + (trainingDays !== 1 ? 's' : '') + ' entrenando</span>',
+      '<span>' + esc(formatDate(now)) + '</span>',
+      '<span>Semana ' + weekNum + ' de ' + now.getFullYear() + '</span>',
+      '<span>' + trainingDays + ' día' + (trainingDays !== 1 ? 's' : '') + ' entrenando</span>',
       '</div>',
-      '<div class="restore-banner" style="background:rgba(255,77,109,0.05);border-color:rgba(255,77,109,0.1);font-size:0.82rem;">🔍 Progreso: ' + Object.keys(progress).length + ' días · ' + weekId + (fallbackSource ? ' ← ' + fallbackSource : '') + ' · Historial: ' + Object.keys(db.getHistory()).length + ' semanas' + (Object.keys(db.getHistory()).length > 0 ? ' · <button id="restoreFromHistory" style="background:var(--primary);border:none;color:#fff;padding:0.15rem 0.5rem;border-radius:var(--radius-xs);cursor:pointer;font-weight:700;font-size:0.78rem;">Restaurar</button>' : '') + '</div>',
+      '<div class="restore-banner" style="background:rgba(255,77,109,0.05);border-color:rgba(255,77,109,0.1);font-size:0.82rem;">Progreso: ' + Object.keys(progress).length + ' días · ' + weekId + (fallbackSource ? ' ← ' + fallbackSource : '') + ' · Historial: ' + Object.keys(db.getHistory()).length + ' semanas' + (Object.keys(db.getHistory()).length > 0 ? ' · <button id="restoreFromHistory" style="background:var(--primary);border:none;color:#fff;padding:0.15rem 0.5rem;border-radius:var(--radius-xs);cursor:pointer;font-weight:700;font-size:0.78rem;">Restaurar</button>' : '') + '</div>',
       '<div class="progress-stats">',
       '<div class="stat-card"><div class="stat-value">' + pct + '%</div><div class="stat-label">Progreso global</div></div>',
       '<div class="stat-card"><div class="stat-value">' + totalSetsDone + '</div><div class="stat-label">Series completadas</div></div>',
@@ -1153,9 +1153,9 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
 
     /* === Charts === */
     html += [
-      '<h3 style="margin-top:2rem;">📈 Volumen semanal</h3>',
+      '<h3 style="margin-top:2rem;">Volumen Semanal</h3>',
       '<div class="chart-container"><canvas id="volumeChart" width="800" height="300"></canvas></div>',
-      '<h3 style="margin-top:1.5rem;">📊 Progresión de pesos</h3>',
+      '<h3 style="margin-top:1.5rem;">Progresión de Pesos</h3>',
       '<p class="settings-description">Últimos pesos registrados por ejercicio</p>',
       '<div class="chart-container"><canvas id="weightChart" width="800" height="300"></canvas></div>',
     ].join('')
@@ -1176,7 +1176,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const yearWeeks = Object.keys(historyData).filter(k => k.startsWith(year + '-W') && k !== currentWeekStr).sort()
 
     if (yearWeeks.length > 0) {
-      html += '<h3 style="margin-top:2rem;">📆 Historial ' + year + '</h3>'
+      html += '<h3 style="margin-top:2rem;">Historial ' + year + '</h3>'
       html += '<div class="progress-stats">'
       html += '<div class="stat-card"><div class="stat-value">' + yearStats.totalSets + '</div><div class="stat-label">Series totales</div></div>'
       html += '<div class="stat-card"><div class="stat-value">' + yearStats.totalDays + '</div><div class="stat-label">Días entrenados</div></div>'
@@ -1226,14 +1226,14 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
         if (e && e.progress && Object.keys(e.progress).length > 0) {
           db.setProgress(JSON.parse(JSON.stringify(e.progress)))
           if (e.weights) db.setWeights(JSON.parse(JSON.stringify(e.weights)))
-          showToast('✅ Progreso restaurado')
+          showToast('Progreso restaurado')
           renderDaySelector()
           renderWorkout(currentDay)
           renderProgress()
           return
         }
       }
-      showToast('⚠️ No hay datos de progreso en el historial')
+      showToast('No hay datos de progreso en el historial')
     })
   }
 
@@ -1354,7 +1354,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const keys = Object.keys(photos).sort()
 
     let html = [
-      '<h2>📸 Fotos de Progreso</h2>',
+      '<h2>Fotos de Progreso</h2>',
       '<p class="settings-description">Tómate una foto cada semana para ver tu evolución</p>',
     ].join('')
 
@@ -1373,7 +1373,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     }
     html += '<div class="photo-upload-row">'
     ;['front','back','side'].forEach(angle => {
-      const label = { front: '🤳 Frente', back: '🔙 Espalda', side: '↔️ Lado' }[angle]
+      const label = { front: 'Frente', back: 'Espalda', side: 'Lado' }[angle]
       html += '<label class="photo-upload-btn" data-angle="' + angle + '">' + label + '<input type="file" accept="image/*" capture="environment" class="photo-input" data-angle="' + angle + '" style="display:none;"></label>'
     })
     html += '</div>'
@@ -1384,7 +1384,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
 
     /* History gallery */
     if (keys.length > 0) {
-      html += '<h3 style="margin-top:2rem;">📖 Historial</h3>'
+      html += '<h3 style="margin-top:2rem;">Historial</h3>'
       html += '<div class="photo-gallery">'
       keys.slice().reverse().forEach(wk => {
         const p = photos[wk]
@@ -1428,7 +1428,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
             photos[curKey][angle] = dataUrl
             db.setPhotos(photos)
             renderPhotos()
-            showToast('✅ Foto guardada')
+            showToast('Foto guardada')
           }
           img.src = e.target.result
         }
@@ -1465,7 +1465,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const labelNames = { neck: 'Cuello', shoulders: 'Hombros', chest: 'Pecho', bicep: 'Brazo', waist: 'Cintura', hip: 'Cadera', thigh: 'Pierna', calf: 'Pantorrilla' }
 
     let html = [
-      '<h2>📏 Mediciones Corporales</h2>',
+      '<h2>Mediciones Corporales</h2>',
       '<p class="settings-description">Registra tus medidas cada semana para ver tu progreso</p>',
       '<div class="measures-form"><div class="measures-grid">',
     ].join('')
@@ -1476,7 +1476,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     html += '</div><button class="reset-btn" id="saveMeasures" style="margin-top:1rem;">Guardar medidas</button></div>'
 
     if (measures.length > 0) {
-      html += '<h3 style="margin-top:2rem;">📊 Evolución</h3>'
+      html += '<h3 style="margin-top:2rem;">Evolución</h3>'
       html += '<div class="chart-container"><canvas id="measuresChart" width="800" height="300"></canvas></div>'
       html += '<div class="measures-table-wrap"><table class="measures-table"><thead><tr><th>Fecha</th>'
       labels.forEach(k => { html += '<th>' + labelNames[k] + '</th>' })
@@ -1500,13 +1500,13 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
         const v = parseFloat(document.getElementById('m-' + k)?.value)
         if (!isNaN(v) && v > 0) { entry[k] = v; hasAny = true }
       })
-      if (!hasAny) { showToast('⚠️ Ingresa al menos una medida'); return }
+      if (!hasAny) { showToast('Ingresa al menos una medida'); return }
       const measures = db.getMeasurements()
       measures.push(entry)
       db.setMeasurements(measures)
       renderMeasures()
       drawMeasuresChart()
-      showToast('✅ Medidas guardadas')
+      showToast('Medidas guardadas')
     })
     if (measures.length > 0) drawMeasuresChart()
   }
@@ -1588,7 +1588,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const weeks = Object.keys(history).sort()
     const fullHistory = db.getHistory()
 
-    let html = '<div class="exh-header"><h3>📈 ' + esc(exName) + '</h3></div>'
+    let html = '<div class="exh-header"><h3>' + esc(exName) + '</h3></div>'
 
     /* Weight progression */
     const weightEntries = []
@@ -1692,7 +1692,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       db.setTimer(data)
       btn.textContent = '▶ ' + getTimerDisplay(_timerSeconds)
       btn.classList.remove('timer-active')
-      showToast('⏱ Timer pausado')
+      showToast('Timer pausado')
     } else {
       const data = db.getTimer() || {}
       if (!_timerInterval) {
@@ -1706,7 +1706,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       }, 1000)
       btn.textContent = '⏱ ' + getTimerDisplay(_timerSeconds)
       btn.classList.add('timer-active')
-      showToast('⏱ Timer iniciado')
+      showToast('Timer iniciado')
     }
   }
 
@@ -1766,7 +1766,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     }
 
     if (stalling.length > 0) {
-      let html = '<div class="plateau-section"><h3>⚠️ Estancamiento detectado</h3><p class="settings-description">Estos ejercicios llevan 3+ semanas con el mismo peso:</p>'
+      let html = '<div class="plateau-section"><h3>Estancamiento Detectado</h3><p class="settings-description">Estos ejercicios llevan 3+ semanas con el mismo peso:</p>'
       stalling.forEach(s => {
         html += '<div class="plateau-item"><span class="plateau-ex">' + esc(s.exName) + '</span><span class="plateau-day">' + esc(s.day) + '</span><span class="plateau-wt">' + esc(s.weight) + ' kg</span></div>'
       })
@@ -1791,7 +1791,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     } else {
       supersets[exKey] = true
       btn.classList.add('superset-active')
-      showToast('✅ Superset activado — completa las series y alterna')
+      showToast('Superset activado — completa las series y alterna')
     }
     db.setSupersets(supersets)
   }
@@ -1805,7 +1805,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const m = plan.macros
 
     let html = [
-      '<h2>🥗 Plan de Alimentación</h2>',
+      '<h2>Plan de Alimentación</h2>',
       '<div class="diet-macro-bar">',
       '<div class="diet-macro"><span class="diet-macro-label">Calorías</span><span class="diet-macro-val">' + m.calories + ' kcal</span></div>',
       '<div class="diet-macro"><span class="diet-macro-label">Proteína</span><span class="diet-macro-val">' + m.protein + ' g</span></div>',
@@ -1813,7 +1813,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<div class="diet-macro"><span class="diet-macro-val fat">' + m.fat + ' g</span><span class="diet-macro-label">Grasas</span></div>',
       '</div>',
       '<p class="diet-subtext">Distribución basada en evidencia científica. Proteína ~2g/kg, Grasa ~0.9g/kg, resto carbohidratos.</p>',
-      '<p class="diet-rotation">🔄 Los ejemplos rotan automáticamente cada día — ' + esc(formatDate(new Date())) + '</p>',
+      '<p class="diet-rotation">Los ejemplos rotan automáticamente cada día — ' + esc(formatDate(new Date())) + '</p>',
     ].join('')
 
     plan.structure.forEach((meal, i) => {
@@ -1823,9 +1823,9 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const fat = Math.round(m.fat * meal.pct)
 
       html += '<div class="diet-meal-card">'
-      html += '<div class="diet-meal-header">' + meal.icon + ' ' + esc(meal.name) + '<span class="diet-meal-cal">' + cal + ' kcal</span></div>'
+      html += '<div class="diet-meal-header">' + esc(meal.name) + '<span class="diet-meal-cal">' + cal + ' kcal</span></div>'
       html += '<div class="diet-meal-macros">P: ' + protein + 'g · C: ' + carbs + 'g · G: ' + fat + 'g</div>'
-      html += '<div class="diet-meal-examples-title">🔹 Ejemplos (elige 1 por comida):</div>'
+      html += '<div class="diet-meal-examples-title">Ejemplos (elige 1 por comida):</div>'
       html += '<div class="diet-examples">'
 
       const examples = getMealExamples(i, protein, carbs, fat)
@@ -1845,7 +1845,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     })
 
     html += '<div class="diet-refs">'
-    html += '<h3>📚 Referencias científicas</h3>'
+    html += '<h3>Referencias Científicas</h3>'
     dietPlan.nutritionists.forEach(n => {
       html += '<div class="diet-ref"><strong>' + esc(n.name) + '</strong> — ' + esc(n.title) + '<br><span class="diet-ref-cite">' + esc(n.cite) + '</span></div>'
     })
@@ -1925,9 +1925,9 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const idealW = (profile.heightCm - 100).toFixed(0)
 
     container.innerHTML = [
-      '<h2>⚙️ Ajustes</h2>',
+      '<h2>Ajustes</h2>',
       '<div class="card">',
-      '<div class="card-title">👤 Tu Perfil — <span style="color:var(--primary)">' + esc(username) + '</span></div>',
+      '<div class="card-title">Tu Perfil — <span style="color:var(--primary)">' + esc(username) + '</span></div>',
       '<div class="settings-edit-grid">',
       '<label>Edad <input type="number" id="editAge" value="' + profile.age + '" min="10" max="120"></label>',
       '<label>Altura (cm) <input type="number" id="editHeight" value="' + profile.heightCm + '" min="100" max="250"></label>',
@@ -1946,16 +1946,16 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<div class="settings-profile-grid">',
       '<div><span class="settings-field-label">Metabolismo basal</span><strong class="settings-field-value" id="dispBmr">' + profile.bmr + ' kcal/día</strong></div>',
       '<div><span class="settings-field-label">Gasto diario (TDEE)</span><strong class="settings-field-value" id="dispTdee">' + profile.tdee + ' kcal/día</strong></div>',
-      '<div><span class="settings-field-label settings-deficit">🔥 Déficit sugerido</span><strong class="settings-field-value settings-deficit-val" id="dispDeficit">' + profile.deficitCalories + ' kcal/día</strong></div>',
+      '<div><span class="settings-field-label settings-deficit">Déficit sugerido</span><strong class="settings-field-value settings-deficit-val" id="dispDeficit">' + profile.deficitCalories + ' kcal/día</strong></div>',
       '<div><span class="settings-field-label">Peso ideal aprox</span><strong class="settings-field-value">' + idealW + ' kg (' + Math.round(idealW * 2.205) + ' lb)</strong></div>',
       '</div>',
       '<p class="settings-diet-tip">',
-      '🍗 Come ~' + profile.deficitCalories + ' kcal/día con alta proteína (1.6-2.2g/kg) para perder grasa sin perder músculo.</p>',
+      'Come ~' + profile.deficitCalories + ' kcal/día con alta proteína (1.6-2.2g/kg) para perder grasa sin perder músculo.</p>',
       '</div>',
 
       /* Sync section */
       '<div class="card">',
-      '<div class="card-title">☁️ Respaldo en la nube</div>',
+      '<div class="card-title">Respaldo en la Nube</div>',
       '<p class="settings-description">',
       'Los datos se guardan localmente y se sincronizan automáticamente con un Gist privado de GitHub cada 15s.',
       ' Así puedes acceder a tu información desde cualquier dispositivo con el mismo token.</p>',
@@ -1967,8 +1967,8 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       hasToken ? 'Actualizar' : 'Conectar', '</button>',
       '</div></div>',
       '<div class="settings-token-row" style="margin-top:0.75rem;gap:0.5rem;">',
-      '<button id="pushGistBtn" class="reset-btn"' + (!hasToken ? ' disabled style="opacity:0.4"' : '') + '>⬆ Subir a Gist</button>',
-      '<button id="pullGistBtn" class="reset-btn"' + (!hasToken ? ' disabled style="opacity:0.4"' : '') + '>⬇ Bajar de Gist</button>',
+      '<button id="pushGistBtn" class="reset-btn"' + (!hasToken ? ' disabled style="opacity:0.4"' : '') + '>Subir a Gist</button>',
+      '<button id="pullGistBtn" class="reset-btn"' + (!hasToken ? ' disabled style="opacity:0.4"' : '') + '>Bajar de Gist</button>',
       '</div>',
       '<div id="syncStatus" class="settings-sync-status"></div>',
       '<p class="settings-gist-id">',
@@ -1977,7 +1977,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
 
       /* AI Coach */
       '<div class="card">',
-      '<div class="card-title">🤖 Coach IA</div>',
+      '<div class="card-title">Coach IA</div>',
       '<div class="settings-edit-grid">',
       '<label>Proveedor <select id="aiProviderSelect" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.5rem;border-radius:var(--radius-sm);font-size:0.9rem;">',
       '<option value="gemini"' + (aiProvider === 'gemini' ? ' selected' : '') + '>Gemini (aistudio.google.com)</option>',
@@ -1990,29 +1990,29 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<button id="saveAiBtn" class="reset-btn" style="margin-top:0.75rem;">' + (aiKey ? 'Actualizar' : 'Conectar') + ' Coach IA</button>',
       '<div id="aiStatus" class="settings-sync-status"></div>',
       '<p style="font-size:0.75rem;color:var(--text-dim);margin-top:0.5rem;">',
-      '💡 <strong>Groq</strong> (gratis): <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color:var(--primary)">console.groq.com/keys</a> — 30 req/min, no necesita tarjeta.',
+      '<strong>Groq</strong> (gratis): <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color:var(--primary)">console.groq.com/keys</a> — 30 req/min, no necesita tarjeta.',
       ' · <strong>Gemini</strong> (gratis): <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--primary)">aistudio.google.com/apikey</a>',
       '</p>',
       '</div>',
 
       /* Export */
       '<div class="card">',
-      '<div class="card-title">📤 Exportar datos</div>',
+      '<div class="card-title">Exportar Datos</div>',
       '<p class="settings-description">Descarga tus datos como JSON (completo) o CSV (progresión de pesos).</p>',
       '<div class="settings-sync-actions">',
-      '<button class="reset-btn" id="exportJsonBtn">⬇ Exportar JSON</button>',
-      '<button class="reset-btn" id="exportCsvBtn">⬇ Exportar CSV (pesos)</button>',
+      '<button class="reset-btn" id="exportJsonBtn">Exportar JSON</button>',
+      '<button class="reset-btn" id="exportCsvBtn">Exportar CSV (pesos)</button>',
       '</div>',
       '</div>',
 
       /* Security info */
       '<div class="card">',
-      '<div class="card-title">🛡️ Seguridad</div>',
+      '<div class="card-title">Seguridad</div>',
       '<ul class="settings-security-list">',
-      '<li>🔐 Datos encriptados con AES-256-GCM antes de subir</li>',
-      '<li>📡 Comunicación HTTPS con GitHub API</li>',
-      '<li>🛡️ Content Security Policy activa</li>',
-      '<li>💾 Token guardado solo en tu navegador</li>',
+      '<li>Datos encriptados con AES-256-GCM antes de subir</li>',
+      '<li>Comunicación HTTPS con GitHub API</li>',
+      '<li>Content Security Policy activa</li>',
+      '<li>Token guardado solo en tu navegador</li>',
       '</ul>',
       '</div>',
     ].join('')
@@ -2025,7 +2025,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       p.weightLb = parseInt(document.getElementById('editWeight').value, 10) || 165
       p.gender = document.getElementById('editGender').value
       await db.setProfile(p)
-      showToast('✅ Perfil actualizado')
+      showToast('Perfil actualizado')
       renderSettings()
       renderDiet()
     })
@@ -2042,40 +2042,40 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       saveBtn.textContent = 'Validando...'
       const valid = await db.validateToken(newToken)
       if (!valid) {
-        syncStatus.textContent = '❌ Token inválido o expirado'
+        syncStatus.textContent = 'Token inválido o expirado'
         syncStatus.style.color = 'var(--primary)'
         saveBtn.disabled = false
         saveBtn.textContent = hasToken ? 'Actualizar' : 'Conectar'
         return
       }
       db.setToken(newToken)
-      showToast('✅ Token de GitHub guardado')
+      showToast('Token de GitHub guardado')
       renderSettings()
     })
 
     document.getElementById('pushGistBtn')?.addEventListener('click', async () => {
       const st = document.getElementById('syncStatus')
-      st.textContent = '⏳ Subiendo...'; st.style.color = 'var(--text-dim)'
+      st.textContent = 'Subiendo...'; st.style.color = 'var(--text-dim)'
       const ok = await db.pushToGist()
-      st.textContent = ok ? '✅ Datos subidos correctamente' : '❌ Error al subir'
+      st.textContent = ok ? 'Datos subidos correctamente' : 'Error al subir'
       st.style.color = ok ? 'var(--green)' : 'var(--primary)'
-      if (ok) showToast('⬆ Datos respaldados en Gist')
+      if (ok) showToast('Datos respaldados en Gist')
     })
 
     document.getElementById('pullGistBtn')?.addEventListener('click', async () => {
       const st = document.getElementById('syncStatus')
-      st.textContent = '⏳ Descargando...'; st.style.color = 'var(--text-dim)'
+      st.textContent = 'Descargando...'; st.style.color = 'var(--text-dim)'
       const ok = await db.syncFromGist()
       if (ok) {
-        st.textContent = '✅ Datos restaurados desde la nube'
+        st.textContent = 'Datos restaurados desde la nube'
         st.style.color = 'var(--green)'
-        showToast('⬇ Datos restaurados')
+        showToast('Datos restaurados desde la nube')
         renderSettings()
         renderWorkout(currentDay)
         renderProgress()
         renderDiet()
       } else {
-        st.textContent = '❌ No hay datos en la nube o PIN incorrecto'
+        st.textContent = 'No hay datos en la nube o PIN incorrecto'
         st.style.color = 'var(--primary)'
       }
     })
@@ -2085,7 +2085,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const st = document.getElementById('aiStatus')
       aiProvider = document.getElementById('aiProviderSelect').value
       const key = document.getElementById('aiKeyInput').value.trim()
-      if (!key) { st.textContent = '❌ Ingresa una API key'; return }
+      if (!key) { st.textContent = 'Ingresa una API key'; return }
       aiKey = key
       aiUrl = document.getElementById('aiUrlInput')?.value.trim() || 'https://api.groq.com/openai/v1'
       aiModel = document.getElementById('aiModelInput')?.value.trim() || 'llama-3.3-70b-versatile'
@@ -2093,10 +2093,10 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       localStorage.setItem(LS_PREFIX + 'key', aiKey)
       localStorage.setItem(LS_PREFIX + 'url', aiUrl)
       localStorage.setItem(LS_PREFIX + 'model', aiModel)
-      st.textContent = '✅ Coach IA configurado'
+      st.textContent = 'Coach IA configurado'
       st.style.color = 'var(--green)'
       updateCoachFab()
-      showToast('🤖 Coach IA activado')
+      showToast('Coach IA activado')
     })
     document.getElementById('aiProviderSelect')?.addEventListener('change', function () {
       const isOpenAI = this.value === 'openai'
@@ -2118,7 +2118,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
         exportedAt: new Date().toISOString(),
       }
       downloadFile(JSON.stringify(data, null, 2), 'gym-trainer-backup.json', 'application/json')
-      showToast('✅ Datos exportados como JSON')
+      showToast('Datos exportados como JSON')
     })
     document.getElementById('exportCsvBtn')?.addEventListener('click', () => {
       const weights = db.getWeights()
@@ -2144,7 +2144,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       }
       const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n')
       downloadFile(csv, 'gym-trainer-weights.csv', 'text/csv')
-      showToast('✅ Pesos exportados como CSV')
+      showToast('Pesos exportados como CSV')
     })
   }
 

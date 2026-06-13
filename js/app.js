@@ -614,7 +614,7 @@
     const indicator = inp.parentNode.querySelector('.wt-indicator')
     if (indicator && profile && inp.value) {
       const kg = parseFloat(inp.value)
-      const bw = profile.weightKg
+      const bw = parseFloat(profile.weightKg)
       const muscle = (inp.dataset.muscle || '').toLowerCase()
       const range = getWeightRange(muscle, bw)
       if (range && kg > 0) {
@@ -632,7 +632,7 @@
     const ranges = [
       { kw: ['pectoral','pecho','press banca','bench'], min: 0.5, max: 1.3 },
       { kw: ['espalda','back','remo','pulldown','jalón','dorsal'], min: 0.5, max: 1.2 },
-      { kw: ['hombro','shoulder','press militar','overhead'], min: 0.25, max: 0.7 },
+      { kw: ['hombro','shoulder','press militar','overhead','deltoides','deltoid'], min: 0.25, max: 0.7 },
       { kw: ['cuádriceps','quad','pierna','leg','sentadilla','squat','prensa'], min: 0.8, max: 2.2 },
       { kw: ['isquiotibial','hamstring','femoral','curl pierna'], min: 0.3, max: 0.8 },
       { kw: ['glúteo','glute'], min: 0.6, max: 1.5 },
@@ -640,7 +640,7 @@
       { kw: ['tríceps','triceps'], min: 0.12, max: 0.35 },
       { kw: ['abdominal','core','abs'], min: 0.1, max: 0.3 },
       { kw: ['trapecio','trap','encogimiento'], min: 0.3, max: 0.8 },
-      { kw: ['gemelo','calf','pantorrilla'], min: 0.5, max: 1.2 },
+      { kw: ['gemelo','calf','pantorrilla','sóleo','soleo','soleus'], min: 0.5, max: 1.2 },
       { kw: ['general','peso libre'], min: 0.3, max: 0.8 },
     ]
     for (const r of ranges) {
@@ -1119,11 +1119,13 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '</div>',
     ].join('')
 
-    /* === Year history === */
+    /* === Year history (exclude current week) === */
     const year = now.getFullYear()
-    const yearStats = db.getYearStats(year)
+    const currentWeekNum = getISOWeek(now)
+    const currentWeekStr = year + '-W' + String(currentWeekNum).padStart(2, '0')
+    const yearStats = db.getYearStats(year, currentWeekStr)
     const historyData = db.getHistory()
-    const yearWeeks = Object.keys(historyData).filter(k => k.startsWith(year + '-W')).sort()
+    const yearWeeks = Object.keys(historyData).filter(k => k.startsWith(year + '-W') && k !== currentWeekStr).sort()
 
     if (yearWeeks.length > 0) {
       html += '<h3 style="margin-top:2rem;">📆 Historial ' + year + '</h3>'

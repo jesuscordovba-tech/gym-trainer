@@ -13,6 +13,7 @@ function createDefaultProfile() {
 }
 
 const gymData = {
+  categories: ['cardio', 'pecho', 'espalda', 'hombros', 'biceps', 'triceps', 'piernas', 'abdominales', 'pesoLibre', 'funcional'],
   machines: {
     cardio: [
       { id: 'caminadora', name: 'Caminadora' },
@@ -87,7 +88,7 @@ const gymData = {
     ],
     pesoLibre: [
       { id: 'mancuernas', name: 'Mancuernas (2-50 kg)' },
-      { id: 'barras-olicas', name: 'Barras Olímpicas' },
+      { id: 'barras-olimpicas', name: 'Barras Olímpicas' },
       { id: 'barra-ez', name: 'Barra EZ' },
       { id: 'rack-sentadillas', name: 'Rack para Sentadillas' },
       { id: 'power-rack', name: 'Jaula de Potencia (Power Rack)' },

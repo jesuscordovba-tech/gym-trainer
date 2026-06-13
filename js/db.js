@@ -397,10 +397,10 @@
       return false
     }
 
-    function getYearStats(year) {
+    function getYearStats(year, excludeWeek) {
       if (!data || !data.history) return { year, weeks: 0, totalSets: 0, totalDays: 0, setsPerWeek: 0 }
       const prefix = year + '-W'
-      const weeks = Object.keys(data.history).filter(k => k.startsWith(prefix)).sort()
+      const weeks = Object.keys(data.history).filter(k => k.startsWith(prefix) && k !== excludeWeek).sort()
       let totalSets = 0, totalDays = 0
       weeks.forEach(wk => {
         const h = data.history[wk]

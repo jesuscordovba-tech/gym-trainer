@@ -252,31 +252,29 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   flex-shrink: 0;
 }
 
-/* Video button — clean icon + text */
+/* Video button — circular icon matching other control buttons */
 .ex-video-btn {
+  background: none;
+  border: 1px solid rgba(233,69,96,0.3);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 0.7rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  background: rgba(233,69,96,0.08);
-  border: 1px solid rgba(233,69,96,0.2);
-  color: var(--primary);
-  padding: 0.3rem 0.6rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 600;
-  transition: background 0.15s, border-color 0.15s;
+  justify-content: center;
+  transition: all 0.2s;
+  line-height: 1;
   flex-shrink: 0;
+  color: var(--primary);
 }
 .ex-video-btn:hover {
-  background: rgba(233,69,96,0.16);
-  border-color: rgba(233,69,96,0.4);
+  background: rgba(233,69,96,0.1);
+  border-color: var(--primary);
 }
 .ex-video-btn:active {
-  background: rgba(233,69,96,0.22);
-}
-.ex-video-btn .vid-icon {
-  font-size: 0.65rem;
+  background: rgba(233,69,96,0.2);
 }
 
 .set-tracker {

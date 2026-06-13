@@ -342,6 +342,15 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   position: static;
   background: none;
 }
+/* Playing state — iframe fills the container */
+.ex-video-btn.playing {
+  border: none;
+  cursor: default;
+}
+.ex-video-btn.playing:hover {
+  transform: none;
+  box-shadow: none;
+}
 
 .set-tracker {
   display: flex;

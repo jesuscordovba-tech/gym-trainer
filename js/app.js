@@ -342,11 +342,11 @@
     }
     h += '</div></div>'
     if (activeEx.video) {
-      h += '<button class="ex-video-btn" data-video="' + esc(activeEx.video) + '" data-name="' + esc(activeEx.name) + '" title="Ver demostración: ' + esc(activeEx.name) + '">'
+      h += '<div class="ex-video-btn" data-video="' + esc(activeEx.video) + '" data-name="' + esc(activeEx.name) + '" title="Ver demostración: ' + esc(activeEx.name) + '">'
       h += '<img src="https://img.youtube.com/vi/' + esc(activeEx.video) + '/mqdefault.jpg" alt="" loading="lazy" onerror="this.parentElement.classList.add(\'no-thumb\')">'
       h += '<div class="play-overlay"><div class="play-icon">▶</div></div>'
       h += '<span class="vid-label">' + esc(activeEx.name) + '</span>'
-      h += '</button>'
+      h += '</div>'
     }
     h += '</div></div>'
     return h
@@ -444,8 +444,13 @@
     container.querySelectorAll('.swap-btn').forEach(btn => {
       btn.addEventListener('click', showVariants)
     })
-    container.querySelectorAll('.ex-video-btn').forEach(btn => {
-      btn.addEventListener('click', openVideo)
+    container.querySelectorAll('.ex-video-btn').forEach(el => {
+      el.addEventListener('click', function () {
+        const id = this.dataset.video
+        if (!id || this.querySelector('iframe')) return
+        this.classList.add('playing')
+        this.innerHTML = '<iframe src="https://www.youtube.com/embed/' + id + '?autoplay=1&controls=1&rel=0&modestbranding=1" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" style="display:block;width:100%;height:100%;position:absolute;inset:0;"></iframe>'
+      })
     })
     const resetBtn = document.getElementById('resetDay')
     if (resetBtn) {

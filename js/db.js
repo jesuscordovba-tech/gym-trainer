@@ -65,6 +65,20 @@
       let encrypted = localStorage.getItem(userKey(u))
       let decrypted = encrypted ? await auth.decrypt(encrypted, pin) : null
 
+      // Try backup encrypted key if primary is corrupted
+      if (!decrypted) {
+        try {
+          const bak = localStorage.getItem(userKey(u) + '_bak')
+          if (bak) {
+            decrypted = await auth.decrypt(bak, pin)
+            if (decrypted) {
+              localStorage.setItem(userKey(u), bak)
+              localStorage.removeItem(userKey(u) + '_bak')
+            }
+          }
+        } catch {}
+      }
+
       // Fallback: try Gist if no local data (migration from old system)
       if (!decrypted && token) {
         try {
@@ -115,6 +129,19 @@
             if (res.status === 401) return { ok: false, error: 'Token de GitHub inválido o expirado — ve a Ajustes' }
           } catch {}
         }
+        // Fallback: try raw backup (saved by beforeunload)
+        try {
+          const raw = localStorage.getItem(userKey(u) + '_raw')
+          if (raw) {
+            const parsed = JSON.parse(raw)
+            if (parsed && parsed.profile) {
+              decrypted = parsed
+              localStorage.removeItem(userKey(u) + '_raw')
+            }
+          }
+        } catch {}
+      }
+      if (!decrypted) {
         return { ok: false, error: 'Usuario o PIN incorrecto' }
       }
 
@@ -146,6 +173,7 @@
         } catch {}
       }
 
+      setupBeforeUnload()
       startAutoSync()
       return { ok: true, data: decrypted }
     }
@@ -160,7 +188,7 @@
           const encrypted = await auth.encrypt(data, _pin)
           localStorage.setItem(userKey(_username), encrypted)
           await pushToGist()
-        } catch {}
+        } catch (e) { console.warn('Logout save error:', e) }
       }
       data = null
       _username = ''
@@ -183,6 +211,22 @@
     function getCalories() { return data ? (data.caloriesBurned || {}) : {} }
     function getNotes() { return data ? (data.notes || {}) : {} }
     async function setNotes(n) { if (data) { data.notes = n; archiveCurrentWeek(); schedulePersist() } }
+
+    /* --- Photos --- */
+    function getPhotos() { return data ? (data.photos || {}) : {} }
+    async function setPhotos(p) { if (data) { data.photos = p; schedulePersist() } }
+
+    /* --- Body Measurements --- */
+    function getMeasurements() { return data ? (data.measurements || []) : [] }
+    async function setMeasurements(m) { if (data) { data.measurements = m; schedulePersist() } }
+
+    /* --- Workout Timer --- */
+    function getTimer() { return data ? (data.workoutTimer || null) : null }
+    async function setTimer(t) { if (data) { data.workoutTimer = t; schedulePersist() } }
+
+    /* --- Supersets --- */
+    function getSupersets() { return data ? (data.supersets || {}) : {} }
+    async function setSupersets(s) { if (data) { data.supersets = s; schedulePersist() } }
 
     /* --- Persist (localStorage) --- */
 
@@ -258,6 +302,30 @@
     function stopAutoSync() {
       if (_autoPullTimer) { clearInterval(_autoPullTimer); _autoPullTimer = null }
       if (_visHandler) { document.removeEventListener('visibilitychange', _visHandler); _visHandler = null }
+    }
+
+    /* Flush pending writes on page close */
+    function setupBeforeUnload() {
+      window.addEventListener('beforeunload', (e) => {
+        if (_persistTimer) { clearTimeout(_persistTimer); _persistTimer = null }
+        if (_gistTimer) { clearTimeout(_gistTimer); _gistTimer = null }
+        if (data && _username && _pin) {
+          const key = userKey(_username)
+          // Preserve last valid encrypted data before we write
+          try {
+            const cur = localStorage.getItem(key)
+            if (cur && cur.length > 50) localStorage.setItem(key + '_bak', cur)
+          } catch {}
+          // Synchronous raw backup (always works)
+          try {
+            localStorage.setItem(key + '_raw', JSON.stringify(data))
+          } catch (e) { console.warn('Beforeunload raw backup error:', e) }
+          // Async encrypted save (best-effort, modern browsers wait for this)
+          auth.encrypt(data, _pin).then(en => {
+            localStorage.setItem(key, en)
+          }).catch(e => console.warn('Beforeunload persist error:', e))
+        }
+      })
     }
 
     /* --- Gist sync (manual backup/restore) --- */
@@ -366,17 +434,20 @@
       }
       if (storedWeek !== currentWeek) {
         const p = data.progress || {}
-        const hadProgress = Object.keys(p).length > 0
+        const w = data.weights || {}
+        const hadProgress = Object.keys(p).length > 0 || Object.keys(w).length > 0
         if (hadProgress) {
           const oldWeekId = getISOWeekString(new Date(storedWeek))
           const hist = data.history || {}
           const existing = hist[oldWeekId]
           if (existing) {
+            if (!existing.progress) existing.progress = {}
+            if (!existing.weights) existing.weights = {}
             for (const dk of Object.keys(p)) {
-              const day = parseInt(dk); if (isNaN(day)) continue
+              const day = parseInt(dk, 10); if (isNaN(day)) continue
               existing.progress[day] = existing.progress[day] || {}
               for (const ek of Object.keys(p[dk])) {
-                const ex = parseInt(ek); if (isNaN(ex)) continue
+                const ex = parseInt(ek, 10); if (isNaN(ex)) continue
                 if ((p[dk][ek] || 0) > (existing.progress[day][ex] || 0)) existing.progress[day][ex] = p[dk][ek]
               }
             }
@@ -394,6 +465,34 @@
         localStorage.setItem('gymapp_week', currentWeek)
         return hadProgress
       }
+      return false
+    }
+
+    function restoreLastWeek() {
+      if (!data) { console.warn('restoreLastWeek: no data'); return false }
+      const hist = data.history || {}
+      const weeks = Object.keys(hist).filter(k => /^\d{4}-W\d{2}$/.test(k)).sort()
+      for (let i = weeks.length - 1; i >= 0; i--) {
+        const h = hist[weeks[i]]
+        if (h && h.progress && Object.keys(h.progress).length > 0) {
+          data.progress = JSON.parse(JSON.stringify(h.progress))
+          if (h.weights) data.weights = JSON.parse(JSON.stringify(h.weights))
+          schedulePersist()
+          notify()
+          return true
+        }
+      }
+      for (const k of Object.keys(hist)) {
+        const h = hist[k]
+        if (h && h.progress && Object.keys(h.progress).length > 0) {
+          data.progress = JSON.parse(JSON.stringify(h.progress))
+          if (h.weights) data.weights = JSON.parse(JSON.stringify(h.weights))
+          schedulePersist()
+          notify()
+          return true
+        }
+      }
+      console.warn('restoreLastWeek: no suitable history entry found')
       return false
     }
 
@@ -415,7 +514,7 @@
       return { year, weeks: weeks.length, totalSets, totalDays, setsPerWeek: weeks.length ? Math.round(totalSets / weeks.length) : 0 }
     }
 
-    function onUpdate(cb) { listeners.push(cb) }
+    function onUpdate(cb) { listeners = [cb] }
     function notify() { listeners.forEach(cb => cb(data ? data.progress : {}, data ? data.weights : {})) }
 
     function getToken() { return token }
@@ -438,8 +537,12 @@
       getCustomExercises, setCustomExercises,
       getCalories, setCalories,
       getNotes, setNotes,
+      getPhotos, setPhotos,
+      getMeasurements, setMeasurements,
+      getTimer, setTimer,
+      getSupersets, setSupersets,
       getHistory, getHistoryWeek, getYearStats,
-      checkWeekReset, archiveCurrentWeek,
+      checkWeekReset, archiveCurrentWeek, restoreLastWeek,
       onUpdate, syncFromGist, pushToGist,
       startAutoSync, stopAutoSync,
       getToken, setToken, hasToken, validateToken,

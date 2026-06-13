@@ -282,6 +282,8 @@
         <button data-tab="progressTab">Progreso</button>
         <button data-tab="dietTab">Dieta</button>
         <button data-tab="machinesTab">Máquinas</button>
+        <button data-tab="photosTab">Fotos</button>
+        <button data-tab="measuresTab">Medidas</button>
         <button data-tab="settingsTab">Ajustes</button>
       </nav>
     </div>
@@ -304,8 +306,16 @@
     </div>
 
     <div id="machinesTab" class="tab-content hidden">
-      <h2 style="margin-bottom:1.5rem;">🏋️ Máquinas del Gym</h2>
+      <h2 style="margin-bottom:1.25rem;font-size:1.2rem;">🏋️ Máquinas del Gym</h2>
       <div id="machinesContent"></div>
+    </div>
+
+    <div id="photosTab" class="tab-content hidden">
+      <div id="photosContent"></div>
+    </div>
+
+    <div id="measuresTab" class="tab-content hidden">
+      <div id="measuresContent"></div>
     </div>
 
     <div id="settingsTab" class="tab-content hidden">
@@ -406,6 +416,17 @@
         <input type="text" id="coachInput" placeholder="Pregúntale al coach..." style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.6rem;border-radius:var(--radius-sm);font-size:0.85rem;">
         <button id="coachSend" class="reset-btn" style="padding:0.6rem 1rem;">Enviar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Exercise History Overlay -->
+  <div class="variant-overlay" id="exHistoryOverlay">
+    <div class="variant-modal" style="width:400px;max-width:92vw;">
+      <div class="variant-modal-header">
+        <span class="variant-modal-title">📈 Historial del ejercicio</span>
+        <button class="variant-close" id="exHistoryClose">✕</button>
+      </div>
+      <div id="exHistoryContent"></div>
     </div>
   </div>
 

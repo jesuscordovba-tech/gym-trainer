@@ -424,7 +424,7 @@
       html += renderExercise(dayIndex, ck, ex, setsCompleted, weight, defaultKg, nextW, ck, false, true)
     })
 
-    html += '<button class="reset-btn add-ex-btn" id="addCustomEx" style="margin-bottom:1rem;width:100%;">➕ Agregar ejercicio personalizado</button>'
+    html += '<button class="reset-btn add-ex-btn" id="addCustomEx" style="margin-bottom:1rem;width:100%;">Agregar ejercicio personalizado</button>'
 
     html += [
       '<div class="cardio-card">',
@@ -1091,7 +1091,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<span>Semana ' + weekNum + ' de ' + now.getFullYear() + '</span>',
       '<span>' + trainingDays + ' día' + (trainingDays !== 1 ? 's' : '') + ' entrenando</span>',
       '</div>',
-      '<div class="restore-banner" style="background:rgba(255,77,109,0.05);border-color:rgba(255,77,109,0.1);font-size:0.82rem;">Progreso: ' + Object.keys(progress).length + ' días · ' + weekId + (fallbackSource ? ' ← ' + fallbackSource : '') + ' · Historial: ' + Object.keys(db.getHistory()).length + ' semanas' + (Object.keys(db.getHistory()).length > 0 ? ' · <button id="restoreFromHistory" style="background:var(--primary);border:none;color:#fff;padding:0.15rem 0.5rem;border-radius:var(--radius-xs);cursor:pointer;font-weight:700;font-size:0.78rem;">Restaurar</button>' : '') + '</div>',
+      '<div class="restore-banner" style="background:rgba(255,77,109,0.05);border-color:rgba(255,77,109,0.1);font-size:0.82rem;">Progreso: ' + Object.keys(progress).length + ' días · ' + weekId + (fallbackSource ? ' ← ' + fallbackSource : '') + ' · Historial: ' + Object.keys(db.getHistory()).length + ' semanas' + (Object.keys(db.getHistory()).length > 0 ? ' · <button id="restoreFromBanner" style="background:var(--primary);border:none;color:#fff;padding:0.15rem 0.5rem;border-radius:var(--radius-xs);cursor:pointer;font-weight:700;font-size:0.78rem;">Restaurar</button>' : '') + '</div>',
       '<div class="progress-stats">',
       '<div class="stat-card"><div class="stat-value">' + pct + '%</div><div class="stat-label">Progreso global</div></div>',
       '<div class="stat-card"><div class="stat-value">' + totalSetsDone + '</div><div class="stat-label">Series completadas</div></div>',
@@ -1190,7 +1190,10 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
         navigator.share({ title: 'GYM TRAINER - Mi Progreso', text, url: location.href }).catch(() => {})
       }
     })
-    document.getElementById('restoreFromHistory')?.addEventListener('click', () => {
+    document.getElementById('restoreFromBanner')?.addEventListener('click', () => { restoreFromHistory() })
+    document.getElementById('restoreFromHistory')?.addEventListener('click', () => { restoreFromHistory() })
+
+    function restoreFromHistory() {
       const hist = db.getHistory()
       for (const k of Object.keys(hist)) {
         const e = hist[k]
@@ -1205,7 +1208,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
         }
       }
       showToast('No hay datos de progreso en el historial')
-    })
+    }
   }
 
   /* === Charts === */

@@ -117,11 +117,21 @@ Custom exercises can be edited (✎ button) in addition to being removed. Reuses
 ### Sync Indicator
 A small spinner ("Guardando...") appears in the header whenever data is being persisted locally, giving visual feedback.
 
+### Responsive Design
+- Mobile-first CSS with breakpoints at 360px, 480px, 640px, 768px, 1024px.
+- Day grid adapts: 3 columns on mobile, 6 on desktop.
+- Stats grid: 2 columns mobile, 4 on desktop.
+- Navigation scrolls horizontally on small screens.
+- All touch targets ≥ 36px, interactive elements have `tap-highlight-color: transparent`.
+- Safe area insets for notched devices.
+- Charts resize with window.
+
 ### UI/UX Improvements
 - Tab content fades in with a smooth animation.
 - Charts resize on window resize.
 - Loading spinners on coach chat requests.
 - Touch-friendly RIR selector buttons.
+- Compact header on mobile with scrollable nav.
 
 ## Build/Deploy
 No build step. Push to `main` branch, GitHub Pages serves from root.

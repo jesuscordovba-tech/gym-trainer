@@ -337,7 +337,7 @@
     if (activeEx.video) {
       h += '<div class="exercise-video-placeholder" data-video="' + esc(activeEx.video) + '"><span>▶</span></div>'
     }
-    h += '</div>'
+    h += '</div></div>'
     return h
   }
 

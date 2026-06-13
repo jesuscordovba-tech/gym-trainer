@@ -52,12 +52,17 @@ Main application logic. All code in an IIFE.
 - `renderWorkout(dayIndex)` — main workout view
 - `handleSetClick()` — marks a set as completed, auto-starts rest timer
 - `handleWeightChange()` — saves weight input
-- `recommendWeight(ex, currentKg, allDone)` — computes next weight (+2.5kg if RIR≤1, +1.25kg otherwise). Only active when all sets completed.
+- `recommendWeight(ex, currentKg, allDone)` — computes next weight (+2.5kg if RIR≤1, +1.25kg otherwise)
 - `startTimer()` / `showTimer()` / `hideTimer()` — rest timer with audio beep
-- `setupVideo()` / `openVideo()` / `closeVideo()` — video modal for individual videos (still used for future video-btn)
+- `toggleWorkoutTimer()` / `resetWorkoutTimer()` — workout session timer
+- `setupVideo()` / `openVideo()` / `closeVideo()` — video modal
+- `showExHistory(key, name)` — per-exercise history overlay
+- `renderPhotos()` — progress photos tab
+- `renderMeasures()` — body measurements tab
 - `renderMachines()` — machines tab
 - `renderProgress()` — progress tab (stats + per-day detail)
 - `renderSettings()` — settings tab (profile, PIN, GitHub token, sync)
+- `updatePlateauAlerts()` — detects stalled exercises
 - `esc(s)` — HTML-escape a string
 
 **DEFAULT_KG** — machine → starting kg mapping for initial weight suggestions.
@@ -79,9 +84,25 @@ New feature classes (lock screen, variant overlay, settings edit grid, swap/edit
 ## Features
 
 ### Video System
-Each exercise with a video shows a placeholder (▶). On click, it injects the YouTube iframe (muted autoplay, loop, controls). This saves mobile data vs loading all iframes on page load.
+Each exercise has a ▶ Video button. On click, opens a full overlay/modal with YouTube iframe (autoplay, controls).
 
-There's also a video overlay/modal for future use (individual exercise video popup).
+### Exercise History
+Each exercise shows a 📈 button. Displays historical weight progression for that exercise in a popup overlay.
+
+### Supersets
+Toggle superset mode per exercise (↔ button). Superset exercises highlighted with `.superset-item` class. Data persisted via `db.getSupersets()`.
+
+### Workout Timer
+Session timer (⏱ button in workout header). Tracks total elapsed time. Right-click to reset. Persisted via `db.getTimer()` and restored on page load.
+
+### Progress Photos
+Photos tab with front/back/side upload for each week. Uses `<input type="file" accept="image/*" capture="environment">` for camera access. Data persisted via `db.getPhotos()`.
+
+### Body Measurements
+Measures tab with neck, shoulders, chest, bicep, waist, hip, thigh, calf inputs. Data persisted via `db.getMeasures()`.
+
+### Plateau Alerts
+`updatePlateauAlerts()` detects exercises where weight hasn't increased in 3+ weeks and highlights them.
 
 ### Weight Recommendation
 Two states:

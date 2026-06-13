@@ -63,13 +63,18 @@ Main application logic. All code in an IIFE.
 **DEFAULT_KG** — machine → starting kg mapping for initial weight suggestions.
 
 ### `css/style.css`
-Dark theme. Responsive breakpoints:
-- 768px — tighter padding, smaller header
-- 640px — column layout for exercise-top, 2-column day-grid
-- 480px — 1-column day-grid, smaller stats, smaller set-dots
-- 360px — smallest screens, tiny text
+Dark theme. Base layout from `2caf7af` (clean, user-approved) merged with enhanced responsive breakpoints from `6cc547b`:
 
-Touch targets min 44px. `overflow-x: hidden` on body. `touch-action: manipulation` on interactive elements. `prefers-reduced-motion` respected. `safe-area-inset` for notched devices.
+**Responsive breakpoints:**
+- ≥768px (tablet/desktop) — wider padding, larger font sizes, 4-column stats
+- ≥1024px (large desktop) — 6-column day grid, 3-column machine grid  
+- ≤640px (mobile landscape) — column layout for exercise-top, compact nav
+- ≤480px (mobile portrait) — smaller set-dots, compact cards, 2-column grids
+- ≤360px (very small) — minimal padding, smallest touch targets
+
+Touch targets min 36-44px. `overflow-x: hidden` on body. `touch-action: manipulation` on interactive elements. `prefers-reduced-motion` respected. `safe-area-inset` for notched devices via `@supports`.
+
+New feature classes (lock screen, variant overlay, settings edit grid, swap/edit/remove buttons, bot card, coach FAB) are defined as inline `<style>` in `index.html` to avoid CSS bloat.
 
 ## Features
 

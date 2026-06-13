@@ -15,28 +15,22 @@
   --radius: 12px;
   --radius-sm: 8px;
   --shadow: 0 4px 20px rgba(0,0,0,.4);
-  --header-h: 56px;
 }
 
-html {
-  scroll-behavior: smooth;
-  -webkit-text-size-adjust: 100%;
-}
+html { scroll-behavior: smooth; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
-  line-height: 1.5;
+  line-height: 1.6;
   min-height: 100vh;
-  min-height: 100dvh;
   overflow-x: hidden;
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
-button, .day-card, .set-dot, .machine-item, .rest-timer-btn, .reset-btn {
+/* Touch & motion */
+button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-timer-btn, .reset-btn, .play-all-btn {
   touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -46,207 +40,170 @@ button, .day-card, .set-dot, .machine-item, .rest-timer-btn, .reset-btn {
   }
 }
 
-/* ===== HEADER ===== */
+/* Layout */
 .app-header {
   background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
   border-bottom: 1px solid var(--border);
+  padding: max(0.75rem, env(safe-area-inset-top)) 0;
   position: sticky;
   top: 0;
   z-index: 100;
-  padding-top: env(safe-area-inset-top);
 }
 
 .header-inner {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 0 0.75rem;
+  padding: 0 1.5rem;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  height: var(--header-h);
-  gap: 0.5rem;
 }
 
 .logo {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   font-weight: 800;
   letter-spacing: -.5px;
-  white-space: nowrap;
-  flex-shrink: 0;
 }
+
 .logo span { color: var(--primary); }
 
-/* Sync indicator */
-.sync-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.6rem;
-  color: var(--text-dim);
-  opacity: 0;
-  transition: opacity 0.3s;
-  flex-shrink: 0;
-}
-.sync-indicator.show { opacity: 1; }
-.sync-indicator .spinner {
-  width: 8px; height: 8px;
-  border: 1.5px solid var(--border);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-}
-
-/* Main nav */
 .main-nav {
   display: flex;
-  gap: 0.15rem;
-  overflow-x: auto;
-  flex: 1;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  justify-content: flex-end;
+  gap: 0.25rem;
+  flex-wrap: wrap;
 }
-.main-nav::-webkit-scrollbar { display: none; }
 
 .main-nav button {
   background: none;
   border: none;
   color: var(--text-dim);
-  padding: 0.4rem 0.6rem;
+  padding: 0.6rem 1rem;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 600;
   transition: all 0.2s;
-  min-height: 36px;
-  white-space: nowrap;
+  min-height: 44px;
 }
 
 .main-nav button:hover { color: var(--text); background: rgba(255,255,255,0.05); }
 .main-nav button.active { color: var(--primary); background: rgba(233,69,96,0.1); }
 
-/* ===== CONTENT ===== */
+/* Content */
 .content {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.5rem;
 }
 
-/* ===== TAB TRANSITIONS ===== */
-.tab-content {
-  animation: tabFadeIn 0.2s ease;
-}
-@keyframes tabFadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.hidden { display: none !important; }
-
-/* ===== CARDS ===== */
+/* Cards */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1.25rem;
-  margin-bottom: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
   box-shadow: var(--shadow);
 }
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
-.card-title { font-size: 1.1rem; font-weight: 700; }
 
-/* ===== DAY SELECTOR ===== */
+.card-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* Day selector */
 .day-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  margin-bottom: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2rem;
 }
 
 .day-card {
   background: var(--surface);
   border: 2px solid var(--border);
   border-radius: var(--radius);
-  padding: 0.7rem 0.5rem;
+  padding: 1rem;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s;
-  min-height: 60px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  min-height: 44px;
 }
 
-.day-card:hover { border-color: var(--primary-dim); }
-.day-card:active { transform: scale(0.97); }
+.day-card:hover { border-color: var(--primary-dim); transform: translateY(-2px); }
 .day-card.active { border-color: var(--primary); background: rgba(233,69,96,0.08); }
-.day-card .day-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
-.day-card .day-name { font-weight: 700; font-size: 0.85rem; margin: 0.15rem 0; word-break: break-word; }
-.day-card .day-focus { font-size: 0.7rem; color: var(--text-dim); }
+.day-card .day-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.day-card .day-name { font-weight: 700; margin: 0.3rem 0; word-break: break-word; }
+.day-card .day-focus { font-size: 0.8rem; color: var(--text-dim); }
 
-/* ===== WORKOUT ===== */
-.workout-header { margin-bottom: 1rem; }
-.workout-header h2 { font-size: 1.3rem; margin-bottom: 0.2rem; }
-.workout-header .focus { font-size: 0.85rem; color: var(--text-dim); }
-
-/* Bot card */
-.bot-card {
-  background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.65rem 0.85rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.8rem;
+/* Workout detail */
+.workout-header {
+  margin-bottom: 1.5rem;
 }
-.bot-card-title {
-  font-weight: 700;
-  color: var(--primary);
+
+.workout-header h2 {
+  font-size: 1.6rem;
   margin-bottom: 0.3rem;
-  font-size: 0.8rem;
 }
-.bot-msg { color: var(--text-dim); line-height: 1.4; }
 
-/* ===== EXERCISE ITEM ===== */
+.workout-header .focus { color: var(--text-dim); }
+
+/* Exercise list */
 .exercise-item {
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 0.75rem;
-  margin-bottom: 0.6rem;
-  transition: border-color 0.2s;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  transition: all 0.2s;
 }
-.exercise-item:active { border-color: var(--primary-dim); }
+
+.exercise-item:hover { border-color: var(--primary-dim); }
+
+.exercise-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.exercise-info { flex: 1; min-width: 0; }
 
 .exercise-name {
   font-weight: 700;
-  font-size: 0.95rem;
-  margin-bottom: 0.15rem;
+  font-size: 1.05rem;
+  margin-bottom: 0.2rem;
   word-break: break-word;
 }
 
 .exercise-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  font-size: 0.78rem;
+  gap: 0.75rem;
+  font-size: 0.85rem;
   color: var(--text-dim);
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.5rem;
 }
+
 .exercise-meta span {
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.25rem;
 }
 
 .machine-badge {
   display: inline-block;
   background: rgba(15,52,96,0.5);
   color: #5dade2;
-  font-size: 0.7rem;
-  padding: 0.15rem 0.4rem;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
   font-weight: 500;
 }
@@ -255,115 +212,69 @@ button, .day-card, .set-dot, .machine-item, .rest-timer-btn, .reset-btn {
   display: inline-block;
   background: rgba(233,69,96,0.1);
   color: var(--primary);
-  font-size: 0.7rem;
-  padding: 0.15rem 0.4rem;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
   font-weight: 500;
 }
 
-/* ===== WEIGHT ROW ===== */
-.weight-input-row {
-  display: flex;
-  gap: 0.4rem;
-  align-items: center;
-  margin-top: 0.4rem;
-  flex-wrap: wrap;
-}
-.weight-input {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 0.3rem 0.4rem;
-  border-radius: 4px;
-  width: 64px;
-  font-size: 0.85rem;
-  text-align: center;
-  min-height: 36px;
-}
-.weight-input:focus { outline: none; border-color: var(--primary); }
-.weight-label { font-size: 0.75rem; color: var(--text-dim); }
-.weight-rec {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: var(--green);
-  background: rgba(46,204,113,0.12);
-  padding: 0.12rem 0.35rem;
-  border-radius: 4px;
-  white-space: nowrap;
-}
-.weight-suggest {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--orange);
-  background: rgba(243,156,18,0.12);
-  padding: 0.12rem 0.4rem;
-  border-radius: 4px;
-  white-space: nowrap;
-}
-.wt-indicator { font-size: 0.65rem; white-space: nowrap; }
-
-/* ===== SET TRACKER ===== */
+/* Exercise controls */
 .exercise-controls {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.5rem;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  min-width: 100px;
 }
 
 .set-tracker {
   display: flex;
-  gap: 0.3rem;
+  gap: 0.35rem;
 }
 
 .set-dot {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 2px solid var(--border);
   background: transparent;
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: all 0.2s;
   color: var(--text-dim);
-  position: relative;
 }
+
 .set-dot.completed {
   background: var(--green);
   border-color: var(--green);
   color: white;
 }
+
 .set-dot.current {
   border-color: var(--primary);
   color: var(--primary);
 }
-.set-dot:active { transform: scale(0.9); }
 
-.ex-controls-row {
-  display: flex;
-  gap: 0.35rem;
-  align-items: center;
-}
+.set-dot:hover { border-color: var(--primary); }
 
 .rest-timer-btn {
   background: rgba(243,156,18,0.1);
   border: 1px solid var(--orange);
   color: var(--orange);
-  padding: 0.35rem 0.7rem;
+  padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 600;
   transition: all 0.2s;
-  min-height: 36px;
-  white-space: nowrap;
+  min-height: 44px;
 }
-.rest-timer-btn:active { background: rgba(243,156,18,0.3); }
+
+.rest-timer-btn:hover { background: rgba(243,156,18,0.2); }
 .rest-timer-btn.active { animation: pulse 1s infinite; }
 
 @keyframes pulse {
@@ -371,149 +282,449 @@ button, .day-card, .set-dot, .machine-item, .rest-timer-btn, .reset-btn {
   50% { opacity: 0.5; }
 }
 
-/* Swap / Edit / Remove buttons */
-.swap-btn, .edit-ex-btn, .remove-ex-btn {
+/* Timer modal */
+.timer-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.timer-overlay.show { display: flex; }
+
+.timer-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  text-align: center;
+  width: 90vw;
+  max-width: 400px;
+}
+
+.timer-display {
+  font-size: 4rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin: 1rem 0;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s;
+}
+
+.timer-label { color: var(--text-dim); margin-bottom: 1rem; }
+
+.timer-controls {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.timer-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.6rem 1.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  min-height: 44px;
+}
+
+.timer-btn:hover { background: var(--primary); border-color: var(--primary); }
+.timer-btn.skip { color: var(--orange); border-color: var(--orange); }
+.timer-btn.skip:hover { background: rgba(243,156,18,0.2); }
+
+/* Cardio section */
+.cardio-card {
+  background: linear-gradient(135deg, rgba(233,69,96,0.08), rgba(15,52,96,0.08));
+  border: 1px solid var(--primary-dim);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-top: 1rem;
+}
+
+.cardio-card h3 {
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cardio-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.cardio-item { font-size: 0.9rem; }
+.cardio-item strong { color: var(--text-dim); display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Warmup / Cooldown */
+.warmup-box, .cooldown-box {
+  background: rgba(46,204,113,0.05);
+  border: 1px solid rgba(46,204,113,0.2);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+
+.cooldown-box {
+  background: rgba(52,152,219,0.05);
+  border-color: rgba(52,152,219,0.2);
+}
+
+.warmup-box strong, .cooldown-box strong {
+  color: var(--green);
+  margin-right: 0.5rem;
+}
+
+.cooldown-box strong { color: #5dade2; }
+
+/* Weight tracking */
+.weight-input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.weight-input {
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
+  padding: 0.4rem 0.5rem;
+  border-radius: 4px;
+  width: 70px;
   font-size: 0.9rem;
+  text-align: center;
+}
+
+.weight-input:focus { outline: none; border-color: var(--primary); }
+.weight-label {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+.weight-rec {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--green);
+  background: rgba(46,204,113,0.12);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.weight-suggest {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--orange);
+  background: rgba(243,156,18,0.12);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Progress tab */
+.progress-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.stat-label { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.25rem; }
+
+/* Progress day row */
+.progress-day-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.progress-day-done .progress-day-count {
+  color: var(--green);
+}
+.progress-day-count {
+  color: var(--text-dim);
+}
+#progressContent h2 {
+  margin-bottom: 1.5rem;
+}
+
+.week-info-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+}
+.week-info-bar span { display: inline-flex; align-items: center; gap: 0.35rem; }
+#progressContent h3 {
+  margin-bottom: 0.75rem;
+}
+
+/* Machines tab */
+.machine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.category-section { margin-bottom: 2rem; }
+.category-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--primary);
+  display: inline-block;
+}
+
+.machine-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.machine-item:hover { border-color: var(--primary-dim); }
+
+/* Settings section */
+.settings-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+
+.settings-field-label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.settings-field-value {
+  font-weight: 700;
+}
+
+.settings-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1rem 0;
+}
+
+.settings-token-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.settings-token-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  min-height: 44px;
+}
+
+.settings-token-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.settings-sync-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.settings-security-list {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  padding-left: 1.2rem;
+  line-height: 1.8;
+}
+
+/* Settings extras */
+#settingsContent h2 {
+  margin-bottom: 1.5rem;
+}
+.settings-description {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 0.75rem;
+}
+.settings-diet-tip {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-top: 0.75rem;
+}
+.settings-deficit {
+  color: var(--primary) !important;
+}
+.settings-deficit-val {
+  color: var(--primary);
+}
+.settings-token-section {
+  margin-bottom: 1rem;
+}
+.settings-token-label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+  color: var(--text-dim);
+}
+.settings-save-btn {
+  min-width: 90px;
+  background: rgba(46,204,113,0.15) !important;
+  border-color: var(--green) !important;
+  color: var(--green) !important;
+}
+.settings-save-btn:hover {
+  background: rgba(46,204,113,0.3) !important;
+}
+.settings-sync-status {
+  font-size: 0.85rem;
+  min-height: 1.2rem;
+  margin-bottom: 0.75rem;
+}
+.settings-pull-btn {
+  border-color: var(--green) !important;
+  color: var(--green) !important;
+}
+.settings-push-btn {
+  border-color: var(--orange) !important;
+  color: var(--orange) !important;
+}
+.settings-gist-id {
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+#changePinBtn {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+/* Tab transitions */
+.tab-content {
+  animation: tabFadeIn 0.25s ease;
+}
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Sync indicator */
+.sync-indicator {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  transition: border-color 0.2s;
-  flex-shrink: 0;
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-left: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.3s;
 }
-.swap-btn:hover { border-color: var(--primary); }
-.edit-ex-btn { border-color: var(--green); color: var(--green); }
-.edit-ex-btn:hover { background: rgba(46,204,113,0.1); }
-.remove-ex-btn { border-color: var(--primary); color: var(--primary); }
-.remove-ex-btn:hover { background: rgba(233,69,96,0.1); }
+.sync-indicator.show { opacity: 1; }
+.sync-indicator .spinner {
+  width: 10px; height: 10px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Hidden */
+.hidden { display: none !important; }
 
 /* Superset badge */
 .superset-badge {
   display: inline-block;
   background: rgba(46,204,113,0.15);
   color: var(--green);
-  font-size: 0.65rem;
-  padding: 0.1rem 0.35rem;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
   border-radius: 4px;
   font-weight: 600;
-  margin-left: 0.4rem;
-  vertical-align: middle;
-}
-.swapped-badge {
-  font-size: 0.6rem;
-  background: var(--primary);
-  color: white;
-  padding: 0.08rem 0.3rem;
-  border-radius: 4px;
-  margin-left: 0.25rem;
-  vertical-align: middle;
+  margin-left: 0.5rem;
 }
 
-/* ===== WARMUP / COOLDOWN / CARDIO ===== */
-.warmup-box, .cooldown-box {
-  background: rgba(46,204,113,0.05);
-  border: 1px solid rgba(46,204,113,0.2);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 0.85rem;
-  margin: 0.5rem 0;
-  font-size: 0.85rem;
-}
-.cooldown-box {
-  background: rgba(52,152,219,0.05);
-  border-color: rgba(52,152,219,0.2);
-}
-.warmup-box strong { color: var(--green); margin-right: 0.4rem; }
-.cooldown-box strong { color: #5dade2; margin-right: 0.4rem; }
-
-.cardio-card {
-  background: linear-gradient(135deg, rgba(233,69,96,0.08), rgba(15,52,96,0.08));
-  border: 1px solid var(--primary-dim);
-  border-radius: var(--radius);
-  padding: 1rem;
-  margin-top: 0.75rem;
-}
-.cardio-card h3 {
-  font-size: 0.9rem;
-  color: var(--primary);
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.cardio-detail {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.5rem;
-}
-.cardio-item { font-size: 0.85rem; }
-.cardio-item strong { color: var(--text-dim); display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
-
-/* ===== TIMER ===== */
-.timer-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  z-index: 1000;
+/* Video button (not currently used but kept) */
+.video-btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
-}
-.timer-overlay.show { display: flex; }
-.timer-modal {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 2rem 1.5rem;
-  text-align: center;
-  width: 90vw;
-  max-width: 360px;
-}
-.timer-display {
-  font-size: 3.5rem;
-  font-weight: 800;
+  background: rgba(233,69,96,0.12);
+  border: 1px solid var(--primary);
   color: var(--primary);
-  margin: 0.75rem 0;
-  font-variant-numeric: tabular-nums;
-  transition: color 0.3s;
-}
-.timer-label { color: var(--text-dim); margin-bottom: 0.75rem; font-size: 0.9rem; }
-.timer-controls { display: flex; gap: 0.5rem; justify-content: center; }
-.timer-btn {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 0.5rem 1.25rem;
-  border-radius: var(--radius-sm);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   cursor: pointer;
-  font-weight: 600;
+  font-size: 1rem;
+  margin-left: 0.5rem;
   transition: all 0.2s;
-  min-height: 44px;
-  font-size: 0.85rem;
+  vertical-align: middle;
 }
-.timer-btn:active { background: var(--primary); border-color: var(--primary); }
-.timer-btn.skip { color: var(--orange); border-color: var(--orange); }
-.timer-btn.skip:active { background: rgba(243,156,18,0.2); }
 
-/* ===== VIDEO ===== */
+.video-btn:hover {
+  background: var(--primary);
+  color: white;
+}
+
+/* Video overlay */
 .video-overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.9);
+  background: rgba(0,0,0,0.88);
   z-index: 1000;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem;
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  padding: 1rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
+
 .video-overlay.show { display: flex; }
+
 .video-modal {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -521,35 +732,48 @@ button, .day-card, .set-dot, .machine-item, .rest-timer-btn, .reset-btn {
   width: 100%;
   max-width: 720px;
   overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
 }
+
 .video-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.6rem 0.85rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
 }
-.video-modal-title { font-weight: 700; font-size: 0.9rem; }
+
+.video-modal-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
 .video-close {
   background: none;
   border: none;
   color: var(--text-dim);
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   cursor: pointer;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
 }
-.video-close:active { background: rgba(233,69,96,0.15); color: var(--primary); }
+
+.video-close:hover {
+  background: rgba(233,69,96,0.15);
+  color: var(--primary);
+}
+
 .video-wrapper {
   position: relative;
   width: 100%;
   padding-top: 56.25%;
 }
+
 .video-wrapper iframe {
   position: absolute;
   inset: 0;
@@ -559,7 +783,7 @@ button, .day-card, .set-dot, .machine-item, .rest-timer-btn, .reset-btn {
 
 /* Inline exercise video */
 .exercise-video {
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
   border-radius: var(--radius-sm);
   overflow: hidden;
   border: 1px solid var(--border);
@@ -572,576 +796,85 @@ button, .day-card, .set-dot, .machine-item, .rest-timer-btn, .reset-btn {
   border: 0;
 }
 
-/* Video placeholder */
+/* Exercise video placeholder (click-to-load) */
 .exercise-video-placeholder {
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
   border-radius: var(--radius-sm);
   overflow: hidden;
   border: 1px solid var(--border);
   background: #111;
+  position: relative;
   cursor: pointer;
   aspect-ratio: 16 / 9;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 2rem;
   color: var(--text-dim);
   transition: all 0.2s;
 }
-.exercise-video-placeholder:active { background: #1a1a1a; border-color: var(--primary-dim); }
+.exercise-video-placeholder:hover {
+  background: #1a1a1a;
+  border-color: var(--primary-dim);
+}
 .exercise-video-placeholder::after {
   content: '▶ Cargar video';
   position: absolute;
-  bottom: 0.4rem;
+  bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+/* Weight inline indicator */
+.wt-indicator {
   font-size: 0.7rem;
-  color: var(--text-dim);
-  opacity: 0.6;
+  margin-left: 0.3rem;
+  white-space: nowrap;
 }
 
-/* ===== VARIANT OVERLAY ===== */
-.variant-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9998;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-  padding: 0.5rem;
-}
-.variant-overlay.show { opacity: 1; pointer-events: auto; }
+/* Calorie section */
+.calorie-section { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 0.75rem; }
+.calorie-section h3 { font-size: 0.9rem; margin: 0 0 0.5rem; }
+.calorie-row { display: flex; align-items: center; gap: 0.5rem; }
+.cal-unit { font-size: 0.8rem; color: var(--text-dim); }
 
-.variant-modal {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem;
-  width: 380px;
-  max-width: 100%;
-  max-height: 85vh;
-  overflow-y: auto;
-}
-.variant-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-.variant-modal-title { font-size: 0.95rem; font-weight: 700; }
-.variant-close {
-  background: none;
-  border: none;
-  color: var(--text);
-  font-size: 1.1rem;
-  cursor: pointer;
-  opacity: 0.6;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.variant-close:active { opacity: 1; }
-
-.variant-item {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.65rem;
-  margin-bottom: 0.4rem;
-}
-.variant-name { font-weight: 700; font-size: 0.85rem; margin-bottom: 0.15rem; }
-.variant-meta { font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.35rem; }
-.variant-select-btn {
-  background: var(--primary);
-  border: none;
-  color: white;
-  padding: 0.35rem 0.6rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  font-weight: 700;
-  cursor: pointer;
-  margin-right: 0.4rem;
-  min-height: 36px;
-}
-.variant-video-btn {
-  font-size: 0.72rem;
-  color: var(--primary);
-  cursor: pointer;
-  font-weight: 600;
-}
-.variant-actions { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
-
-/* ===== PROGRESS ===== */
-.progress-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.6rem;
-  margin-bottom: 1.25rem;
-}
-
-.stat-card {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.85rem;
-  text-align: center;
-}
-.stat-value {
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: var(--primary);
-}
-.stat-label { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.15rem; }
-
-.progress-day-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.45rem 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.85rem;
-}
-.progress-day-done .progress-day-count { color: var(--green); }
-.progress-day-count { color: var(--text-dim); }
-
-#progressContent h2 { margin-bottom: 1rem; }
-#progressContent h3 { margin-bottom: 0.5rem; font-size: 1rem; }
-
-.week-info-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.6rem 0.85rem;
-  margin-bottom: 1rem;
-  font-size: 0.8rem;
-}
-.week-info-bar span { display: inline-flex; align-items: center; gap: 0.3rem; }
-
-/* History */
-.history-week-list {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  margin-top: 0.75rem;
-}
-.history-week-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0.85rem;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.8rem;
-}
-.history-week-row:last-child { border-bottom: none; }
-.history-week-label { font-weight: 600; color: var(--text-dim); }
-.history-week-count { color: var(--green); font-weight: 600; }
-
-/* ===== MACHINES ===== */
-.machine-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.5rem;
-}
-.category-section { margin-bottom: 1.25rem; }
-.category-title {
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.35rem;
-  border-bottom: 2px solid var(--primary);
-  display: inline-block;
-}
-.machine-item {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 0.85rem;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-}
-.machine-item:active { border-color: var(--primary-dim); }
-
-/* ===== SETTINGS ===== */
-.settings-profile-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-}
-
-.settings-edit-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-}
-.settings-edit-grid label {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  gap: 0.2rem;
-}
-.settings-edit-grid input,
-.settings-edit-grid select {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 0.4rem 0.5rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  outline: none;
-  min-height: 40px;
-}
-.settings-edit-grid input:focus,
-.settings-edit-grid select:focus { border-color: var(--primary); }
-
-.settings-field-label {
-  display: block;
-  font-size: 0.65rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.settings-field-value { font-weight: 700; font-size: 0.9rem; }
-
-.settings-divider {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 0.75rem 0;
-}
-
-.settings-token-row {
-  display: flex;
-  gap: 0.4rem;
-}
-.settings-token-input {
-  flex: 1;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 0.4rem 0.6rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  min-height: 40px;
-}
-.settings-token-input:focus { outline: none; border-color: var(--primary); }
-
-.settings-sync-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-top: 0.5rem;
-}
-
-.settings-security-list {
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  padding-left: 1rem;
-  line-height: 1.7;
-}
-
-#settingsContent h2 { margin-bottom: 1rem; }
-.settings-description { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.5rem; }
-.settings-diet-tip { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem; }
-.settings-deficit { color: var(--primary) !important; }
-.settings-deficit-val { color: var(--primary); }
-.settings-token-section { margin-bottom: 0.75rem; }
-.settings-token-label { display: block; font-size: 0.8rem; margin-bottom: 0.3rem; color: var(--text-dim); }
-.settings-save-btn {
-  min-width: 80px;
-  background: rgba(46,204,113,0.15) !important;
-  border-color: var(--green) !important;
-  color: var(--green) !important;
-}
-.settings-sync-status { font-size: 0.8rem; min-height: 1.1rem; margin-bottom: 0.5rem; }
-.settings-gist-id { margin-top: 0.5rem; font-size: 0.7rem; color: var(--text-dim); }
-
-/* ===== CALORIE SECTION ===== */
-.calorie-section {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 0.75rem;
-  margin-bottom: 0.5rem;
-}
-.calorie-section h3 { font-size: 0.85rem; margin: 0 0 0.35rem; }
-.calorie-row { display: flex; align-items: center; gap: 0.4rem; }
-.cal-unit { font-size: 0.75rem; color: var(--text-dim); }
-
-/* ===== BUTTONS ===== */
+/* Reset button */
 .reset-btn {
   background: rgba(233,69,96,0.1);
   border: 1px solid var(--primary-dim);
   color: var(--primary);
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.2rem;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
   transition: all 0.2s;
-  min-height: 40px;
-  white-space: nowrap;
-}
-.reset-btn:active { background: rgba(233,69,96,0.2); }
-
-.add-ex-btn {
-  font-size: 0.8rem;
-  border: 2px dashed var(--border) !important;
-  background: transparent !important;
-  color: var(--text-dim) !important;
-  cursor: pointer;
-  padding: 0.6rem;
-  border-radius: var(--radius-sm);
-  transition: all 0.2s;
-  width: 100%;
-}
-.add-ex-btn:active { border-color: var(--primary) !important; color: var(--primary) !important; }
-
-/* ===== LOCK SCREEN ===== */
-#lockScreen {
-  position: fixed;
-  inset: 0;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-#lockScreen.hidden { display: none; }
-
-.lock-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  width: 320px;
-  max-width: 90vw;
-  text-align: center;
-}
-.lock-box h1 { font-size: 1.3rem; margin-bottom: 0.4rem; }
-.lock-box h1 span { color: var(--primary); }
-.lock-box p { color: var(--text-dim); font-size: 0.8rem; margin-bottom: 1rem; }
-
-.lock-input {
-  width: 100%;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 0.6rem;
-  border-radius: var(--radius-sm);
-  font-size: 1.1rem;
-  text-align: center;
-  margin-bottom: 0.75rem;
-  outline: none;
-  transition: border-color 0.2s;
-}
-.lock-input:focus { border-color: var(--primary); }
-
-.lock-error {
-  color: var(--primary);
-  font-size: 0.75rem;
-  min-height: 1.1rem;
-  margin-bottom: 0.4rem;
-}
-.lock-btn {
-  width: 100%;
-  background: var(--primary);
-  border: none;
-  color: white;
-  padding: 0.65rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.2s;
   min-height: 44px;
 }
-.lock-btn:active { opacity: 0.85; }
-.lock-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.lock-hint { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.75rem; }
-.lock-hint button {
-  background: none;
-  border: none;
-  color: var(--primary);
-  cursor: pointer;
+.reset-btn:hover { background: rgba(233,69,96,0.2); }
+
+/* Cloud badge */
+.cloud-badge {
   font-size: 0.7rem;
-  text-decoration: underline;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.cloud-ready {
+  background: rgba(46,204,113,0.15);
+  color: #2ecc71;
+}
+.cloud-local {
+  background: rgba(136,136,136,0.15);
+  color: #888;
 }
 
-/* ===== DIET ===== */
-.diet-macro-bar {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-.diet-macro {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.75rem;
+.reset-day-wrap {
+  margin-top: 1.5rem;
   text-align: center;
 }
-.diet-macro-label {
-  display: block;
-  font-size: 0.65rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.diet-macro-val {
-  display: block;
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: var(--primary);
-}
-.diet-macro-val.carbs { color: #5dade2; }
-.diet-macro-val.fat { color: var(--orange); }
-
-.diet-subtext { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.4rem; }
-.diet-rotation { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 1rem; opacity: 0.7; }
-
-.diet-meal-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem;
-  margin-bottom: 0.75rem;
-}
-.diet-meal-header {
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 0.2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.diet-meal-cal { font-size: 0.85rem; color: var(--primary); font-weight: 700; }
-.diet-meal-macros { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.5rem; }
-.diet-meal-examples-title { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.4rem; }
-.diet-examples { display: flex; flex-direction: column; gap: 0.4rem; }
-.diet-example {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem;
-}
-.diet-example-name { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.2rem; color: var(--green); }
-.diet-example-items { display: flex; flex-wrap: wrap; gap: 0.25rem; }
-.diet-food-item {
-  display: inline-block;
-  background: rgba(15,52,96,0.4);
-  color: #5dade2;
-  font-size: 0.68rem;
-  padding: 0.12rem 0.35rem;
-  border-radius: 4px;
-}
-.diet-example-macros { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.2rem; }
-
-.diet-refs {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem;
-  margin-top: 1rem;
-}
-.diet-refs h3 { margin-bottom: 0.5rem; font-size: 0.9rem; }
-.diet-ref {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  margin-bottom: 0.4rem;
-  padding: 0.35rem 0;
-  border-bottom: 1px solid var(--border);
-}
-.diet-ref:last-child { border-bottom: none; }
-.diet-ref strong { color: var(--text); }
-.diet-ref-cite { font-style: italic; font-size: 0.68rem; opacity: 0.7; }
-
-/* ===== CHARTS ===== */
-.chart-container {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-.chart-container canvas {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 250px;
-}
-
-/* ===== RIR SELECT ===== */
-#rirSelect button:hover {
-  border-color: var(--primary) !important;
-}
-
-/* ===== WEEK RESET TOAST ===== */
-.week-toast {
-  position: fixed;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: var(--surface);
-  border: 1px solid var(--green);
-  color: var(--green);
-  padding: 0.6rem 1.25rem;
-  border-radius: var(--radius);
-  font-weight: 600;
-  font-size: 0.85rem;
-  z-index: 2000;
-  opacity: 0;
-  transition: all 0.3s ease;
-  pointer-events: none;
-  white-space: nowrap;
-  box-shadow: var(--shadow);
-}
-.week-toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* ===== CUSTOM EXERCISE ===== */
-.custom-exercise {
-  border-left: 3px solid var(--green) !important;
-}
-
-/* ===== SPINNER ===== */
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* ===== COACH ===== */
-#coachFab {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 999;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  display: none;
-  transition: transform 0.2s;
-  -webkit-tap-highlight-color: transparent;
-}
-#coachFab:active { transform: scale(0.9); }
 
 /* ===== RESPONSIVE ===== */
 
@@ -1151,7 +884,6 @@ button, .day-card, .set-dot, .machine-item, .rest-timer-btn, .reset-btn {
   .header-inner { padding: 0 1.5rem; }
   .main-nav button { padding: 0.5rem 1rem; font-size: 0.85rem; }
   .logo { font-size: 1.3rem; }
-  .day-grid { grid-template-columns: repeat(3, 1fr); }
   .exercise-item { padding: 1rem; }
   .exercise-name { font-size: 1.05rem; }
   .progress-stats { grid-template-columns: repeat(4, 1fr); }
@@ -1168,10 +900,18 @@ button, .day-card, .set-dot, .machine-item, .rest-timer-btn, .reset-btn {
 
 /* Mobile landscape & small tablets */
 @media (max-width: 640px) {
-  .day-grid { grid-template-columns: repeat(3, 1fr); }
-  .day-card { min-height: 54px; padding: 0.5rem; }
-  .day-card .day-name { font-size: 0.78rem; }
-  .exercise-meta { font-size: 0.72rem; gap: 0.35rem; }
+  .header-inner { flex-direction: column; gap: 0.5rem; }
+  .main-nav { justify-content: center; width: 100%; }
+  .main-nav button { flex: 1; text-align: center; padding: 0.5rem 0.3rem; font-size: 0.75rem; min-height: 40px; }
+  .exercise-top { flex-direction: column; }
+  .exercise-controls { align-items: flex-start; width: 100%; flex-direction: row; justify-content: space-between; }
+  .set-tracker { gap: 0.3rem; }
+  .timer-display { font-size: 3rem; }
+  .day-grid { grid-template-columns: repeat(2, 1fr); }
+  .cardio-detail { grid-template-columns: 1fr; }
+  .card { padding: 1rem; }
+  .exercise-item { padding: 0.75rem; }
+  .exercise-meta { font-size: 0.82rem; }
   .progress-stats { grid-template-columns: repeat(2, 1fr); }
   .diet-macro-bar { grid-template-columns: 1fr 1fr; }
 }
@@ -1179,31 +919,31 @@ button, .day-card, .set-dot, .machine-item, .rest-timer-btn, .reset-btn {
 /* Mobile portrait */
 @media (max-width: 480px) {
   .content { padding: 0.75rem; }
-  .header-inner { padding: 0 0.5rem; }
-  .main-nav button { padding: 0.35rem 0.45rem; font-size: 0.7rem; min-height: 32px; }
-  .logo { font-size: 0.95rem; }
-  .day-grid { grid-template-columns: repeat(3, 1fr); gap: 0.35rem; }
-  .day-card { padding: 0.4rem 0.3rem; min-height: 48px; }
-  .day-card .day-name { font-size: 0.72rem; }
-  .day-card .day-focus { font-size: 0.6rem; }
-  .day-card .day-label { font-size: 0.55rem; }
-  .exercise-item { padding: 0.6rem; }
-  .exercise-name { font-size: 0.88rem; }
-  .exercise-meta { font-size: 0.7rem; gap: 0.3rem; }
-  .set-dot { width: 34px; height: 34px; font-size: 0.7rem; }
-  .rest-timer-btn { font-size: 0.7rem; padding: 0.3rem 0.5rem; min-height: 32px; }
-  .weight-input { width: 56px; font-size: 0.8rem; }
-  .workout-header h2 { font-size: 1.1rem; }
-  .stat-value { font-size: 1.3rem; }
-  .stat-card { padding: 0.6rem; }
-  .timer-modal { padding: 1.25rem; }
-  .timer-display { font-size: 2.8rem; }
-  .video-modal-header { padding: 0.4rem 0.6rem; }
-  .settings-profile-grid { grid-template-columns: 1fr 1fr; gap: 0.35rem; }
-  .settings-edit-grid { grid-template-columns: 1fr 1fr; gap: 0.35rem; }
+  .header-inner { padding: 0 0.5rem; gap: 0.35rem; }
+  .main-nav button { padding: 0.4rem 0.5rem; font-size: 0.72rem; min-height: 36px; }
+  .logo { font-size: 1rem; }
+  .day-grid { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
+  .day-card { padding: 0.6rem; }
+  .day-card .day-name { font-size: 0.8rem; }
+  .day-card .day-focus { font-size: 0.7rem; }
+  .exercise-item { padding: 0.7rem; }
+  .exercise-name { font-size: 0.92rem; }
+  .exercise-meta { font-size: 0.75rem; gap: 0.35rem; }
+  .set-dot { width: 36px; height: 36px; font-size: 0.72rem; }
+  .rest-timer-btn { font-size: 0.78rem; padding: 0.3rem 0.6rem; min-height: 36px; }
+  .weight-input { width: 60px; font-size: 0.82rem; }
+  .workout-header h2 { font-size: 1.2rem; }
+  .progress-stats { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .stat-value { font-size: 1.4rem; }
+  .stat-card { padding: 0.7rem; }
+  .timer-modal { padding: 1.5rem; }
+  .timer-display { font-size: 3rem; }
+  .video-modal-header { padding: 0.5rem 0.75rem; }
+  .settings-profile-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .settings-edit-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
   .machine-grid { grid-template-columns: repeat(2, 1fr); }
-  .machine-item { padding: 0.5rem 0.6rem; font-size: 0.78rem; }
-  .card { padding: 0.85rem; }
+  .machine-item { padding: 0.6rem 0.8rem; font-size: 0.82rem; }
+  .card { padding: 1rem; }
   .lock-box { padding: 1.25rem; width: 290px; }
   .lock-input { font-size: 1rem; padding: 0.5rem; }
   .variant-modal { width: 100%; max-width: 100%; max-height: 90vh; }
@@ -1211,20 +951,268 @@ button, .day-card, .set-dot, .machine-item, .rest-timer-btn, .reset-btn {
 
 /* Very small screens */
 @media (max-width: 360px) {
-  .day-grid { grid-template-columns: repeat(3, 1fr); gap: 0.25rem; }
-  .day-card { padding: 0.3rem 0.2rem; min-height: 42px; }
-  .day-card .day-name { font-size: 0.65rem; }
-  .set-dot { width: 30px; height: 30px; font-size: 0.65rem; }
-  .exercise-name { font-size: 0.82rem; }
-  .weight-input { width: 50px; font-size: 0.75rem; }
-  .timer-display { font-size: 2.2rem; }
-  .main-nav button { padding: 0.3rem 0.35rem; font-size: 0.65rem; }
-  .logo { font-size: 0.85rem; }
+  .content { padding: 0.6rem; }
+  .header-inner { padding: 0 0.4rem; }
+  .main-nav button { padding: 0.3rem 0.35rem; font-size: 0.65rem; min-height: 32px; }
+  .logo { font-size: 0.88rem; }
+  .day-grid { gap: 0.3rem; }
+  .day-card { padding: 0.5rem; }
+  .day-card .day-name { font-size: 0.72rem; }
+  .exercise-item { padding: 0.6rem; }
+  .exercise-name { font-size: 0.85rem; }
+  .exercise-meta { font-size: 0.7rem; gap: 0.25rem; }
+  .set-dot { width: 32px; height: 32px; font-size: 0.65rem; }
+  .weight-input { width: 50px; font-size: 0.78rem; }
+  .timer-display { font-size: 2.5rem; }
+  .stat-value { font-size: 1.2rem; }
 }
 
 /* ===== SAFE AREA ===== */
 @supports (padding: max(0px)) {
   .app-header { padding-top: max(0px, env(safe-area-inset-top)); }
-  .content { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+  .content { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)); }
   #coachFab { bottom: max(1.5rem, env(safe-area-inset-bottom)); }
+}
+
+/* Week reset toast */
+.week-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--surface);
+  border: 1px solid var(--green);
+  color: var(--green);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.9rem;
+  z-index: 2000;
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+}
+.week-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Diet section */
+.diet-macro-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.diet-macro {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  text-align: center;
+}
+.diet-macro-label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.diet-macro-val {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+.diet-macro-val.carbs { color: #5dade2; }
+.diet-macro-val.fat { color: var(--orange); }
+.diet-subtext {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+}
+.diet-rotation {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 1.5rem;
+  opacity: 0.7;
+}
+.diet-meal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.diet-meal-header {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.diet-meal-cal {
+  font-size: 0.9rem;
+  color: var(--primary);
+  font-weight: 700;
+}
+.diet-meal-macros {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 0.75rem;
+}
+.diet-meal-examples-title {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+}
+.diet-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.diet-example {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+}
+.diet-example-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+  color: var(--green);
+}
+.diet-example-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.diet-food-item {
+  display: inline-block;
+  background: rgba(15,52,96,0.4);
+  color: #5dade2;
+  font-size: 0.72rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+.diet-example-macros {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: 0.3rem;
+}
+.diet-refs {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+}
+.diet-refs h3 {
+  margin-bottom: 0.75rem;
+}
+.diet-ref {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.diet-ref:last-child { border-bottom: none; }
+.diet-ref strong { color: var(--text); }
+.diet-ref-cite {
+  font-style: italic;
+  font-size: 0.72rem;
+  opacity: 0.7;
+}
+
+/* History section */
+.history-week-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 1rem;
+}
+.history-week-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.history-week-row:last-child { border-bottom: none; }
+.history-week-label {
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.history-week-count {
+  color: var(--green);
+  font-weight: 600;
+}
+
+/* Custom exercises */
+.custom-exercise {
+  border-left: 3px solid var(--green) !important;
+}
+.add-ex-btn {
+  font-size: 0.85rem;
+  border: 2px dashed var(--border) !important;
+  background: transparent !important;
+  color: var(--text-dim) !important;
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+.add-ex-btn:hover {
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}
+
+/* Charts */
+.chart-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+.chart-container canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+}
+
+/* Variant video container */
+.variant-video-container {
+  margin-top: 0.5rem;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #000;
+}
+.variant-video-container iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+
+/* Exercise control row */
+.ex-controls-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+/* RIR select buttons */
+#rirSelect button:hover {
+  border-color: var(--primary) !important;
 }

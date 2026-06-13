@@ -340,13 +340,12 @@
       h += '<button class="edit-ex-btn" data-day="' + dayIndex + '" data-idx="' + exKey.replace(dayIndex + '-custom-', '') + '" title="Editar ejercicio">✎</button>'
       h += '<button class="remove-ex-btn" data-day="' + dayIndex + '" data-idx="' + exKey.replace(dayIndex + '-custom-', '') + '" title="Eliminar ejercicio">✕</button>'
     }
-    h += '</div></div>'
     if (activeEx.video) {
       h += '<button class="ex-video-btn" data-video="' + esc(activeEx.video) + '" data-name="' + esc(activeEx.name) + '" title="Ver demostración">'
       h += '<span class="vid-icon">▶</span> Video'
       h += '</button>'
     }
-    h += '</div></div>'
+    h += '</div></div></div></div>'
     return h
   }
 

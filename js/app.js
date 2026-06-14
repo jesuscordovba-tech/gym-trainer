@@ -191,6 +191,17 @@
     for (const k in progress) { const d = progress[k]; if (d) for (const ek in d) totalSets += d[ek] || 0 }
     if (totalSets > 0) recordTrainingDay()
 
+    // Auto-navigate to today's workout (Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=keep)
+    const dayOfWeek = new Date().getDay()
+    const dayOffset = parseInt(localStorage.getItem('gymapp_day_offset') || '0', 10)
+    if (dayOfWeek !== 0) {
+      let target = (dayOfWeek - 1 + dayOffset) % 6
+      if (target < 0) target += 6
+      const customDays = db.getCustomDays()
+      const totalFixedDays = workoutPlan.days.length
+      if (target < totalFixedDays) currentDay = target
+    }
+
     renderNav()
     renderDaySelector()
     renderWorkout(currentDay)
@@ -2092,6 +2103,9 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<label>Género <select id="editGender"><option value="M"' + (profile.gender === 'M' ? ' selected' : '') + '>Masculino</option><option value="F"' + (profile.gender === 'F' ? ' selected' : '') + '>Femenino</option></select></label>',
       '</div>',
       '<button class="reset-btn" id="saveProfileBtn" style="margin-top:0.75rem;">Guardar Perfil</button>',
+      '<label style="display:flex;align-items:center;gap:0.5rem;margin-top:0.75rem;font-size:0.85rem;color:var(--text-dim);">Inicio de semana (desplazar días) <select id="dayOffsetSelect" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-xs);padding:0.25rem 0.5rem;">' +
+        [0,1,2,3,4,5,6].map(o => '<option value="' + o + '"' + (parseInt(localStorage.getItem('gymapp_day_offset') || '0', 10) === o ? ' selected' : '') + '>Lunes + ' + o + '</option>').join('') +
+      '</select></label>',
       '<hr class="settings-divider">',
       '<div class="settings-profile-grid">',
       '<div><span class="settings-field-label">Edad</span><strong class="settings-field-value" id="dispAge">' + profile.age + ' años</strong></div>',
@@ -2222,6 +2236,11 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       showToast('Perfil actualizado')
       renderSettings()
       renderDiet()
+    })
+
+    document.getElementById('dayOffsetSelect')?.addEventListener('change', function() {
+      localStorage.setItem('gymapp_day_offset', this.value)
+      showToast('Preferencia guardada. Recarga la app para aplicar.')
     })
 
     /* Custom Days */

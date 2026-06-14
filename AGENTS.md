@@ -1,10 +1,10 @@
 # GYM TRAINER — App Documentation
 
-> **Ubicación del proyecto:** `/Users/jesus/app gym jesus/`
+> **Ubicación del proyecto:** `/Users/jesus/gym-app/`
 
 ## Stack
 - Vanilla JS (no frameworks), CSS3, HTML5
-- Hosted on GitHub Pages: https://jesuscordovba-tech.github.io/gym-trainer
+- Hosted on Vercel: https://gym-trainer-lac.vercel.app
 - Repo: https://github.com/jesuscordovba-tech/gym-trainer
 
 ## Files
@@ -15,7 +15,7 @@ Key meta tags:
 - `viewport` — allows pinch-to-zoom (no `user-scalable=no`)
 - `apple-mobile-web-app-capable` — fullscreen on iOS home screen
 - `theme-color` — dark/light variants for browser chrome
-- CSP restricts: scripts self, connect to api.github.com, frames to youtube.com
+- CSP restricts: scripts self, connect to api.github.com + AI APIs + Open Food Facts + wger, frames to youtube.com
 
 ### `js/data.js`
 Static data (never modified at runtime):
@@ -164,4 +164,8 @@ A small spinner ("Guardando...") appears in the header whenever data is being pe
 - Compact header on mobile with scrollable nav.
 
 ## Build/Deploy
-No build step. Push to `main` branch, GitHub Pages serves from root.
+- No build step. Push to `main` branch, Vercel auto-deploys from GitHub.
+- `vercel.json` has catch-all rewrite for SPA routing.
+
+## Removed Features
+- **Música/Spotify** — fully removed (June 2026). Included Web Playback SDK, PKCE OAuth, player bar, playlist search, shuffle, fallback to device. Eliminated due to persistent Web Playback SDK connection issues.

@@ -1,6 +1,8 @@
 ;(() => {
   let currentDay = 0
   let _calMonthOffset = 0
+  let _guidedMode = false
+  let _guidedNextEx = null
   let timerInterval = null
   let audioCtx = null
   const LS_PREFIX = 'gymapp_ai_'
@@ -424,7 +426,10 @@
       '<div class="workout-header">',
       '<div class="workout-header-row">',
       '<h2>' + esc(d.name) + '</h2>',
+      '<div style="display:flex;gap:0.35rem;align-items:center;">',
+      '<button class="reset-btn" id="guidedToggleBtn" style="font-size:0.75rem;padding:0.2rem 0.5rem;' + (_guidedMode ? 'background:var(--primary);color:#fff;border-color:var(--primary);' : '') + '">' + (_guidedMode ? 'Guiado ON' : 'Modo Guiado') + '</button>',
       '<button class="workout-timer-btn" id="workoutTimerBtn" title="Temporizador de entrenamiento">⏱ ' + getTimerDisplay(_timerSeconds) + '</button>',
+      '</div>',
       '</div>',
       isCustom ? '' : '<div class="focus">' + esc(d.focus) + '</div>',
       isCustom ? '' : '<div class="focus-note">' + esc(workoutPlan.getFocusNote(profile)) + '</div>',
@@ -608,6 +613,13 @@
       })
     }
 
+    /* Guided mode toggle */
+    document.getElementById('guidedToggleBtn')?.addEventListener('click', () => {
+      _guidedMode = !_guidedMode
+      showToast(_guidedMode ? 'Modo guiado activado' : 'Modo guiado desactivado')
+      renderWorkout(dayIndex)
+    })
+
     /* Timer button */
     document.getElementById('workoutTimerBtn')?.addEventListener('click', toggleWorkoutTimer)
     document.getElementById('workoutTimerBtn')?.addEventListener('contextmenu', e => {
@@ -716,8 +728,22 @@
     if (wasMilestone) showToast('Ejercicio completado — ' + maxSets + '/' + maxSets + ' series')
 
     const restBtn = e.currentTarget.closest('.exercise-item')?.querySelector('.rest-timer-btn')
+    const justCompleted = progress[day][rawEx] >= maxSets
     if (restBtn && (progress[day][rawEx] || 0) > 0 && (progress[day][rawEx] || 0) < maxSets) {
       startTimer.call(restBtn)
+    } else if (justCompleted && _guidedMode) {
+      const exItems = document.querySelectorAll('#workoutContent .exercise-item')
+      let foundNext = false
+      for (const item of exItems) {
+        if (foundNext) {
+          item.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          item.style.transition = 'box-shadow 0.3s'
+          item.style.boxShadow = '0 0 0 2px var(--primary)'
+          setTimeout(() => { item.style.boxShadow = '' }, 2000)
+          break
+        }
+        if (item === e.currentTarget.closest('.exercise-item')) foundNext = true
+      }
     }
   }
 
@@ -786,7 +812,7 @@
     showTimer(parseInt(this.dataset.rest, 10) || 60)
   }
 
-  function showTimer(seconds) {
+  function showTimer(seconds, onDone) {
     clearInterval(timerInterval)
     const overlay = document.getElementById('timerOverlay')
     const display = document.getElementById('timerDisplay')
@@ -816,6 +842,7 @@
           osc.start()
           osc.stop(audioCtx.currentTime + 0.3)
         } catch (_) {}
+        if (onDone) setTimeout(onDone, 500)
       }
     }, 1000)
   }

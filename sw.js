@@ -1,5 +1,5 @@
-const CACHE = 'gym-trainer-v7'
-const URLS = ['/', 'index.html', 'css/style.css', 'js/data.js', 'js/auth.js', 'js/db.js', 'js/app.js', 'manifest.json']
+const CACHE = 'gym-trainer-v8'
+const URLS = ['/', 'index.html', 'css/style.css', 'js/data.js', 'js/auth.js', 'js/storage.js', 'js/db.js', 'js/app.js', 'manifest.json']
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(URLS)))

@@ -47,7 +47,7 @@
       }
 
       const encrypted = await auth.encrypt(userBlob, pin)
-      localStorage.setItem(userKey(u), encrypted)
+      await store.set(userKey(u), encrypted)
       users.push(u)
       saveUsers(users)
 
@@ -62,18 +62,26 @@
 
     async function loginUser(username, pin) {
       const u = username.toLowerCase()
-      let encrypted = localStorage.getItem(userKey(u))
+      let encrypted = await store.get(userKey(u))
+      if (!encrypted) {
+        encrypted = localStorage.getItem(userKey(u))
+        if (encrypted) await store.set(userKey(u), encrypted)
+      }
       let decrypted = encrypted ? await auth.decrypt(encrypted, pin) : null
 
       // Try backup encrypted key if primary is corrupted
       if (!decrypted) {
         try {
-          const bak = localStorage.getItem(userKey(u) + '_bak')
+          let bak = await store.get(userKey(u) + '_bak')
+          if (!bak) {
+            bak = localStorage.getItem(userKey(u) + '_bak')
+            if (bak) await store.set(userKey(u) + '_bak', bak)
+          }
           if (bak) {
             decrypted = await auth.decrypt(bak, pin)
             if (decrypted) {
-              localStorage.setItem(userKey(u), bak)
-              localStorage.removeItem(userKey(u) + '_bak')
+              await store.set(userKey(u), bak)
+              await store.del(userKey(u) + '_bak')
             }
           }
         } catch {}
@@ -91,7 +99,7 @@
                 encrypted = gdata[u]
                 decrypted = await auth.decrypt(encrypted, pin)
                 if (decrypted) {
-                  localStorage.setItem(userKey(u), encrypted)
+                  await store.set(userKey(u), encrypted)
                   // Ensure user appears in local users list
                   const users = await getUsers()
                   if (!users.includes(u)) { users.push(u); saveUsers(users) }
@@ -115,7 +123,7 @@
             customWorkout: {},
           }
           encrypted = await auth.encrypt(userBlob, pin)
-          localStorage.setItem(userKey(u), encrypted)
+          await store.set(userKey(u), encrypted)
           decrypted = userBlob
           const users = await getUsers()
           if (!users.includes(u)) { users.push(u); saveUsers(users) }
@@ -131,12 +139,16 @@
         }
         // Fallback: try raw backup (saved by beforeunload)
         try {
-          const raw = localStorage.getItem(userKey(u) + '_raw')
+          let raw = await store.get(userKey(u) + '_raw')
+          if (!raw) {
+            raw = localStorage.getItem(userKey(u) + '_raw')
+            if (raw) await store.set(userKey(u) + '_raw', raw)
+          }
           if (raw) {
             const parsed = JSON.parse(raw)
             if (parsed && parsed.profile) {
               decrypted = parsed
-              localStorage.removeItem(userKey(u) + '_raw')
+              await store.del(userKey(u) + '_raw')
             }
           }
         } catch {}
@@ -163,7 +175,7 @@
                 const fresh = await auth.decrypt(gdata[u], pin)
                 if (fresh) {
                   data = fresh
-                  localStorage.setItem(userKey(u), gdata[u])
+                  await store.set(userKey(u), gdata[u])
                   // Merge local users from Gist
                   if (gdata.users) { localStorage.setItem(USERS_KEY, JSON.stringify(gdata.users)) }
                 }
@@ -186,7 +198,7 @@
       if (data && _username && _pin) {
         try {
           const encrypted = await auth.encrypt(data, _pin)
-          localStorage.setItem(userKey(_username), encrypted)
+          await store.set(userKey(_username), encrypted)
           await pushToGist()
         } catch (e) { console.warn('Logout save error:', e) }
       }
@@ -224,7 +236,7 @@
     function getTimer() { return data ? (data.workoutTimer || null) : null }
     async function setTimer(t) { if (data) { data.workoutTimer = t; schedulePersist() } }
 
-    /* --- Persist (localStorage) --- */
+    /* --- Persist (IndexedDB + localStorage) --- */
 
     async function setProgress(p) { if (data) { data.progress = p; notify(); archiveCurrentWeek(); schedulePersist() } }
     async function setWeights(w) { if (data) { data.weights = w; archiveCurrentWeek(); schedulePersist() } }
@@ -248,7 +260,7 @@
       showSyncIndicator()
       try {
         const encrypted = await auth.encrypt(data, _pin)
-        localStorage.setItem(userKey(_username), encrypted)
+        await store.set(userKey(_username), encrypted)
         setTimeout(hideSyncIndicator, 300)
       } catch (e) { console.warn('Persist error:', e); hideSyncIndicator() }
     }
@@ -317,8 +329,9 @@
             localStorage.setItem(key + '_raw', JSON.stringify(data))
           } catch (e) { console.warn('Beforeunload raw backup error:', e) }
           // Async encrypted save (best-effort, modern browsers wait for this)
-          auth.encrypt(data, _pin).then(en => {
-            localStorage.setItem(key, en)
+          auth.encrypt(data, _pin).then(async en => {
+            await store.set(key, en)
+            try { localStorage.setItem(key, en) } catch {}
           }).catch(e => console.warn('Beforeunload persist error:', e))
         }
       })
@@ -360,7 +373,7 @@
         if (!decrypted) return false
         data = decrypted
         const encrypted = await auth.encrypt(data, _pin)
-        localStorage.setItem(userKey(_username), encrypted)
+        await store.set(userKey(_username), encrypted)
         notify()
         return true
       } catch { return false }

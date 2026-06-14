@@ -10,7 +10,7 @@
 ## Files
 
 ### `index.html`
-Entry point. Loads all scripts. Lock screen (PIN) rendered inline in `<style>`.
+Entry point. Loads all scripts (order: data.js → auth.js → storage.js → db.js → app.js). Lock screen (PIN) rendered inline in `<style>`.
 Key meta tags:
 - `viewport` — allows pinch-to-zoom (no `user-scalable=no`)
 - `apple-mobile-web-app-capable` — fullscreen on iOS home screen
@@ -30,12 +30,19 @@ PIN-based auth using Web Crypto API (AES-256-GCM). PIN derived via PBKDF2 with s
 - `isLocked()`, `setPin(pin)`, `checkPin(pin)`, `clearPin()`
 - `encrypt(data, pin)` / `decrypt(encrypted, pin)` — used by db.js for cloud sync
 
+### `js/storage.js`
+IndexedDB wrapper (IIFE, exposes `window.store`).
+- DB: `gymtrainer`, store: `data`, version: 1
+- API: `store.get(key)`, `store.set(key, value)`, `store.del(key)`, `store.keys()`
+- Async (Promise-based). Used by db.js for user data blobs (`gymapp_data_*`).
+
 ### `js/db.js`
-LocalStorage persistence + GitHub Gist sync.
-- Keys: `gymapp_progress`, `gymapp_weights`, `gymapp_github_token`
-- Auto-syncs to Gist on every change (500ms debounce)
+Persistence layer: IndexedDB (via `js/storage.js`) for user data blobs + localStorage for small config keys.
+- User data (`gymapp_data_*`) stored in IndexedDB via `store.get/set/del`
+- Config keys in localStorage: `gymapp_github_token`, `gymapp_users`, `gymapp_current_user`, `gymapp_pin`, `gymapp_week`, `gymapp_salt`
+- beforeunload handler writes encrypted blob to IndexedDB + raw JSON backup to localStorage
+- GitHub Gist sync (encrypted, AES-256-GCM), auto-syncs on every change (500ms debounce + 5s Gist debounce)
 - Gist ID: `a2e0cc16311b5589246aa6215e5a7250`
-- Sync encrypts data with auth.encrypt() before sending
 
 ### `js/app.js`
 Main application logic. All code in an IIFE.

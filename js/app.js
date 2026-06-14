@@ -2807,7 +2807,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
         redirect_uri: spotifyRedirectUri,
         code_challenge_method: 'S256',
         code_challenge: challenge,
-        scope: 'playlist-read-private playlist-read-collaborative',
+        scope: 'playlist-read-private playlist-read-collaborative streaming user-read-email user-modify-playback-state user-read-playback-state',
       })
       window.location.href = 'https://accounts.spotify.com/authorize?' + params.toString()
     })
@@ -2830,17 +2830,14 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const verifier = localStorage.getItem(SPOTIFY_PREFIX + 'verifier')
     if (!verifier) return false
     try {
-      const body = new URLSearchParams({
-        client_id: spotifyClientId,
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: spotifyRedirectUri,
-        code_verifier: verifier,
-      })
-      const res = await fetch('https://accounts.spotify.com/api/token', {
+      const res = await fetch('/api/spotify?action=token', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString(),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code,
+          redirect_uri: spotifyRedirectUri,
+          code_verifier: verifier,
+        }),
       })
       if (!res.ok) return false
       const data = await res.json()
@@ -2854,17 +2851,12 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
 
   async function refreshSpotifyToken() {
     const refresh = db.getSpotifyRefreshToken()
-    if (!refresh || !spotifyClientId) return false
+    if (!refresh) return false
     try {
-      const body = new URLSearchParams({
-        client_id: spotifyClientId,
-        grant_type: 'refresh_token',
-        refresh_token: refresh,
-      })
-      const res = await fetch('https://accounts.spotify.com/api/token', {
+      const res = await fetch('/api/spotify?action=refresh', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString(),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refresh }),
       })
       if (!res.ok) return false
       const data = await res.json()

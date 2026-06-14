@@ -1805,4 +1805,65 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   object-fit: cover;
 }
 
+/* === Bottom Navigation (mobile) === */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background-color: rgba(13,13,15,0.85);
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 30%);
+  backdrop-filter: saturate(1.3) blur(30px);
+  -webkit-backdrop-filter: saturate(1.3) blur(30px);
+  border-top: 1px solid var(--glass-border);
+  padding: 0.25rem 0;
+  padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
+  justify-content: space-around;
+}
+.bottom-nav button {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.25rem 0.15rem;
+  transition: all 0.2s;
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.bottom-nav button.active { color: var(--primary); }
+.bottom-nav .bn-icon { font-size: 1.15rem; line-height: 1; }
+.bottom-nav .bn-label { font-size: 0.55rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.bottom-nav button.active .bn-icon { filter: drop-shadow(0 0 6px rgba(255,77,109,0.4)); }
+
+@media (max-width: 640px) {
+  .bottom-nav { display: flex; }
+  .main-nav { display: none; }
+  .content { padding-bottom: max(4.5rem, env(safe-area-inset-bottom)); }
+}
+@media (max-width: 480px) {
+  .bottom-nav .bn-label { font-size: 0.5rem; }
+  .bottom-nav .bn-icon { font-size: 1.1rem; }
+}
+@media (min-width: 641px) {
+  .bottom-nav { display: none !important; }
+  .main-nav { display: flex; }
+}
+
+/* === Desktop breakpoints === */
+@media (min-width: 1280px) {
+  .content { max-width: 960px; }
+  .machine-grid { grid-template-columns: repeat(4, 1fr); }
+  .progress-stats { grid-template-columns: repeat(4, 1fr); }
+  .stat-value { font-size: 2rem; }
+}
+@media (min-width: 1600px) {
+  .content { max-width: 1100px; }
 }

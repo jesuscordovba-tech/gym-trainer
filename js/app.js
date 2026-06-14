@@ -11,6 +11,11 @@
   let aiUrl = localStorage.getItem(LS_PREFIX + 'url') || 'https://api.groq.com/openai/v1'
   let aiModel = localStorage.getItem(LS_PREFIX + 'model') || 'llama-3.3-70b-versatile'
 
+  const SPOTIFY_PREFIX = 'gymapp_spotify_'
+  let spotifyClientId = localStorage.getItem(SPOTIFY_PREFIX + 'client_id') || ''
+  let spotifyRedirectUri = localStorage.getItem(SPOTIFY_PREFIX + 'redirect_uri') || window.location.origin + window.location.pathname
+  let spotifyToken = db.getSpotifyToken()
+
   const DAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB']
 
   function getISOWeek(d) {
@@ -495,6 +500,14 @@
         '<div class="cardio-item"><strong>Protocolo</strong>' + esc(d.cardio.protocol) + '</div>',
         '</div></div>',
         '<div class="cooldown-box"><strong>Enfriamiento:</strong> ' + esc(d.cooldown) + '</div>',
+        '<div class="spotify-section">',
+        '<h3 style="font-size:0.9rem;">Música para entrenar</h3>',
+        '<div class="spotify-row">',
+        '<input type="text" id="spotifySearchInput" class="spotify-input" placeholder="Ej: gym, workout, hype..." autocomplete="off">',
+        '<button class="spotify-btn" id="spotifySearchBtn">Buscar</button>',
+        '</div>',
+        '<div id="spotifyPlaylists"></div>',
+        '</div>',
       ].join('')
     }
     html += (function() {
@@ -653,6 +666,33 @@
         showExHistory(key, name)
       })
     })
+
+    /* Spotify search in workout */
+    const spotSearchBtn = document.getElementById('spotifySearchBtn')
+    const spotInput = document.getElementById('spotifySearchInput')
+    if (spotSearchBtn && spotInput) {
+      spotSearchBtn.addEventListener('click', () => spotifySearchAndRender(spotInput.value.trim()))
+      spotInput.addEventListener('keydown', e => { if (e.key === 'Enter') spotifySearchAndRender(spotInput.value.trim()) })
+    }
+  }
+
+  async function spotifySearchAndRender(query) {
+    const container = document.getElementById('spotifyPlaylists')
+    if (!query) { container.innerHTML = ''; return }
+    container.innerHTML = '<div><span class="food-search-spinner"></span> Buscando playlists...</div>'
+    const playlists = await spotifySearchPlaylists(query)
+    if (!playlists.length) { container.innerHTML = '<div style="color:var(--text-dim);font-size:0.82rem;">' + (!spotifyToken ? 'Conecta Spotify en Ajustes primero' : 'Sin resultados') + '</div>'; return }
+    container.innerHTML = playlists.map(p => {
+      const img = p.images?.[0]?.url || ''
+      const id = p.id || ''
+      return '<div class="spotify-playlist">' +
+        '<div class="spotify-playlist-name">' + esc(p.name) + '</div>' +
+        '<div class="spotify-playlist-meta">🎵 ' + (p.tracks?.total || 0) + ' canciones · ' + esc(p.owner?.display_name || '') + '</div>' +
+        (id ? '<div class="spotify-embed"><iframe src="https://open.spotify.com/embed/playlist/' + id + '" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"></iframe></div>' : '') +
+        '<a class="spotify-playlist-link" href="' + esc(p.external_urls?.spotify || '#') + '" target="_blank" rel="noopener">Abrir en Spotify →</a>' +
+        '</div>'
+    }).join('')
+  }
   }
 
   function showVariants(e) {
@@ -1158,7 +1198,76 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       })
       html += '</div></div>'
     })
+    /* wger exercise search */
+    html += '<div class="ex-search-section">'
+    html += '<h3>🔎 Buscar ejercicios (wger.de)</h3>'
+    html += '<p class="settings-description">Busca ejercicios por músculo o nombre. Base de datos abierta de wger.de</p>'
+    html += '<div class="ex-search-row">'
+    html += '<select id="exSearchMuscle" class="ex-search-input" style="max-width:200px;">'
+    html += '<option value="">Todos los músculos</option>'
+    html += '<option value="1">Bíceps</option><option value="2">Antebrazo</option>'
+    html += '<option value="3">Abdominales</option><option value="4">Pantorrillas</option>'
+    html += '<option value="5">Pectoral</option><option value="6">Espalda baja</option>'
+    html += '<option value="7">Espalda media</option><option value="8">Deltoides</option>'
+    html += '<option value="9">Cuádriceps</option><option value="10">Femorales</option>'
+    html += '<option value="11">Glúteos</option><option value="12">Trapecio</option>'
+    html += '<option value="13">Tríceps</option>'
+    html += '</select>'
+    html += '<input type="text" id="exSearchInput" class="ex-search-input" placeholder="O busca por nombre..." autocomplete="off">'
+    html += '<button class="reset-btn" id="exSearchBtn">Buscar</button>'
+    html += '</div>'
+    html += '<div id="exResults"></div>'
+    html += '</div>'
+
     container.innerHTML = html
+
+    setupExerciseSearch()
+  }
+
+  /* === wger Exercise Search === */
+  function setupExerciseSearch() {
+    const input = document.getElementById('exSearchInput')
+    const muscle = document.getElementById('exSearchMuscle')
+    const btn = document.getElementById('exSearchBtn')
+    const results = document.getElementById('exResults')
+    if (!input || !btn) return
+    function doSearch() {
+      const q = input.value.trim()
+      const m = muscle.value
+      searchWgerExercises(q, m)
+    }
+    btn.addEventListener('click', doSearch)
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch() })
+  }
+
+  async function searchWgerExercises(query, muscleId) {
+    const results = document.getElementById('exResults')
+    results.innerHTML = '<div><span class="food-search-spinner"></span> Buscando...</div>'
+    try {
+      let url = 'https://wger.de/api/v2/exercise/?language=2&limit=20'
+      if (muscleId) url += '&muscles=' + muscleId
+      if (query) url += '&name=' + encodeURIComponent(query)
+      const res = await fetch(url)
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      const data = await res.json()
+      const exercises = data.results || []
+      if (!exercises.length) { results.innerHTML = '<div style="color:var(--text-dim);font-size:0.82rem;">Sin resultados</div>'; return }
+      results.innerHTML = exercises.map(ex => {
+        const muscleNames = (ex.muscles || []).join(', ')
+        const equipment = (ex.equipment || []).join(', ')
+        const desc = (ex.description || '').replace(/<[^>]*>/g, '').substring(0, 200)
+        return '<div class="ex-result">' +
+          '<div class="ex-result-name">' + esc(ex.name) + '</div>' +
+          '<div class="ex-result-meta">' +
+          '<span>💪 ' + esc(muscleNames || 'General') + '</span>' +
+          (equipment ? '<span>🏋️ ' + esc(equipment) + '</span>' : '') +
+          '</div>' +
+          (desc ? '<div class="ex-result-desc">' + esc(desc) + '...</div>' : '') +
+          '</div>'
+      }).join('')
+    } catch (e) {
+      results.innerHTML = '<div style="color:var(--primary);font-size:0.82rem;">Error: ' + esc(e.message) + '</div>'
+    }
   }
 
   function renderProgress() {
@@ -2012,6 +2121,18 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       html += '</div></div>'
     })
 
+    /* Food search via Open Food Facts */
+    html += '<div class="food-search-section">'
+    html += '<h3>🔍 Buscar alimentos (Open Food Facts)</h3>'
+    html += '<p class="settings-description">Busca alimentos por nombre para ver sus macros y llevar tu diario.</p>'
+    html += '<div class="food-search-row">'
+    html += '<input type="text" id="foodSearchInput" class="food-search-input" placeholder="Ej: pechuga pollo, arroz, whey..." autocomplete="off">'
+    html += '</div>'
+    html += '<div id="foodResults"></div>'
+    html += '<h4 style="margin-top:1rem;font-size:0.9rem;">📋 Diario de hoy</h4>'
+    html += '<div id="foodDiary"></div>'
+    html += '</div>'
+
     html += '<div class="diet-refs">'
     html += '<h3>Referencias Científicas</h3>'
     dietPlan.nutritionists.forEach(n => {
@@ -2020,6 +2141,112 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     html += '</div>'
 
     container.innerHTML = html
+
+    setupFoodSearch()
+  }
+
+  /* === Open Food Facts API === */
+  let _foodSearchTimer = null
+
+  function setupFoodSearch() {
+    const input = document.getElementById('foodSearchInput')
+    const results = document.getElementById('foodResults')
+    const diary = document.getElementById('foodDiary')
+    if (!input) return
+    input.addEventListener('input', () => {
+      clearTimeout(_foodSearchTimer)
+      const q = input.value.trim()
+      if (q.length < 2) { results.innerHTML = ''; return }
+      _foodSearchTimer = setTimeout(() => searchFood(q), 400)
+    })
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { clearTimeout(_foodSearchTimer); searchFood(input.value.trim()) }
+    })
+    renderFoodDiary()
+  }
+
+  async function searchFood(query) {
+    const results = document.getElementById('foodResults')
+    results.innerHTML = '<div><span class="food-search-spinner"></span> Buscando...</div>'
+    try {
+      const url = 'https://world.openfoodfacts.org/cgi/search.pl?action=process&search_terms=' + encodeURIComponent(query) + '&json=1&page_size=10'
+      const res = await fetch(url)
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      const data = await res.json()
+      const products = data.products || []
+      if (!products.length) { results.innerHTML = '<div style="color:var(--text-dim);font-size:0.82rem;">Sin resultados</div>'; return }
+      results.innerHTML = products.map(p => {
+        const n = p.product_name || p.product_name_es || 'Sin nombre'
+        const kcal = p.nutriments?.['energy-kcal_100g'] || 0
+        const protein = p.nutriments?.proteins_100g || 0
+        const carbs = p.nutriments?.carbohydrates_100g || 0
+        const fat = p.nutriments?.fat_100g || 0
+        return '<div class="food-result">' +
+          '<div class="food-result-info">' +
+          '<div class="food-result-name">' + esc(n) + '</div>' +
+          '<div class="food-result-nutri">' +
+          '<span>🔥 ' + Math.round(kcal) + ' kcal</span>' +
+          '<span>🥩 P' + protein.toFixed(1) + 'g</span>' +
+          '<span>🍚 C' + carbs.toFixed(1) + 'g</span>' +
+          '<span>🧈 G' + fat.toFixed(1) + 'g</span>' +
+          '<span style="font-size:0.65rem;opacity:0.6;">(por 100g)</span>' +
+          '</div></div>' +
+          '<button class="food-add-btn" data-name="' + esc(n) + '" data-kcal="' + Math.round(kcal) + '" data-protein="' + protein.toFixed(1) + '" data-carbs="' + carbs.toFixed(1) + '" data-fat="' + fat.toFixed(1) + '">+ Añadir</button>' +
+          '</div>'
+      }).join('')
+      results.querySelectorAll('.food-add-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          addFoodToDiary({
+            name: btn.dataset.name,
+            kcal: parseInt(btn.dataset.kcal),
+            protein: parseFloat(btn.dataset.protein),
+            carbs: parseFloat(btn.dataset.carbs),
+            fat: parseFloat(btn.dataset.fat),
+          })
+        })
+      })
+    } catch (e) {
+      results.innerHTML = '<div style="color:var(--primary);font-size:0.82rem;">Error: ' + esc(e.message) + '</div>'
+    }
+  }
+
+  function addFoodToDiary(food) {
+    const today = new Date().toISOString().split('T')[0]
+    const diary = db.getFoodDiary()
+    if (!diary[today]) diary[today] = []
+    diary[today].push(food)
+    db.setFoodDiary(diary)
+    showToast('🍽️ Añadido: ' + esc(food.name))
+    renderFoodDiary()
+  }
+
+  function removeFoodFromDiary(idx) {
+    const today = new Date().toISOString().split('T')[0]
+    const diary = db.getFoodDiary()
+    if (!diary[today]) return
+    diary[today].splice(idx, 1)
+    if (!diary[today].length) delete diary[today]
+    db.setFoodDiary(diary)
+    renderFoodDiary()
+  }
+
+  function renderFoodDiary() {
+    const container = document.getElementById('foodDiary')
+    if (!container) return
+    const today = new Date().toISOString().split('T')[0]
+    const diary = db.getFoodDiary()
+    const entries = diary[today] || []
+    if (!entries.length) { container.innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem;margin-top:0.5rem;">No has registrado alimentos hoy</div>'; return }
+    let totalKcal = 0, totalP = 0, totalC = 0, totalF = 0
+    let h = entries.map((e, i) => {
+      totalKcal += e.kcal || 0; totalP += e.protein || 0; totalC += e.carbs || 0; totalF += e.fat || 0
+      return '<div class="food-diary-entry"><span>' + esc(e.name) + ' — 🔥' + (e.kcal || 0) + ' kcal</span><button class="food-diary-remove" data-idx="' + i + '">✕</button></div>'
+    }).join('')
+    h += '<div class="food-diary-total">🔥 Total: ' + totalKcal + ' kcal · P ' + totalP.toFixed(1) + 'g · C ' + totalC.toFixed(1) + 'g · G ' + totalF.toFixed(1) + 'g</div>'
+    container.innerHTML = h
+    container.querySelectorAll('.food-diary-remove').forEach(btn => {
+      btn.addEventListener('click', () => removeFoodFromDiary(parseInt(btn.dataset.idx)))
+    })
   }
 
   function seededShuffle(arr, seed) {
@@ -2196,6 +2423,24 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<button class="reset-btn" id="testNotifBtn" style="margin-top:0.5rem;">Probar notificación</button>',
       '</div>',
 
+      /* Spotify */
+      '<div class="card">',
+      '<div class="card-title">🎵 Spotify — Música para entrenar</div>',
+      '<p class="settings-description">Conecta tu cuenta de Spotify para buscar playlists de entrenamiento.</p>',
+      '<div class="settings-edit-grid">',
+      '<label>Client ID <input type="text" id="spotifyClientId" class="settings-token-input" value="' + esc(spotifyClientId) + '" placeholder="Tu Spotify Client ID"></label>',
+      '<label>Redirect URI <input type="text" id="spotifyRedirectUri" class="settings-token-input" value="' + esc(spotifyRedirectUri) + '" placeholder="https://tusitio.github.io/gym-trainer"></label>',
+      '</div>',
+      '<button class="spotify-btn" id="spotifyConnectBtn" style="margin-top:0.5rem;">' + (db.getSpotifyToken() ? '✅ Conectado (reconectar)' : 'Conectar con Spotify') + '</button>',
+      '<div id="spotifyStatus" class="spotify-status" style="margin-top:0.5rem;"></div>',
+      '<p style="font-size:0.7rem;color:var(--text-dim);margin-top:0.5rem;">',
+      '1. Crea una app en <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener" style="color:var(--primary)">developer.spotify.com</a>',
+      '<br>2. Añade la Redirect URI arriba en la app de Spotify',
+      '<br>3. Copia el Client ID aquí y haz clic en Conectar',
+      '</p>',
+      '</div>',
+      '</div>',
+
       /* Export */
       '<div class="card">',
       '<div class="card-title">Exportar Datos</div>',
@@ -2338,6 +2583,18 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const isOpenAI = this.value === 'openai'
       document.getElementById('aiUrlLabel').style.display = isOpenAI ? '' : 'none'
       document.getElementById('aiModelLabel').style.display = isOpenAI ? '' : 'none'
+    })
+
+    /* Spotify connection */
+    document.getElementById('spotifyConnectBtn')?.addEventListener('click', () => {
+      const cid = document.getElementById('spotifyClientId').value.trim()
+      const uri = document.getElementById('spotifyRedirectUri').value.trim()
+      if (!cid || !uri) { document.getElementById('spotifyStatus').textContent = '❌ Completa Client ID y Redirect URI'; return }
+      localStorage.setItem(SPOTIFY_PREFIX + 'client_id', cid)
+      localStorage.setItem(SPOTIFY_PREFIX + 'redirect_uri', uri)
+      spotifyClientId = cid
+      spotifyRedirectUri = uri
+      spotifyLogin()
     })
 
     /* Export handlers */
@@ -2522,6 +2779,118 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     })
   }
 
+  /* === Spotify PKCE OAuth + Search === */
+  function spotifyLogin() {
+    const verifier = generateCodeVerifier()
+    localStorage.setItem(SPOTIFY_PREFIX + 'verifier', verifier)
+    generateCodeChallenge(verifier).then(challenge => {
+      const params = new URLSearchParams({
+        client_id: spotifyClientId,
+        response_type: 'code',
+        redirect_uri: spotifyRedirectUri,
+        code_challenge_method: 'S256',
+        code_challenge: challenge,
+        scope: 'playlist-read-private playlist-read-collaborative',
+      })
+      window.location.href = 'https://accounts.spotify.com/authorize?' + params.toString()
+    })
+  }
+
+  function generateCodeVerifier() {
+    const arr = new Uint8Array(32)
+    crypto.getRandomValues(arr)
+    return btoa(String.fromCharCode(...arr)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  }
+
+  async function generateCodeChallenge(verifier) {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(verifier)
+    const hash = await crypto.subtle.digest('SHA-256', data)
+    return btoa(String.fromCharCode(...new Uint8Array(hash))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  }
+
+  async function exchangeSpotifyCode(code) {
+    const verifier = localStorage.getItem(SPOTIFY_PREFIX + 'verifier')
+    if (!verifier) return false
+    try {
+      const body = new URLSearchParams({
+        client_id: spotifyClientId,
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: spotifyRedirectUri,
+        code_verifier: verifier,
+      })
+      const res = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      })
+      if (!res.ok) return false
+      const data = await res.json()
+      db.setSpotifyToken(data.access_token)
+      if (data.refresh_token) db.setSpotifyRefreshToken(data.refresh_token)
+      spotifyToken = data.access_token
+      localStorage.removeItem(SPOTIFY_PREFIX + 'verifier')
+      return true
+    } catch { return false }
+  }
+
+  async function refreshSpotifyToken() {
+    const refresh = db.getSpotifyRefreshToken()
+    if (!refresh || !spotifyClientId) return false
+    try {
+      const body = new URLSearchParams({
+        client_id: spotifyClientId,
+        grant_type: 'refresh_token',
+        refresh_token: refresh,
+      })
+      const res = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      })
+      if (!res.ok) return false
+      const data = await res.json()
+      db.setSpotifyToken(data.access_token)
+      if (data.refresh_token) db.setSpotifyRefreshToken(data.refresh_token)
+      spotifyToken = data.access_token
+      return true
+    } catch { return false }
+  }
+
+  async function spotifySearchPlaylists(query) {
+    if (!spotifyToken) { if (!(await refreshSpotifyToken())) return [] }
+    try {
+      const res = await fetch('https://api.spotify.com/v1/search?q=' + encodeURIComponent(query) + '&type=playlist&limit=10', {
+        headers: { 'Authorization': 'Bearer ' + spotifyToken }
+      })
+      if (res.status === 401) {
+        if (await refreshSpotifyToken()) return spotifySearchPlaylists(query)
+        return []
+      }
+      if (!res.ok) return []
+      const data = await res.json()
+      return (data.playlists?.items || []).filter(p => p)
+    } catch { return [] }
+  }
+
+  /* Handle Spotify redirect (code exchange) */
+  async function handleSpotifyRedirect() {
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    if (!code) return
+    const ok = await exchangeSpotifyCode(code)
+    if (ok) {
+      showToast('🎵 Spotify conectado exitosamente')
+      // Clean URL
+      const url = new URL(window.location)
+      url.searchParams.delete('code')
+      window.history.replaceState({}, '', url)
+      // Re-render settings if visible
+      if (!document.getElementById('settingsTab').classList.contains('hidden')) renderSettings()
+    }
+  }
+
   function downloadFile(content, filename, mimeType) {
     const blob = new Blob([content], { type: mimeType })
     const url = URL.createObjectURL(blob)
@@ -2581,6 +2950,9 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     document.getElementById('calPrev')?.addEventListener('click', () => { _calMonthOffset--; renderCalendar() })
     document.getElementById('calNext')?.addEventListener('click', () => { _calMonthOffset++; renderCalendar() })
   }
+
+  /* Handle Spotify OAuth redirect before login screen */
+  handleSpotifyRedirect()
 
   /* Start with login screen */
   initLoginScreen()

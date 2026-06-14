@@ -237,6 +237,13 @@
     function getCalories() { return data ? (data.caloriesBurned || {}) : {} }
     function getNotes() { return data ? (data.notes || {}) : {} }
     async function setNotes(n) { if (data) { data.notes = n; archiveCurrentWeek(); schedulePersist() } }
+    function getFoodDiary() { return data ? (data.foodDiary || {}) : {} }
+    async function setFoodDiary(fd) { if (data) { data.foodDiary = fd; schedulePersist() } }
+    const SPOTIFY_KEY = 'gymapp_spotify'
+    function getSpotifyToken() { return localStorage.getItem(SPOTIFY_KEY) || '' }
+    function setSpotifyToken(t) { localStorage.setItem(SPOTIFY_KEY, t) }
+    function getSpotifyRefreshToken() { return localStorage.getItem(SPOTIFY_KEY + '_refresh') || '' }
+    function setSpotifyRefreshToken(t) { localStorage.setItem(SPOTIFY_KEY + '_refresh', t) }
 
     /* --- Photos --- */
     function getPhotos() { return data ? (data.photos || {}) : {} }
@@ -601,6 +608,8 @@
       getExerciseMods, setExerciseMods,
       getCalories, setCalories,
       getNotes, setNotes,
+      getFoodDiary, setFoodDiary,
+      getSpotifyToken, setSpotifyToken, getSpotifyRefreshToken, setSpotifyRefreshToken,
       getWorkoutNotes, setWorkoutNotes,
       getPhotos, setPhotos,
       getMeasurements, setMeasurements,

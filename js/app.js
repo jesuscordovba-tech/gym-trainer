@@ -717,9 +717,13 @@
 
     const activeEx = isCustom
       ? (db.getCustomExercises()[day] || [])[parseInt(rawEx.split('-custom-')[1], 10)]
-      : (workoutPlan.days[day].exercises[rawEx])
+      : isCustomDay(day)
+        ? (db.getCustomDays()[day - 100]?.exercises[rawEx])
+        : (workoutPlan.days[day]?.exercises[rawEx])
     if (!activeEx) return
-    const maxSets = activeEx.sets
+    const exMods = db.getExerciseMods()
+    const mod = exMods[day + '-' + rawEx] || {}
+    const maxSets = mod.sets || activeEx.sets
     if (progress[day][rawEx] > maxSets) progress[day][rawEx] = maxSets
 
     if (progress[day][rawEx] > setsCompleted) recordTrainingDay()
@@ -1227,7 +1231,6 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<h3>Detalle por día</h3>',
     ].join('')
 
-    renderCalendar()
     workoutPlan.days.forEach((d, i) => {
       const p = progress[i] || {}
       const daySets = d.exercises.reduce((a, ex) => a + ex.sets, 0)
@@ -1358,7 +1361,8 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
 
     container.innerHTML = html
 
-    /* Draw charts */
+    /* Calendar + Charts */
+    renderCalendar()
     drawVolumeChart(progress)
     drawWeightChart()
 

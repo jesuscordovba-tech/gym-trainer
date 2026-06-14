@@ -16,6 +16,14 @@
   let spotifyRedirectUri = localStorage.getItem(SPOTIFY_PREFIX + 'redirect_uri') || window.location.origin + window.location.pathname
   let spotifyToken = db.getSpotifyToken()
 
+  /* Fetch client_id from backend so user doesn't need to enter it */
+  fetch('/api/config').then(r => r.json()).then(d => {
+    if (d.client_id && d.client_id !== spotifyClientId) {
+      spotifyClientId = d.client_id
+      localStorage.setItem(SPOTIFY_PREFIX + 'client_id', d.client_id)
+    }
+  }).catch(() => {})
+
   const DAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB']
 
   function getISOWeek(d) {
@@ -2445,7 +2453,6 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<div class="card-title">🎵 Spotify — Música para entrenar</div>',
       '<p class="settings-description">Conecta tu cuenta de Spotify para buscar playlists de entrenamiento.</p>',
       '<div class="settings-edit-grid">',
-      '<label>Client ID <input type="text" id="spotifyClientId" class="settings-token-input" value="' + esc(spotifyClientId) + '" placeholder="Tu Spotify Client ID"></label>',
       '<label>Redirect URI <input type="text" id="spotifyRedirectUri" class="settings-token-input" value="' + esc(spotifyRedirectUri) + '" placeholder="https://tusitio.github.io/gym-trainer"></label>',
       '</div>',
       '<button class="spotify-btn" id="spotifyConnectBtn" style="margin-top:0.5rem;">' + (db.getSpotifyToken() ? '✅ Conectado (reconectar)' : 'Conectar con Spotify') + '</button>',
@@ -2453,7 +2460,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<p style="font-size:0.7rem;color:var(--text-dim);margin-top:0.5rem;">',
       '1. Crea una app en <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener" style="color:var(--primary)">developer.spotify.com</a>',
       '<br>2. Añade la Redirect URI arriba en la app de Spotify',
-      '<br>3. Copia el Client ID aquí y haz clic en Conectar',
+      '<br>3. Dale clic a Conectar',
       '</p>',
       '</div>',
       '</div>',
@@ -2604,12 +2611,9 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
 
     /* Spotify connection */
     document.getElementById('spotifyConnectBtn')?.addEventListener('click', () => {
-      const cid = document.getElementById('spotifyClientId').value.trim()
       const uri = document.getElementById('spotifyRedirectUri').value.trim()
-      if (!cid || !uri) { document.getElementById('spotifyStatus').textContent = '❌ Completa Client ID y Redirect URI'; return }
-      localStorage.setItem(SPOTIFY_PREFIX + 'client_id', cid)
+      if (!uri) { document.getElementById('spotifyStatus').textContent = '❌ Ingresa la Redirect URI'; return }
       localStorage.setItem(SPOTIFY_PREFIX + 'redirect_uri', uri)
-      spotifyClientId = cid
       spotifyRedirectUri = uri
       spotifyLogin()
     })

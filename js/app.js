@@ -396,6 +396,11 @@
       '<div class="focus-note">' + esc(workoutPlan.getFocusNote(profile)) + '</div>',
       '</div>',
       '<div class="warmup-box"><strong>Calentamiento:</strong> ' + esc(d.warmup) + '</div>',
+    ].join('') + (function() {
+      const today = new Date().toISOString().split('T')[0]
+      const notes = db.getWorkoutNotes()
+      return '<div class="notes-box" style="margin-bottom:1rem;"><strong style="display:block;margin-bottom:0.25rem;font-size:0.82rem;color:var(--text-dim);">Notas del entrenamiento</strong><textarea id="workoutNotesInput" rows="2" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-xs);padding:0.5rem;font-size:0.85rem;resize:vertical;font-family:inherit;" placeholder="¿Cómo te sientes hoy? Lesiones, energía, observaciones...">' + esc(notes[today] || '') + '</textarea></div>'
+    })() + [
     ].join('')
 
     d.exercises.forEach((ex, exIdx) => {
@@ -524,6 +529,21 @@
         if (c) { total += c; lines.push('<span>' + days[d.getDay()] + ': ' + c + ' kcal</span>') }
       }
       calHistory.innerHTML = lines.length ? 'Esta semana: ' + total + ' kcal · ' + lines.join(' · ') : ''
+    }
+
+    /* Workout notes auto-save */
+    const notesInput = document.getElementById('workoutNotesInput')
+    if (notesInput) {
+      let _notesTimer = null
+      notesInput.addEventListener('input', () => {
+        if (_notesTimer) clearTimeout(_notesTimer)
+        _notesTimer = setTimeout(() => {
+          const today = new Date().toISOString().split('T')[0]
+          const notes = db.getWorkoutNotes()
+          notes[today] = notesInput.value
+          db.setWorkoutNotes(notes)
+        }, 600)
+      })
     }
 
     /* Timer button */

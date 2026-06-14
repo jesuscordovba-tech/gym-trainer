@@ -245,6 +245,8 @@
     async function setCustomWorkout(cw) { if (data) { data.customWorkout = cw; schedulePersist() } }
     async function setCustomExercises(ce) { if (data) { data.customExercises = ce; schedulePersist() } }
     async function setCalories(c) { if (data) { data.caloriesBurned = c; schedulePersist() } }
+    function getWorkoutNotes() { return data ? (data.workoutNotes || {}) : {} }
+    async function setWorkoutNotes(n) { if (data) { data.workoutNotes = n; schedulePersist() } }
 
     async function resetAllTrainingData() {
       if (!data) return
@@ -257,6 +259,7 @@
       data.customExercises = {}
       data.customWorkout = {}
       data.caloriesBurned = {}
+      data.workoutNotes = {}
       data.trainingDates = []
       notify()
       await persistNow()
@@ -563,6 +566,7 @@
       getCustomExercises, setCustomExercises,
       getCalories, setCalories,
       getNotes, setNotes,
+      getWorkoutNotes, setWorkoutNotes,
       getPhotos, setPhotos,
       getMeasurements, setMeasurements,
       getTimer, setTimer,

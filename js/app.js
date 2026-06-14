@@ -15,6 +15,11 @@
   let spotifyClientId = localStorage.getItem(SPOTIFY_PREFIX + 'client_id') || ''
   let spotifyRedirectUri = localStorage.getItem(SPOTIFY_PREFIX + 'redirect_uri') || window.location.origin + window.location.pathname
   let spotifyToken = db.getSpotifyToken()
+  let spotifyPlayer = null
+  let spotifyDeviceId = null
+  let spotifyPlayerReady = false
+  let currentTrack = null
+  let isPlaying = false
 
   /* Fetch client_id from backend so user doesn't need to enter it */
   fetch('/api/config').then(r => r.json()).then(d => {
@@ -681,9 +686,24 @@
       '<div class="music-search-bar">',
       '<input type="text" id="musicSearchInput" class="spotify-input" placeholder="Buscar playlists..." autocomplete="off">',
       '<button class="spotify-btn" id="musicSearchBtn">Buscar</button>',
+      '<button class="spotify-btn" id="musicShuffleBtn" style="background:var(--primary);">🔀 Shuffle</button>',
       '</div>',
       '<div id="musicPlaylists" class="music-grid">',
       connected ? '<p style="color:var(--text-dim);font-size:0.85rem;">Busca tus playlists favoritas para entrenar</p>' : '<p style="color:var(--text-dim);font-size:0.85rem;">Conecta Spotify en <strong>Ajustes</strong> para buscar música</p>',
+      '</div>',
+      '<div id="playerBar" class="player-bar" style="display:none;">',
+      '<div class="player-bar-track">',
+      '<div class="player-bar-img" id="playerTrackImg"></div>',
+      '<div class="player-bar-info">',
+      '<div class="player-bar-name" id="playerTrackName">—</div>',
+      '<div class="player-bar-artist" id="playerTrackArtist">—</div>',
+      '</div>',
+      '</div>',
+      '<div class="player-bar-controls">',
+      '<button class="player-bar-btn" id="playerPrevBtn">⏮</button>',
+      '<button class="player-bar-btn player-bar-play" id="playerPlayBtn">▶</button>',
+      '<button class="player-bar-btn" id="playerNextBtn">⏭</button>',
+      '</div>',
       '</div>',
     ].join('')
 
@@ -697,6 +717,14 @@
         spotifySearchAndRender(q)
       }
     })
+    document.getElementById('musicShuffleBtn')?.addEventListener('click', shufflePlay)
+
+    /* Player controls */
+    document.getElementById('playerPlayBtn')?.addEventListener('click', togglePlayback)
+    document.getElementById('playerNextBtn')?.addEventListener('click', nextTrack)
+    document.getElementById('playerPrevBtn')?.addEventListener('click', prevTrack)
+
+    if (connected && !spotifyPlayer) initSpotifyPlayer()
   }
 
   async function spotifySearchAndRender(query) {
@@ -713,11 +741,132 @@
         '<div class="music-card-body">' +
         '<div class="music-card-name">' + esc(p.name) + '</div>' +
         '<div class="music-card-meta">' + (p.tracks?.total || 0) + ' canciones</div>' +
+        (id ? '<div class="music-card-actions"><button class="music-play-btn" data-id="' + id + '" title="Reproducir en Spotify">▶ Reproducir</button></div>' : '') +
         (id ? '<div class="music-embed"><iframe src="https://open.spotify.com/embed/playlist/' + id + '" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"></iframe></div>' : '') +
         '<a class="music-card-link" href="' + esc(p.external_urls?.spotify || '#') + '" target="_blank" rel="noopener">Abrir en Spotify →</a>' +
         '</div>' +
         '</div>'
     }).join('')
+
+    /* Attach play button events */
+    container.querySelectorAll('.music-play-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const id = this.dataset.id
+        if (id) playPlaylist(id)
+      })
+    })
+  }
+
+  /* === Web Playback SDK === */
+  function initSpotifyPlayer() {
+    if (window.Spotify) { connectPlayer(); return }
+    const s = document.createElement('script')
+    s.src = 'https://sdk.scdn.co/spotify-player.js'
+    s.async = true
+    window.onSpotifyWebPlaybackSDKReady = connectPlayer
+    document.body.appendChild(s)
+  }
+
+  function connectPlayer() {
+    if (!window.Spotify || !spotifyToken) return
+    if (spotifyPlayer) { spotifyPlayer.connect(); return }
+    spotifyPlayer = new Spotify.Player({
+      name: 'GYM TRAINER',
+      getOAuthToken: cb => { cb(spotifyToken) },
+      volume: 0.5,
+    })
+    spotifyPlayer.addListener('ready', ({ device_id }) => {
+      spotifyDeviceId = device_id
+      spotifyPlayerReady = true
+      showToast('🎵 Spotify Player listo')
+    })
+    spotifyPlayer.addListener('player_state_changed', state => {
+      if (state) {
+        isPlaying = !state.paused
+        currentTrack = state.track_window?.current_track || null
+        updatePlayerBar()
+      }
+    })
+    spotifyPlayer.addListener('initialization_error', ({ message }) => showToast('Error: ' + message))
+    spotifyPlayer.addListener('authentication_error', ({ message }) => showToast('Error de autenticación Spotify'))
+    spotifyPlayer.addListener('account_error', ({ message }) => showToast('Requiere Spotify Premium'))
+    spotifyPlayer.connect()
+  }
+
+  function updatePlayerBar() {
+    const bar = document.getElementById('playerBar')
+    if (!bar) return
+    if (!currentTrack) { bar.style.display = 'none'; return }
+    bar.style.display = 'flex'
+    document.getElementById('playerTrackName').textContent = currentTrack.name || '—'
+    document.getElementById('playerTrackArtist').textContent = currentTrack.artists?.map(a => a.name).join(', ') || '—'
+    document.getElementById('playerTrackImg').style.backgroundImage = currentTrack.album?.images?.[0]?.url ? 'url(' + currentTrack.album.images[0].url + ')' : ''
+    document.getElementById('playerPlayBtn').textContent = isPlaying ? '⏸' : '▶'
+  }
+
+  async function playPlaylist(playlistId) {
+    if (!spotifyPlayerReady || !spotifyDeviceId) {
+      showToast('Inicializando reproductor...')
+      if (!spotifyPlayer) initSpotifyPlayer()
+      return
+    }
+    await refreshSpotifyToken()
+    const res = await fetch('https://api.spotify.com/v1/me/player/play?device_id=' + spotifyDeviceId, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + spotifyToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        context_uri: 'spotify:playlist:' + playlistId,
+        offset: { position: 0 },
+      }),
+    })
+    if (res.status === 404) { showToast('No hay dispositivo activo, reconectando...'); initSpotifyPlayer(); return }
+    if (!res.ok) { showToast('Error al reproducir'); return }
+    isPlaying = true
+    updatePlayerBar()
+  }
+
+  async function togglePlayback() {
+    if (!spotifyPlayer) return
+    const state = await spotifyPlayer.getCurrentState()
+    if (state && !state.paused) {
+      await spotifyPlayer.pause()
+      isPlaying = false
+    } else {
+      await spotifyPlayer.resume()
+      isPlaying = true
+    }
+    updatePlayerBar()
+  }
+
+  async function nextTrack() {
+    if (!spotifyPlayer) return
+    await spotifyPlayer.nextTrack()
+  }
+
+  async function prevTrack() {
+    if (!spotifyPlayer) return
+    await spotifyPlayer.previousTrack()
+  }
+
+  const SHUFFLE_TERMS = [
+    'gym', 'workout', 'hype', 'motivation', 'energy', 'beast mode',
+    'running', 'cardio', 'focus', 'power', 'epic', 'training',
+  ]
+
+  async function shufflePlay() {
+    const term = SHUFFLE_TERMS[Math.floor(Math.random() * SHUFFLE_TERMS.length)]
+    const playlists = await spotifySearchPlaylists(term)
+    if (!playlists.length) { showToast('No se encontraron playlists'); return }
+    const pick = playlists[Math.floor(Math.random() * playlists.length)]
+    if (!pick || !pick.id) { showToast('Error al seleccionar playlist'); return }
+    showToast('🔀 ' + pick.name)
+    /* Show in grid */
+    spotifySearchAndRender(term)
+    /* Start playback after a brief delay to let SDK init */
+    setTimeout(() => playPlaylist(pick.id), 500)
   }
 
   function showVariants(e) {

@@ -1756,6 +1756,107 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   text-decoration: none;
 }
 .music-card-link:hover { text-decoration: underline; }
+.music-card-actions {
+  margin-top: 0.5rem;
+}
+.music-play-btn {
+  background: #1DB954;
+  border: none;
+  color: #fff;
+  padding: 0.4rem 0.85rem;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.music-play-btn:hover { opacity: 0.85; }
+
+/* === PLAYER BAR === */
+.player-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 0.6rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  z-index: 999;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.player-bar-track {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 0;
+}
+.player-bar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: var(--surface2);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+.player-bar-info {
+  min-width: 0;
+}
+.player-bar-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.player-bar-artist {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.player-bar-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+.player-bar-btn {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.player-bar-btn:hover { background: var(--surface2); }
+.player-bar-play {
+  font-size: 1.3rem;
+  background: var(--primary);
+  width: 40px;
+  height: 40px;
+}
+.player-bar-play:hover { background: var(--primary-dim); }
+
+@media (max-width: 480px) {
+  .player-bar {
+    padding: 0.5rem 0.75rem;
+  }
+}
 
 @media (max-width: 480px) {
   .music-grid {

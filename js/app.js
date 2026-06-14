@@ -215,6 +215,7 @@
     renderPhotos()
     renderMeasures()
     renderDiet()
+    renderMusic()
     renderSettings()
     setupTimer()
     setupVideo()
@@ -500,14 +501,6 @@
         '<div class="cardio-item"><strong>Protocolo</strong>' + esc(d.cardio.protocol) + '</div>',
         '</div></div>',
         '<div class="cooldown-box"><strong>Enfriamiento:</strong> ' + esc(d.cooldown) + '</div>',
-        '<div class="spotify-section">',
-        '<h3 style="font-size:0.9rem;">Música para entrenar</h3>',
-        '<div class="spotify-row">',
-        '<input type="text" id="spotifySearchInput" class="spotify-input" placeholder="Ej: gym, workout, hype..." autocomplete="off">',
-        '<button class="spotify-btn" id="spotifySearchBtn">Buscar</button>',
-        '</div>',
-        '<div id="spotifyPlaylists"></div>',
-        '</div>',
       ].join('')
     }
     html += (function() {
@@ -666,30 +659,55 @@
         showExHistory(key, name)
       })
     })
+  }
 
-    /* Spotify search in workout */
-    const spotSearchBtn = document.getElementById('spotifySearchBtn')
-    const spotInput = document.getElementById('spotifySearchInput')
-    if (spotSearchBtn && spotInput) {
-      spotSearchBtn.addEventListener('click', () => spotifySearchAndRender(spotInput.value.trim()))
-      spotInput.addEventListener('keydown', e => { if (e.key === 'Enter') spotifySearchAndRender(spotInput.value.trim()) })
-    }
+  function renderMusic() {
+    const container = document.getElementById('musicContent')
+    if (!container) return
+    const connected = !!spotifyToken
+    container.innerHTML = [
+      '<div style="margin-bottom:1.5rem;">',
+      '<h2 style="font-size:1.2rem;margin-bottom:0.25rem;">🎵 Música</h2>',
+      '<p style="font-size:0.8rem;color:var(--text-dim);">Busca playlists para entrenar</p>',
+      '</div>',
+      '<div class="music-search-bar">',
+      '<input type="text" id="musicSearchInput" class="spotify-input" placeholder="Buscar playlists..." autocomplete="off">',
+      '<button class="spotify-btn" id="musicSearchBtn">Buscar</button>',
+      '</div>',
+      '<div id="musicPlaylists" class="music-grid">',
+      connected ? '<p style="color:var(--text-dim);font-size:0.85rem;">Busca tus playlists favoritas para entrenar</p>' : '<p style="color:var(--text-dim);font-size:0.85rem;">Conecta Spotify en <strong>Ajustes</strong> para buscar música</p>',
+      '</div>',
+    ].join('')
+
+    document.getElementById('musicSearchBtn')?.addEventListener('click', () => {
+      const q = document.getElementById('musicSearchInput').value.trim()
+      spotifySearchAndRender(q)
+    })
+    document.getElementById('musicSearchInput')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const q = e.target.value.trim()
+        spotifySearchAndRender(q)
+      }
+    })
   }
 
   async function spotifySearchAndRender(query) {
-    const container = document.getElementById('spotifyPlaylists')
+    const container = document.getElementById('musicPlaylists')
     if (!query) { container.innerHTML = ''; return }
-    container.innerHTML = '<div><span class="food-search-spinner"></span> Buscando playlists...</div>'
+    container.innerHTML = '<div style="text-align:center;padding:2rem 0;"><span class="food-search-spinner"></span> Buscando playlists...</div>'
     const playlists = await spotifySearchPlaylists(query)
     if (!playlists.length) { container.innerHTML = '<div style="color:var(--text-dim);font-size:0.82rem;">' + (!spotifyToken ? 'Conecta Spotify en Ajustes primero' : 'Sin resultados') + '</div>'; return }
     container.innerHTML = playlists.map(p => {
       const img = p.images?.[0]?.url || ''
       const id = p.id || ''
-      return '<div class="spotify-playlist">' +
-        '<div class="spotify-playlist-name">' + esc(p.name) + '</div>' +
-        '<div class="spotify-playlist-meta">🎵 ' + (p.tracks?.total || 0) + ' canciones · ' + esc(p.owner?.display_name || '') + '</div>' +
-        (id ? '<div class="spotify-embed"><iframe src="https://open.spotify.com/embed/playlist/' + id + '" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"></iframe></div>' : '') +
-        '<a class="spotify-playlist-link" href="' + esc(p.external_urls?.spotify || '#') + '" target="_blank" rel="noopener">Abrir en Spotify →</a>' +
+      return '<div class="music-card">' +
+        '<div class="music-card-img" style="background-image:url(' + esc(img) + ')"></div>' +
+        '<div class="music-card-body">' +
+        '<div class="music-card-name">' + esc(p.name) + '</div>' +
+        '<div class="music-card-meta">' + (p.tracks?.total || 0) + ' canciones</div>' +
+        (id ? '<div class="music-embed"><iframe src="https://open.spotify.com/embed/playlist/' + id + '" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"></iframe></div>' : '') +
+        '<a class="music-card-link" href="' + esc(p.external_urls?.spotify || '#') + '" target="_blank" rel="noopener">Abrir en Spotify →</a>' +
+        '</div>' +
         '</div>'
     }).join('')
   }

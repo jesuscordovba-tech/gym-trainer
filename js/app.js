@@ -770,7 +770,7 @@
     container.querySelectorAll('.music-play-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         const id = this.dataset.id
-        if (id) playPlaylist(id)
+        if (id) { localStorage.setItem(SPOTIFY_PREFIX + 'last_playlist', id); playPlaylist(id) }
       })
     })
   }
@@ -836,7 +836,8 @@
   async function playOnDevice(playlistId) {
     const fs = document.getElementById('fallbackStatus')
     if (fs) fs.textContent = '🔍 Buscando dispositivos...'
-    await refreshSpotifyToken()
+    const refreshed = await refreshSpotifyToken()
+    if (!refreshed) { if (fs) fs.textContent = '❌ Token expirado, reconecta en Ajustes'; return }
     const devicesRes = await fetch('https://api.spotify.com/v1/me/player/devices', {
       headers: { 'Authorization': 'Bearer ' + spotifyToken }
     })
@@ -844,15 +845,14 @@
     const devicesData = await devicesRes.json()
     const devices = devicesData.devices || []
     if (!devices.length) {
-      if (fs) fs.textContent = '📱 Abre Spotify en tu teléfono o computadora primero'
-      showToast('Abre Spotify en otro dispositivo')
+      if (fs) fs.textContent = '📱 Abre Spotify en tu teléfono o computadora y presiona "Enviar a dispositivo" de nuevo'
+      showToast('Abre Spotify en tu teléfono/compu primero')
       return
     }
     const device = devices[0]
     if (fs) fs.textContent = '▶ Reproduciendo en: ' + device.name
     showToast('▶ Reproduciendo en ' + device.name)
-    /* Transfer and play */
-    await fetch('https://api.spotify.com/v1/me/player/play?device_id=' + device.id, {
+    const playRes = await fetch('https://api.spotify.com/v1/me/player/play?device_id=' + device.id, {
       method: 'PUT',
       headers: {
         'Authorization': 'Bearer ' + spotifyToken,
@@ -863,6 +863,14 @@
         offset: { position: 0 },
       }),
     })
+    if (!playRes.ok) {
+      if (fs) fs.textContent = '❌ Error al reproducir (código ' + playRes.status + ')'
+      showToast('Error al reproducir')
+    } else {
+      if (fs) fs.textContent = '✅ Reproduciendo en ' + device.name
+      isPlaying = true
+      updatePlayerBar()
+    }
   }
     })
     spotifyPlayer.addListener('initialization_error', ({ message }) => {

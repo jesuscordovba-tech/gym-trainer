@@ -274,11 +274,6 @@
       const btn = e.target.closest('[data-tab]')
       if (btn) switchTab(btn)
     })
-    const bn = document.getElementById('bottomNav')
-    if (bn) bn.addEventListener('click', e => {
-      const btn = e.target.closest('[data-tab]')
-      if (btn) switchTab(btn)
-    })
 
     // Keyboard shortcuts: Ctrl/Cmd + 1-7 for tabs
     document.addEventListener('keydown', e => {

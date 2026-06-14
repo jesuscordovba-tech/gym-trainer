@@ -1,5 +1,6 @@
 ;(() => {
   let currentDay = 0
+  let _calMonthOffset = 0
   let timerInterval = null
   let audioCtx = null
   const LS_PREFIX = 'gymapp_ai_'
@@ -1099,9 +1100,12 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<div class="stat-card"><div class="stat-value">' + daysCompleted + '</div><div class="stat-label">Días completados</div></div>',
       '</div>',
       (typeof navigator.share === 'function' ? '<div style="text-align:center;margin-bottom:1rem;"><button class="reset-btn" id="shareProgressBtn" style="background:var(--surface);border-color:var(--border);color:var(--text);">Compartir Progreso</button></div>' : ''),
+      '<h3>Calendario de Entrenos</h3>',
+      '<div id="calendarWrap" style="margin-bottom:1.5rem;"></div>',
       '<h3>Detalle por día</h3>',
     ].join('')
 
+    renderCalendar()
     workoutPlan.days.forEach((d, i) => {
       const p = progress[i] || {}
       const daySets = d.exercises.reduce((a, ex) => a + ex.sets, 0)
@@ -1453,6 +1457,11 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     if (measures.length > 0) {
       html += '<h3 style="margin-top:2rem;">Evolución</h3>'
       html += '<div class="chart-container"><canvas id="measuresChart" width="800" height="300"></canvas></div>'
+      html += '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;margin-top:0.5rem;font-size:0.75rem;">'
+      ;['#5ac8fa','#bf5af2','#e94560','#2ecc71','#f39c12','#3498db','#ff6b35','#1abc9c'].forEach((c, i) => {
+        html += '<span style="display:inline-flex;align-items:center;gap:0.25rem;"><span style="width:10px;height:10px;border-radius:2px;background:' + c + ';"></span>' + ['Cuello','Hombros','Pecho','Brazo','Cintura','Cadera','Pierna','Pantorrilla'][i] + '</span>'
+      })
+      html += '</div>'
       html += '<div class="measures-table-wrap"><table class="measures-table"><thead><tr><th>Fecha</th>'
       labels.forEach(k => { html += '<th>' + labelNames[k] + '</th>' })
       html += '</tr></thead><tbody>'
@@ -1500,14 +1509,17 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const measures = db.getMeasurements()
     if (measures.length < 2) return
 
-    const keys = ['chest','bicep','waist','thigh']
-    const colors = ['#e94560','#2ecc71','#f39c12','#3498db']
-    const recent = measures.slice(-20)
-    const maxV = Math.max(...recent.flatMap(m => keys.map(k => m[k] || 0)), 1) * 1.1
-    const minV = Math.min(...recent.flatMap(m => keys.map(k => m[k] || Infinity)), 0)
+    const keys = ['neck','shoulders','chest','bicep','waist','hip','thigh','calf']
+    const colors = ['#5ac8fa','#bf5af2','#e94560','#2ecc71','#f39c12','#3498db','#ff6b35','#1abc9c']
+    const labelNames = { neck:'Cuello', shoulders:'Hombros', chest:'Pecho', bicep:'Brazo', waist:'Cintura', hip:'Cadera', thigh:'Pierna', calf:'Pantorrilla' }
+    const recent = measures.slice(-30)
+    const allValues = recent.flatMap(m => keys.map(k => m[k] || 0))
+    const maxV = Math.max(...allValues, 1) * 1.1
+    const minV = Math.min(...allValues.filter(v => v > 0), 0)
+    const range = maxV - minV || 1
 
     ctx.clearRect(0, 0, w, h)
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)'
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'
     ctx.lineWidth = 1
     for (let i = 0; i <= 4; i++) {
       const y = pad.top + (chartH / 4) * i
@@ -1516,35 +1528,33 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
 
     keys.forEach((key, ki) => {
       const values = recent.map(m => m[key] || 0)
-      const hasData = values.some(v => v > 0)
-      if (!hasData) return
+      if (values.every(v => v === 0)) return
       ctx.strokeStyle = colors[ki]
       ctx.lineWidth = 2
       ctx.beginPath()
       values.forEach((v, i) => {
         const x = pad.left + (chartW / Math.max(values.length - 1, 1)) * i
-        const y = pad.top + chartH - ((v - minV) / (maxV - minV)) * chartH
+        const y = pad.top + chartH - ((v - minV) / range) * chartH
         i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
       })
       ctx.stroke()
-      ctx.fillStyle = colors[ki]
-      ctx.font = '10px system-ui'
-      ctx.textAlign = 'left'
-      ctx.fillText(labelMap(key), w - pad.right - 60, pad.top + 14 * ki + 10)
+      const lastV = values[values.length - 1]
+      if (lastV > 0) {
+        ctx.fillStyle = colors[ki]
+        const lx = pad.left + chartW
+        const ly = pad.top + chartH - ((lastV - minV) / range) * chartH
+        ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI * 2); ctx.fill()
+      }
     })
 
     ctx.fillStyle = '#888'
-    ctx.font = '10px system-ui'
+    ctx.font = '9px system-ui'
     ctx.textAlign = 'center'
     recent.forEach((m, i) => {
-      if (recent.length > 8 && i % Math.ceil(recent.length / 6) !== 0) return
+      if (recent.length > 10 && i % Math.ceil(recent.length / 6) !== 0) return
       const x = pad.left + (chartW / Math.max(recent.length - 1, 1)) * i
       ctx.fillText(m.date ? m.date.slice(5) : '', x, h - 8)
     })
-
-    function labelMap(k) {
-      return { chest: 'Pecho', bicep: 'Brazo', waist: 'Cintura', thigh: 'Pierna', neck: 'Cuello', shoulders: 'Hombros', hip: 'Cadera', calf: 'Pantorrilla' }[k] || k
-    }
   }
 
   /* === Exercise History Overlay === */
@@ -2177,6 +2187,55 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+  }
+
+  function renderCalendar() {
+    const wrap = document.getElementById('calendarWrap')
+    if (!wrap) return
+    const trainingDates = db.getTrainingDates()
+    const trainedSet = new Set(trainingDates)
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = now.getMonth() + _calMonthOffset
+    const mDate = new Date(year, month, 1)
+    const mYear = mDate.getFullYear()
+    const mMonth = mDate.getMonth()
+    const daysInMonth = new Date(mYear, mMonth + 1, 0).getDate()
+    const firstDay = mDate.getDay()
+    const todayStr = now.toISOString().split('T')[0]
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
+    let html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">'
+    html += '<button class="reset-btn" id="calPrev" style="font-size:1.1rem;padding:0.25rem 0.6rem;">◀</button>'
+    html += '<strong style="font-size:0.95rem;">' + monthNames[mMonth] + ' ' + mYear + '</strong>'
+    html += '<button class="reset-btn" id="calNext" style="font-size:1.1rem;padding:0.25rem 0.6rem;">▶</button>'
+    html += '</div>'
+
+    html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:0.75rem;">'
+    ;['Do','Lu','Ma','Mi','Ju','Vi','Sa'].forEach(d => {
+      html += '<div style="color:var(--text-muted);padding:0.25rem 0;font-weight:600;">' + d + '</div>'
+    })
+    for (let i = 0; i < firstDay; i++) {
+      html += '<div></div>'
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = mYear + '-' + String(mMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0')
+      const isToday = dateStr === todayStr
+      const hasTraining = trainedSet.has(dateStr)
+      html += '<div style="position:relative;padding:0.35rem 0;border-radius:var(--radius-xs);' +
+        (isToday ? 'background:var(--primary);color:#fff;font-weight:700;' : '') + '">'
+      html += '<span>' + d + '</span>'
+      if (hasTraining) {
+        html += '<div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:' +
+          (isToday ? '#fff' : 'var(--green)') + ';"></div>'
+      }
+      html += '</div>'
+    }
+    html += '</div>'
+    wrap.innerHTML = html
+
+    document.getElementById('calPrev')?.addEventListener('click', () => { _calMonthOffset--; renderCalendar() })
+    document.getElementById('calNext')?.addEventListener('click', () => { _calMonthOffset++; renderCalendar() })
   }
 
   /* Start with login screen */

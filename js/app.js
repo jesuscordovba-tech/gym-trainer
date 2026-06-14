@@ -238,6 +238,9 @@
     setupExHistoryOverlay()
     updatePlateauAlerts()
 
+    /* Init Spotify player early so it's ready when user visits music tab */
+    if (spotifyToken) initSpotifyPlayer()
+
     db.onUpdate(() => {
       renderDaySelector()
       renderWorkout(currentDay)
@@ -692,6 +695,9 @@
       '<div id="musicPlaylists" class="music-grid">',
       connected ? '<p style="color:var(--text-dim);font-size:0.85rem;">Busca tus playlists favoritas para entrenar</p>' : '<p style="color:var(--text-dim);font-size:0.85rem;">Conecta Spotify en <strong>Ajustes</strong> para buscar música</p>',
       '</div>',
+      '<div id="playerStatus" class="player-status" style="font-size:0.78rem;color:var(--text-dim);margin-top:0.5rem;">' +
+        (connected ? (spotifyPlayerReady ? '✅ Conectado' : '🔄 Conectando...') : '') +
+      '</div>',
       '<div id="playerBar" class="player-bar" style="display:none;">',
       '<div class="player-bar-track">',
       '<div class="player-bar-img" id="playerTrackImg"></div>',
@@ -725,7 +731,7 @@
     document.getElementById('playerNextBtn')?.addEventListener('click', nextTrack)
     document.getElementById('playerPrevBtn')?.addEventListener('click', prevTrack)
 
-    if (connected && !spotifyPlayer) initSpotifyPlayer()
+    updatePlayerBar()
   }
 
   async function spotifySearchAndRender(query) {
@@ -759,7 +765,8 @@
   }
 
   /* === Web Playback SDK === */
-  function initSpotifyPlayer() {
+  async function initSpotifyPlayer() {
+    await refreshSpotifyToken()
     if (window.Spotify) { connectPlayer(); return }
     const s = document.createElement('script')
     s.src = 'https://sdk.scdn.co/spotify-player.js'
@@ -779,11 +786,13 @@
     spotifyPlayer.addListener('ready', ({ device_id }) => {
       spotifyDeviceId = device_id
       spotifyPlayerReady = true
+      const st = document.getElementById('playerStatus')
+      if (st) st.textContent = '✅ Conectado'
       showToast('🎵 Reproductor conectado')
       if (_pendingPlaylistId) {
         const pid = _pendingPlaylistId
         _pendingPlaylistId = null
-        setTimeout(() => playPlaylist(pid), 300)
+        setTimeout(() => playPlaylist(pid), 500)
       }
     })
     spotifyPlayer.addListener('player_state_changed', state => {
@@ -793,9 +802,25 @@
         updatePlayerBar()
       }
     })
-    spotifyPlayer.addListener('initialization_error', ({ message }) => { showToast('Error SDK Spotify: ' + message); spotifyPlayerReady = false })
-    spotifyPlayer.addListener('authentication_error', () => { showToast('Token expirado, reconecta en Ajustes'); spotifyPlayerReady = false })
-    spotifyPlayer.addListener('account_error', () => showToast('Requiere Spotify Premium'))
+    spotifyPlayer.addListener('initialization_error', ({ message }) => {
+      const st = document.getElementById('playerStatus')
+      if (st) st.textContent = '❌ Error: ' + message
+      showToast('Error SDK Spotify: ' + message)
+      spotifyPlayerReady = false
+    })
+    spotifyPlayer.addListener('authentication_error', () => {
+      const st = document.getElementById('playerStatus')
+      if (st) st.textContent = '❌ Token expirado'
+      showToast('Token expirado, reconecta en Ajustes')
+      spotifyPlayerReady = false
+    })
+    spotifyPlayer.addListener('account_error', () => {
+      const st = document.getElementById('playerStatus')
+      if (st) st.textContent = '❌ No tienes Premium'
+      showToast('Requiere Spotify Premium')
+      spotifyPlayerReady = false
+    })
+    spotifyPlayer.addListener('playback_error', ({ message }) => { showToast('Error reproducción: ' + message) })
     spotifyPlayer.connect()
   }
 

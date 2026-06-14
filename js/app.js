@@ -340,6 +340,12 @@
     const machine = gymData.getMachineById(activeEx.machine)
     const notes = db.getNotes()
     const exNotes = notes[dataKey] || []
+    const mods = db.getExerciseMods()
+    const mod = mods[dataKey] || {}
+    const exSets = mod.sets || activeEx.sets
+    const exReps = mod.reps || activeEx.reps
+    const exRest = mod.rest || activeEx.rest
+    const exRir = mod.rir !== undefined ? mod.rir : activeEx.rir
     let h = '<div class="exercise-item' + (isCustom ? ' custom-exercise' : '') + '" data-day="' + dayIndex + '" data-ex="' + exKey + '">'
     h += '<div class="exercise-top">'
     h += '<div class="exercise-info">'
@@ -348,9 +354,10 @@
     if (isCustom) h += '<span class="swapped-badge" style="background:var(--green);">✚</span>'
     h += '</div>'
     h += '<div class="exercise-meta">'
-    h += '<span>' + activeEx.sets + '×' + esc(activeEx.reps) + '</span>'
-    h += '<span>' + activeEx.rest + 's</span>'
-    h += '<span>RIR ' + activeEx.rir + '</span>'
+    h += '<span>' + exSets + '×' + esc(exReps) + '</span>'
+    h += '<span>' + exRest + 's</span>'
+    h += '<span>RIR ' + exRir + '</span>'
+    h += '<button class="ex-edit-meta-btn" data-key="' + dataKey + '" data-sets="' + exSets + '" data-reps="' + esc(exReps) + '" data-rest="' + exRest + '" data-rir="' + exRir + '" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:0 0.25rem;font-size:0.75rem;" title="Editar series/reps">✎</button>'
     h += '</div>'
     h += '<div>'
     h += '<span class="machine-badge">' + esc(machine ? machine.name : activeEx.machine) + '</span>'
@@ -365,16 +372,17 @@
     h += '</div></div>'
     h += '<div class="exercise-controls">'
     h += '<div class="set-tracker">'
-    for (let s = 0; s < activeEx.sets; s++) {
+    const capped = Math.min(setsCompleted, exSets)
+    for (let s = 0; s < exSets; s++) {
       const note = exNotes[s]
       h += '<button class="set-dot ' +
-        (s < setsCompleted ? 'completed' : s === setsCompleted ? 'current' : '') +
+        (s < capped ? 'completed' : s === capped ? 'current' : '') +
         '" data-day="' + dayIndex + '" data-ex="' + exKey + '" data-set="' + s + '" title="' + (note ? esc(note.rir !== undefined ? 'RIR ' + note.rir : '') : '') + '">' +
         (s + 1) + '</button>'
     }
     h += '</div>'
     h += '<div class="ex-controls-row">'
-    h += '<button class="rest-timer-btn" data-rest="' + activeEx.rest + '">⏱ ' + activeEx.rest + 's</button>'
+    h += '<button class="rest-timer-btn" data-rest="' + exRest + '">⏱ ' + exRest + 's</button>'
     if (!isCustom) {
       h += '<button class="swap-btn" data-day="' + dayIndex + '" data-ex="' + exKey + '" title="Cambiar ejercicio">↻</button>'
     }
@@ -434,11 +442,14 @@
       const swapped = customWorkout[swapKey]
       const activeEx = swapped || ex
       const setsCompleted = dayProgress[exIdx] || 0
-      const allDone = setsCompleted >= activeEx.sets
+      const exMod = (db.getExerciseMods() || {})[swapKey] || {}
+      const targetSets = exMod.sets || activeEx.sets
+      const targetRir = exMod.rir !== undefined ? exMod.rir : activeEx.rir
+      const allDone = setsCompleted >= targetSets
       const machine = gymData.getMachineById(activeEx.machine)
       const weight = weights[swapKey] || ''
       const defaultKg = getDefaultKg(activeEx.machine)
-      const nextW = recommendWeight(activeEx, weight, allDone)
+      const nextW = recommendWeight({ ...activeEx, sets: targetSets, rir: targetRir }, weight, allDone)
 
       html += renderExercise(dayIndex, exIdx, activeEx, setsCompleted, weight, defaultKg, nextW, swapKey, swapped)
     })
@@ -528,6 +539,28 @@
           db.setCustomExercises(ce)
           renderWorkout(d)
         }
+      })
+    })
+    container.querySelectorAll('.ex-edit-meta-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.key
+        const curSets = btn.dataset.sets
+        const curReps = btn.dataset.reps
+        const curRest = btn.dataset.rest
+        const curRir = btn.dataset.rir
+        const val = prompt('Editar ejercicio\n\nSets, Reps, Descanso(s), RIR\nFormato: sets reps descanso rir\nEj: 4 10-12 90 2', curSets + ' ' + curReps + ' ' + curRest + ' ' + curRir)
+        if (!val) return
+        const parts = val.trim().split(/\s+/)
+        if (parts.length < 4) { showToast('Formato: sets reps descanso rir'); return }
+        const sets = parseInt(parts[0], 10)
+        const reps = parts[1]
+        const rest = parseInt(parts[2], 10)
+        const rir = parseInt(parts[3], 10)
+        if (!sets || sets < 1) { showToast('Sets inválido'); return }
+        const mods = db.getExerciseMods()
+        mods[key] = { sets, reps, rest, rir }
+        db.setExerciseMods(mods)
+        renderWorkout(dayIndex)
       })
     })
     /* Calorie save handler */

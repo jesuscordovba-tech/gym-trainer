@@ -246,6 +246,8 @@
     async function setCustomExercises(ce) { if (data) { data.customExercises = ce; schedulePersist() } }
     function getCustomDays() { return data ? (data.customDays || []) : [] }
     async function setCustomDays(d) { if (data) { data.customDays = d; schedulePersist() } }
+    function getExerciseMods() { return data ? (data.exerciseMods || {}) : {} }
+    async function setExerciseMods(m) { if (data) { data.exerciseMods = m; schedulePersist() } }
     async function setCalories(c) { if (data) { data.caloriesBurned = c; schedulePersist() } }
     function getWorkoutNotes() { return data ? (data.workoutNotes || {}) : {} }
     async function setWorkoutNotes(n) { if (data) { data.workoutNotes = n; schedulePersist() } }
@@ -261,6 +263,7 @@
       data.customExercises = {}
       data.customWorkout = {}
       data.customDays = []
+      data.exerciseMods = {}
       data.caloriesBurned = {}
       data.workoutNotes = {}
       data.trainingDates = []
@@ -568,6 +571,7 @@
       getTrainingDates, setTrainingDates, getCustomWorkout, setCustomWorkout,
       getCustomExercises, setCustomExercises,
       getCustomDays, setCustomDays,
+      getExerciseMods, setExerciseMods,
       getCalories, setCalories,
       getNotes, setNotes,
       getWorkoutNotes, setWorkoutNotes,

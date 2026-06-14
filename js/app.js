@@ -695,6 +695,11 @@
       '<div id="musicPlaylists" class="music-grid">',
       connected ? '<p style="color:var(--text-dim);font-size:0.85rem;">Busca tus playlists favoritas para entrenar</p>' : '<p style="color:var(--text-dim);font-size:0.85rem;">Conecta Spotify en <strong>Ajustes</strong> para buscar música</p>',
       '</div>',
+      '<div id="fallbackSection" style="display:none;margin-top:1rem;text-align:center;">',
+      '<p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.5rem;">No se pudo conectar el reproductor en el navegador.</p>',
+      '<button class="spotify-btn" id="fallbackPlayBtn" style="background:#1DB954;">📱 Enviar a mi dispositivo</button>',
+      '<div id="fallbackStatus" style="font-size:0.78rem;color:var(--text-dim);margin-top:0.5rem;"></div>',
+      '</div>',
       '<div id="playerStatus" class="player-status" style="font-size:0.78rem;color:var(--text-dim);margin-top:0.5rem;">' +
         (connected ? (spotifyPlayerReady ? '✅ Conectado' : '🔄 Conectando...') : '') +
       '</div>',
@@ -730,6 +735,12 @@
     document.getElementById('playerPlayBtn')?.addEventListener('click', togglePlayback)
     document.getElementById('playerNextBtn')?.addEventListener('click', nextTrack)
     document.getElementById('playerPrevBtn')?.addEventListener('click', prevTrack)
+
+    /* Fallback play on device */
+    document.getElementById('fallbackPlayBtn')?.addEventListener('click', () => {
+      const pid = localStorage.getItem(SPOTIFY_PREFIX + 'last_playlist')
+      if (pid) playOnDevice(pid)
+    })
 
     updatePlayerBar()
   }
@@ -782,10 +793,13 @@
     s.onerror = () => { if (st) st.textContent = '❌ Error al cargar SDK Spotify' }
     window.onSpotifyWebPlaybackSDKReady = connectPlayer
     document.body.appendChild(s)
-    /* Timeout: if player not ready in 20s, show help */
+    /* Timeout: if player not ready in 20s, try fallback */
     setTimeout(() => {
       if (!spotifyPlayerReady) {
-        if (st) st.textContent = '❌ No se pudo conectar. ¿Tienes Spotify Premium? Reconecta en Ajustes'
+        const st = document.getElementById('playerStatus')
+        if (st) st.textContent = '⚠️ No se pudo conectar el reproductor en el navegador'
+        const fb = document.getElementById('fallbackSection')
+        if (fb) fb.style.display = 'block'
         showToast('❌ No se pudo conectar el reproductor')
       }
     }, 20000)
@@ -815,8 +829,41 @@
       if (state) {
         isPlaying = !state.paused
         currentTrack = state.track_window?.current_track || null
-        updatePlayerBar()
-      }
+    updatePlayerBar()
+  }
+
+  /* Fallback: play on any available Spotify device (phone, computer, etc.) */
+  async function playOnDevice(playlistId) {
+    const fs = document.getElementById('fallbackStatus')
+    if (fs) fs.textContent = '🔍 Buscando dispositivos...'
+    await refreshSpotifyToken()
+    const devicesRes = await fetch('https://api.spotify.com/v1/me/player/devices', {
+      headers: { 'Authorization': 'Bearer ' + spotifyToken }
+    })
+    if (!devicesRes.ok) { if (fs) fs.textContent = '❌ Error al buscar dispositivos'; return }
+    const devicesData = await devicesRes.json()
+    const devices = devicesData.devices || []
+    if (!devices.length) {
+      if (fs) fs.textContent = '📱 Abre Spotify en tu teléfono o computadora primero'
+      showToast('Abre Spotify en otro dispositivo')
+      return
+    }
+    const device = devices[0]
+    if (fs) fs.textContent = '▶ Reproduciendo en: ' + device.name
+    showToast('▶ Reproduciendo en ' + device.name)
+    /* Transfer and play */
+    await fetch('https://api.spotify.com/v1/me/player/play?device_id=' + device.id, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + spotifyToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        context_uri: 'spotify:playlist:' + playlistId,
+        offset: { position: 0 },
+      }),
+    })
+  }
     })
     spotifyPlayer.addListener('initialization_error', ({ message }) => {
       const st = document.getElementById('playerStatus')
@@ -837,7 +884,10 @@
       spotifyPlayerReady = false
     })
     spotifyPlayer.addListener('playback_error', ({ message }) => { showToast('Error reproducción: ' + message) })
-    spotifyPlayer.connect()
+    spotifyPlayer.connect().catch(() => {
+      const st = document.getElementById('playerStatus')
+      if (st) st.textContent = '❌ Error de conexión. ¿Spotify abierto en otro dispositivo?'
+    })
   }
 
   function updatePlayerBar() {
@@ -852,6 +902,7 @@
   }
 
   async function playPlaylist(playlistId) {
+    localStorage.setItem(SPOTIFY_PREFIX + 'last_playlist', playlistId)
     if (!spotifyPlayerReady || !spotifyDeviceId) {
       _pendingPlaylistId = playlistId
       if (!spotifyPlayer) initSpotifyPlayer()
@@ -872,8 +923,7 @@
       }),
     })
     if (res.status === 404) {
-      showToast('Transfiriendo reproducción a este dispositivo...')
-      /* Transfer playback to our device */
+      showToast('No hay dispositivo activo, intentando conectar...')
       await fetch('https://api.spotify.com/v1/me/player', {
         method: 'PUT',
         headers: {
@@ -885,7 +935,6 @@
           play: true,
         }),
       })
-      /* Retry after transfer */
       const retry = await fetch('https://api.spotify.com/v1/me/player/play?device_id=' + spotifyDeviceId, {
         method: 'PUT',
         headers: {
@@ -897,7 +946,12 @@
           offset: { position: 0 },
         }),
       })
-      if (!retry.ok) { showToast('No se pudo reproducir, abre Spotify en otro dispositivo'); return }
+      if (!retry.ok) {
+        showToast('No se pudo reproducir en el navegador. Abre Spotify en tu teléfono')
+        const fb = document.getElementById('fallbackSection')
+        if (fb) { fb.style.display = 'block'; fb.scrollIntoView({ behavior: 'smooth' }) }
+        return
+      }
     }
     if (!res.ok && res.status !== 404) { showToast('Error al reproducir'); return }
     isPlaying = true

@@ -260,6 +260,7 @@
       data.trainingDates = []
       notify()
       await persistNow()
+      if (token) await pushToGist()
     }
 
     function showSyncIndicator() {

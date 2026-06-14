@@ -766,13 +766,29 @@
 
   /* === Web Playback SDK === */
   async function initSpotifyPlayer() {
+    const st = document.getElementById('playerStatus')
+    if (st) st.textContent = '🔄 Actualizando token...'
     await refreshSpotifyToken()
+    if (!spotifyToken) {
+      if (st) st.textContent = '❌ No hay token, reconecta en Ajustes'
+      return
+    }
     if (window.Spotify) { connectPlayer(); return }
+    if (st) st.textContent = '🔄 Cargando SDK...'
     const s = document.createElement('script')
     s.src = 'https://sdk.scdn.co/spotify-player.js'
     s.async = true
+    s.onload = () => { if (st) st.textContent = '🔄 SDK cargado, conectando...' }
+    s.onerror = () => { if (st) st.textContent = '❌ Error al cargar SDK Spotify' }
     window.onSpotifyWebPlaybackSDKReady = connectPlayer
     document.body.appendChild(s)
+    /* Timeout: if player not ready in 20s, show help */
+    setTimeout(() => {
+      if (!spotifyPlayerReady) {
+        if (st) st.textContent = '❌ No se pudo conectar. ¿Tienes Spotify Premium? Reconecta en Ajustes'
+        showToast('❌ No se pudo conectar el reproductor')
+      }
+    }, 20000)
   }
 
   function connectPlayer() {

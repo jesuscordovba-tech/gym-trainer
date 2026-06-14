@@ -283,6 +283,7 @@
     const grid = document.getElementById('dayGrid')
     grid.innerHTML = ''
     const progress = db.getProgress()
+    const customDays = db.getCustomDays()
     workoutPlan.days.forEach((d, i) => {
       const p = progress[i] || {}
       const completedSets = Object.values(p).reduce((a, b) => a + (b || 0), 0)
@@ -298,6 +299,25 @@
         currentDay = i
         renderDaySelector()
         renderWorkout(i)
+      })
+      grid.appendChild(card)
+    })
+    customDays.forEach((cd, ci) => {
+      const idx = 100 + ci
+      const p = progress[idx] || {}
+      const completedSets = Object.values(p).reduce((a, b) => a + (b || 0), 0)
+      const totalSets = cd.exercises.reduce((a, ex) => a + ex.sets, 0)
+      const card = document.createElement('div')
+      card.className = `day-card ${idx === currentDay ? 'active' : ''}`
+      card.innerHTML = `
+        <div class="day-label">CUSTOM</div>
+        <div class="day-name">${esc(cd.name)}</div>
+        <div class="day-focus">${completedSets}/${totalSets} series</div>
+      `
+      card.addEventListener('click', () => {
+        currentDay = idx
+        renderDaySelector()
+        renderWorkout(idx)
       })
       grid.appendChild(card)
     })
@@ -369,8 +389,11 @@
     return h
   }
 
+  function isCustomDay(idx) { return idx >= 100 }
+
   function renderWorkout(dayIndex) {
-    const d = workoutPlan.days[dayIndex]
+    const isCustom = isCustomDay(dayIndex)
+    const d = isCustom ? db.getCustomDays()[dayIndex - 100] : workoutPlan.days[dayIndex]
     if (!d) return
     const container = document.getElementById('workoutContent')
     const progress = db.getProgress()
@@ -379,23 +402,26 @@
     const customWorkout = db.getCustomWorkout()
     const profile = db.getProfile()
 
-    // Bot validation card
-    const botMsgs = profile ? workoutPlan.validateWorkout(profile) : []
-    let html = [
-      '<div class="bot-card">',
-      '<div class="bot-card-title">Coach — Análisis de tu rutina</div>',
-      botMsgs.map(m => '<div class="bot-msg">' + m + '</div>').join(''),
-      '</div>',
-    ].join('') + [
+    let html = ''
+    if (!isCustom) {
+      const botMsgs = profile ? workoutPlan.validateWorkout(profile) : []
+      html += [
+        '<div class="bot-card">',
+        '<div class="bot-card-title">Coach — Análisis de tu rutina</div>',
+        botMsgs.map(m => '<div class="bot-msg">' + m + '</div>').join(''),
+        '</div>',
+      ].join('')
+    }
+    html += [
       '<div class="workout-header">',
       '<div class="workout-header-row">',
       '<h2>' + esc(d.name) + '</h2>',
       '<button class="workout-timer-btn" id="workoutTimerBtn" title="Temporizador de entrenamiento">⏱ ' + getTimerDisplay(_timerSeconds) + '</button>',
       '</div>',
-      '<div class="focus">' + esc(d.focus) + '</div>',
-      '<div class="focus-note">' + esc(workoutPlan.getFocusNote(profile)) + '</div>',
+      isCustom ? '' : '<div class="focus">' + esc(d.focus) + '</div>',
+      isCustom ? '' : '<div class="focus-note">' + esc(workoutPlan.getFocusNote(profile)) + '</div>',
       '</div>',
-      '<div class="warmup-box"><strong>Calentamiento:</strong> ' + esc(d.warmup) + '</div>',
+      isCustom ? '' : '<div class="warmup-box"><strong>Calentamiento:</strong> ' + esc(d.warmup) + '</div>',
     ].join('') + (function() {
       const today = new Date().toISOString().split('T')[0]
       const notes = db.getWorkoutNotes()
@@ -432,16 +458,19 @@
 
     html += '<button class="reset-btn add-ex-btn" id="addCustomEx" style="margin-bottom:1rem;width:100%;">Agregar ejercicio personalizado</button>'
 
-    html += [
-      '<div class="cardio-card">',
-      '<h3>Cardio — ' + esc(d.cardio.type) + '</h3>',
-      '<div class="cardio-detail">',
-      '<div class="cardio-item"><strong>Máquina</strong>' + esc(gymData.getMachineById(d.cardio.machine)?.name || d.cardio.machine) + '</div>',
-      '<div class="cardio-item"><strong>Duración</strong>' + esc(d.cardio.duration) + '</div>',
-      '<div class="cardio-item"><strong>Protocolo</strong>' + esc(d.cardio.protocol) + '</div>',
-      '</div></div>',
-      '<div class="cooldown-box"><strong>Enfriamiento:</strong> ' + esc(d.cooldown) + '</div>',
-    ].join('') + (function() {
+    if (!isCustom) {
+      html += [
+        '<div class="cardio-card">',
+        '<h3>Cardio — ' + esc(d.cardio.type) + '</h3>',
+        '<div class="cardio-detail">',
+        '<div class="cardio-item"><strong>Máquina</strong>' + esc(gymData.getMachineById(d.cardio.machine)?.name || d.cardio.machine) + '</div>',
+        '<div class="cardio-item"><strong>Duración</strong>' + esc(d.cardio.duration) + '</div>',
+        '<div class="cardio-item"><strong>Protocolo</strong>' + esc(d.cardio.protocol) + '</div>',
+        '</div></div>',
+        '<div class="cooldown-box"><strong>Enfriamiento:</strong> ' + esc(d.cooldown) + '</div>',
+      ].join('')
+    }
+    html += (function() {
       const today = new Date().toISOString().split('T')[0]
       const cal = db.getCalories()
       return '<div class="calorie-section"><h3>Calorías del Entrenamiento</h3><div class="calorie-row"><input type="number" id="calInput" class="weight-input" value="' + (cal[today] || '') + '" placeholder="kcal" min="0" style="width:100px;"><span class="cal-unit">kcal</span><button class="reset-btn" id="saveCalBtn">Guardar</button></div><div id="calHistory" style="font-size:0.8rem;color:var(--text-dim);margin-top:0.5rem;"></div></div>'
@@ -1100,6 +1129,19 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       if (dayDone > 0) totalWorkouts++
       if (dayDone >= daySets) daysCompleted++
     })
+    db.getCustomDays().forEach((cd, ci) => {
+      const idx = 100 + ci
+      const p = progress[idx] || {}
+      const daySets = cd.exercises.reduce((a, ex) => a + ex.sets, 0)
+      let dayDone = 0
+      cd.exercises.forEach((ex, exIdx) => {
+        dayDone += p[exIdx] || 0
+      })
+      totalSets += daySets
+      totalSetsDone += dayDone
+      if (dayDone > 0) totalWorkouts++
+      if (dayDone >= daySets) daysCompleted++
+    })
 
     const pct = totalSets > 0 ? Math.round((totalSetsDone / totalSets) * 100) : 0
 
@@ -1136,6 +1178,20 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const doneClass = dayDone >= daySets ? 'progress-day-done' : ''
       html += '<div class="progress-day-row ' + doneClass + '">'
       html += '<span>' + DAY_LABELS[i] + ' — ' + esc(d.name.split(' — ')[0]) + '</span>'
+      html += '<span class="progress-day-count">'
+      html += dayDone + '/' + daySets + ' series</span></div>'
+    })
+    db.getCustomDays().forEach((cd, ci) => {
+      const idx = 100 + ci
+      const p = progress[idx] || {}
+      const daySets = cd.exercises.reduce((a, ex) => a + ex.sets, 0)
+      let dayDone = 0
+      cd.exercises.forEach((ex, exIdx) => {
+        dayDone += p[exIdx] || 0
+      })
+      const doneClass = dayDone >= daySets ? 'progress-day-done' : ''
+      html += '<div class="progress-day-row ' + doneClass + '">'
+      html += '<span>✚ ' + esc(cd.name) + '</span>'
       html += '<span class="progress-day-count">'
       html += dayDone + '/' + daySets + ' series</span></div>'
     })
@@ -1943,6 +1999,19 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       'Come ~' + profile.deficitCalories + ' kcal/día con alta proteína (1.6-2.2g/kg) para perder grasa sin perder músculo.</p>',
       '</div>',
 
+      /* Custom Days */
+      '<div class="card">',
+      '<div class="card-title">Rutinas Personalizadas</div>',
+      '<p class="settings-description">Crea tus propios días de entrenamiento con los ejercicios que quieras.</p>',
+      '<div id="customDaysList" style="margin-bottom:0.75rem;">' + (function() {
+        const cdays = db.getCustomDays()
+        if (!cdays.length) return '<p style="color:var(--text-dim);font-size:0.85rem;text-align:center;">No has creado rutinas personalizadas aún.</p>'
+        return cdays.map((cd, i) => '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem;background:var(--surface2);border-radius:var(--radius-xs);margin-bottom:0.25rem;"><span style="font-size:0.9rem;">' + esc(cd.name) + ' <span style="color:var(--text-dim);font-size:0.75rem;">(' + cd.exercises.length + ' ejercicios)</span></span><div><button class="reset-btn edit-custom-day" data-idx="' + i + '" style="padding:0.15rem 0.4rem;font-size:0.75rem;">✎</button> <button class="reset-btn del-custom-day" data-idx="' + i + '" style="padding:0.15rem 0.4rem;font-size:0.75rem;color:var(--primary);">✕</button></div></div>').join('')
+      })() + '</div>',
+      '<button class="reset-btn" id="addCustomDayBtn" style="width:100%;">Crear nueva rutina</button>',
+      '<div id="customDayForm" style="margin-top:0.75rem;display:none;"></div>',
+      '</div>',
+
       /* Sync section */
       '<div class="card">',
       '<div class="card-title">Respaldo en la Nube</div>',
@@ -2042,6 +2111,29 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       showToast('Perfil actualizado')
       renderSettings()
       renderDiet()
+    })
+
+    /* Custom Days */
+    document.getElementById('addCustomDayBtn')?.addEventListener('click', () => showCustomDayForm(-1))
+    document.querySelectorAll('.edit-custom-day').forEach(btn => {
+      btn.addEventListener('click', () => showCustomDayForm(parseInt(btn.dataset.idx, 10)))
+    })
+    document.querySelectorAll('.del-custom-day').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx, 10)
+        if (confirm('Borrar la rutina "' + esc(db.getCustomDays()[idx]?.name) + '"?')) {
+          const days = db.getCustomDays()
+          days.splice(idx, 1)
+          db.setCustomDays(days)
+          renderSettings()
+          renderDaySelector()
+          if (isCustomDay(currentDay)) {
+            const ci = currentDay - 100
+            if (ci >= days.length) currentDay = 0
+          }
+          renderWorkout(currentDay)
+        }
+      })
     })
 
     const tokenInput = document.getElementById('tokenInput')
@@ -2195,6 +2287,108 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     })
     document.getElementById('notifTime')?.addEventListener('change', function () {
       localStorage.setItem('gymapp_notif_time', this.value)
+    })
+  }
+
+  function showCustomDayForm(editIdx) {
+    const formDiv = document.getElementById('customDayForm')
+    if (!formDiv) return
+    const existing = editIdx >= 0 ? db.getCustomDays()[editIdx] : null
+    const dayName = existing ? existing.name : ''
+    const exercises = existing ? existing.exercises : [{ name: '', machine: '', sets: 3, reps: '8-12', rest: 90, rir: 2, muscle: '', video: '' }]
+
+    let html = '<div style="background:var(--surface2);padding:0.75rem;border-radius:var(--radius-xs);">'
+    html += '<label style="display:block;margin-bottom:0.5rem;font-size:0.85rem;">Nombre de la rutina<input type="text" id="cdName" class="settings-token-input" value="' + esc(dayName) + '" placeholder="Ej: Full Body" style="margin-top:0.25rem;"></label>'
+    html += '<div style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.5rem;">Ejercicios:</div>'
+    html += '<div id="cdExList">'
+    exercises.forEach((ex, ei) => {
+      html += '<div class="cd-ex-row" data-idx="' + ei + '" style="background:var(--surface3);padding:0.5rem;border-radius:var(--radius-xs);margin-bottom:0.35rem;">'
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;font-size:0.8rem;">'
+      html += '<label>Nombre<input type="text" class="cd-ex-name" value="' + esc(ex.name) + '" placeholder="Press banca" style="width:100%;"></label>'
+      html += '<label>Máquina ID<input type="text" class="cd-ex-machine" value="' + esc(ex.machine) + '" placeholder="pressBanca" style="width:100%;"></label>'
+      html += '<label>Series<input type="number" class="cd-ex-sets" value="' + ex.sets + '" min="1" max="20" style="width:100%;"></label>'
+      html += '<label>Reps<input type="text" class="cd-ex-reps" value="' + esc(ex.reps) + '" placeholder="8-12" style="width:100%;"></label>'
+      html += '<label>Descanso (s)<input type="number" class="cd-ex-rest" value="' + ex.rest + '" min="0" step="5" style="width:100%;"></label>'
+      html += '<label>RIR<input type="number" class="cd-ex-rir" value="' + ex.rir + '" min="0" max="5" style="width:100%;"></label>'
+      html += '<label>Músculo<input type="text" class="cd-ex-muscle" value="' + esc(ex.muscle) + '" placeholder="Pecho" style="width:100%;"></label>'
+      html += '<label>Video (ID)<input type="text" class="cd-ex-video" value="' + esc(ex.video || '') + '" placeholder="YouTube ID" style="width:100%;"></label>'
+      html += '</div>'
+      if (exercises.length > 1) {
+        html += '<button class="reset-btn cd-remove-ex" data-idx="' + ei + '" style="margin-top:0.3rem;font-size:0.7rem;padding:0.1rem 0.4rem;color:var(--primary);">Quitar ejercicio</button>'
+      }
+      html += '</div>'
+    })
+    html += '</div>'
+    html += '<div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap;">'
+    html += '<button class="reset-btn" id="cdAddEx" style="font-size:0.8rem;">Agregar ejercicio</button>'
+    html += '<button class="reset-btn" id="cdSave" style="background:var(--primary);color:#fff;border-color:var(--primary);font-size:0.8rem;">Guardar rutina</button>'
+    html += '<button class="reset-btn" id="cdCancel" style="font-size:0.8rem;">Cancelar</button>'
+    html += '</div></div>'
+    formDiv.innerHTML = html
+    formDiv.style.display = 'block'
+
+    document.getElementById('cdAddEx')?.addEventListener('click', () => {
+      const rows = formDiv.querySelectorAll('.cd-ex-row')
+      const div = document.createElement('div')
+      div.className = 'cd-ex-row'
+      div.style.cssText = 'background:var(--surface3);padding:0.5rem;border-radius:var(--radius-xs);margin-bottom:0.35rem;'
+      div.innerHTML = [
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;font-size:0.8rem;">',
+        '<label>Nombre<input type="text" class="cd-ex-name" value="" placeholder="Press banca" style="width:100%;"></label>',
+        '<label>Máquina ID<input type="text" class="cd-ex-machine" value="" placeholder="pressBanca" style="width:100%;"></label>',
+        '<label>Series<input type="number" class="cd-ex-sets" value="3" min="1" max="20" style="width:100%;"></label>',
+        '<label>Reps<input type="text" class="cd-ex-reps" value="8-12" placeholder="8-12" style="width:100%;"></label>',
+        '<label>Descanso (s)<input type="number" class="cd-ex-rest" value="90" min="0" step="5" style="width:100%;"></label>',
+        '<label>RIR<input type="number" class="cd-ex-rir" value="2" min="0" max="5" style="width:100%;"></label>',
+        '<label>Músculo<input type="text" class="cd-ex-muscle" value="" placeholder="Pecho" style="width:100%;"></label>',
+        '<label>Video (ID)<input type="text" class="cd-ex-video" value="" placeholder="YouTube ID" style="width:100%;"></label>',
+        '</div>',
+        '<button class="reset-btn cd-remove-ex" style="margin-top:0.3rem;font-size:0.7rem;padding:0.1rem 0.4rem;color:var(--primary);">Quitar ejercicio</button>',
+      ].join('')
+      document.getElementById('cdExList').appendChild(div)
+      div.querySelector('.cd-remove-ex')?.addEventListener('click', () => {
+        div.remove()
+      })
+    })
+
+    formDiv.querySelectorAll('.cd-remove-ex').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.closest('.cd-ex-row').remove()
+      })
+    })
+
+    document.getElementById('cdSave')?.addEventListener('click', () => {
+      const name = document.getElementById('cdName').value.trim()
+      if (!name) { showToast('El nombre de la rutina es obligatorio'); return }
+      const rows = formDiv.querySelectorAll('.cd-ex-row')
+      const exs = []
+      rows.forEach(row => {
+        const name = row.querySelector('.cd-ex-name')?.value.trim()
+        const machine = row.querySelector('.cd-ex-machine')?.value.trim()
+        const sets = parseInt(row.querySelector('.cd-ex-sets')?.value, 10) || 3
+        const reps = row.querySelector('.cd-ex-reps')?.value.trim() || '8-12'
+        const rest = parseInt(row.querySelector('.cd-ex-rest')?.value, 10) || 90
+        const rir = parseInt(row.querySelector('.cd-ex-rir')?.value, 10)
+        const muscle = row.querySelector('.cd-ex-muscle')?.value.trim()
+        const video = row.querySelector('.cd-ex-video')?.value.trim()
+        if (name && machine) exs.push({ name, machine, sets, reps, rest, rir, muscle, video })
+      })
+      if (!exs.length) { showToast('Agrega al menos un ejercicio con nombre y máquina'); return }
+      const days = db.getCustomDays()
+      if (editIdx >= 0) {
+        days[editIdx] = { name, exercises: exs }
+      } else {
+        days.push({ name, exercises: exs })
+      }
+      db.setCustomDays(days)
+      renderSettings()
+      renderDaySelector()
+      showToast('Rutina guardada')
+    })
+
+    document.getElementById('cdCancel')?.addEventListener('click', () => {
+      formDiv.style.display = 'none'
+      formDiv.innerHTML = ''
     })
   }
 

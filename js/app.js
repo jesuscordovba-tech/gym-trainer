@@ -20,6 +20,7 @@
   let spotifyPlayerReady = false
   let currentTrack = null
   let isPlaying = false
+  let _pendingPlaylistId = null
 
   /* Fetch client_id from backend so user doesn't need to enter it */
   fetch('/api/config').then(r => r.json()).then(d => {
@@ -778,7 +779,12 @@
     spotifyPlayer.addListener('ready', ({ device_id }) => {
       spotifyDeviceId = device_id
       spotifyPlayerReady = true
-      showToast('🎵 Spotify Player listo')
+      showToast('🎵 Reproductor conectado')
+      if (_pendingPlaylistId) {
+        const pid = _pendingPlaylistId
+        _pendingPlaylistId = null
+        setTimeout(() => playPlaylist(pid), 300)
+      }
     })
     spotifyPlayer.addListener('player_state_changed', state => {
       if (state) {
@@ -787,9 +793,9 @@
         updatePlayerBar()
       }
     })
-    spotifyPlayer.addListener('initialization_error', ({ message }) => showToast('Error: ' + message))
-    spotifyPlayer.addListener('authentication_error', ({ message }) => showToast('Error de autenticación Spotify'))
-    spotifyPlayer.addListener('account_error', ({ message }) => showToast('Requiere Spotify Premium'))
+    spotifyPlayer.addListener('initialization_error', ({ message }) => { showToast('Error SDK Spotify: ' + message); spotifyPlayerReady = false })
+    spotifyPlayer.addListener('authentication_error', () => { showToast('Token expirado, reconecta en Ajustes'); spotifyPlayerReady = false })
+    spotifyPlayer.addListener('account_error', () => showToast('Requiere Spotify Premium'))
     spotifyPlayer.connect()
   }
 
@@ -806,8 +812,10 @@
 
   async function playPlaylist(playlistId) {
     if (!spotifyPlayerReady || !spotifyDeviceId) {
-      showToast('Inicializando reproductor...')
+      _pendingPlaylistId = playlistId
       if (!spotifyPlayer) initSpotifyPlayer()
+      else spotifyPlayer.connect()
+      showToast('Conectando reproductor Spotify...')
       return
     }
     await refreshSpotifyToken()
@@ -822,8 +830,35 @@
         offset: { position: 0 },
       }),
     })
-    if (res.status === 404) { showToast('No hay dispositivo activo, reconectando...'); initSpotifyPlayer(); return }
-    if (!res.ok) { showToast('Error al reproducir'); return }
+    if (res.status === 404) {
+      showToast('Transfiriendo reproducción a este dispositivo...')
+      /* Transfer playback to our device */
+      await fetch('https://api.spotify.com/v1/me/player', {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + spotifyToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          device_ids: [spotifyDeviceId],
+          play: true,
+        }),
+      })
+      /* Retry after transfer */
+      const retry = await fetch('https://api.spotify.com/v1/me/player/play?device_id=' + spotifyDeviceId, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + spotifyToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          context_uri: 'spotify:playlist:' + playlistId,
+          offset: { position: 0 },
+        }),
+      })
+      if (!retry.ok) { showToast('No se pudo reproducir, abre Spotify en otro dispositivo'); return }
+    }
+    if (!res.ok && res.status !== 404) { showToast('Error al reproducir'); return }
     isPlaying = true
     updatePlayerBar()
   }
@@ -841,15 +876,8 @@
     updatePlayerBar()
   }
 
-  async function nextTrack() {
-    if (!spotifyPlayer) return
-    await spotifyPlayer.nextTrack()
-  }
-
-  async function prevTrack() {
-    if (!spotifyPlayer) return
-    await spotifyPlayer.previousTrack()
-  }
+  function nextTrack() { spotifyPlayer?.nextTrack() }
+  function prevTrack() { spotifyPlayer?.previousTrack() }
 
   const SHUFFLE_TERMS = [
     'gym', 'workout', 'hype', 'motivation', 'energy', 'beast mode',
@@ -863,10 +891,8 @@
     const pick = playlists[Math.floor(Math.random() * playlists.length)]
     if (!pick || !pick.id) { showToast('Error al seleccionar playlist'); return }
     showToast('🔀 ' + pick.name)
-    /* Show in grid */
     spotifySearchAndRender(term)
-    /* Start playback after a brief delay to let SDK init */
-    setTimeout(() => playPlaylist(pick.id), 500)
+    setTimeout(() => playPlaylist(pick.id), 300)
   }
 
   function showVariants(e) {

@@ -1229,6 +1229,53 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       html += dayDone + '/' + daySets + ' series</span></div>'
     })
 
+    /* === Exercise Stats === */
+    html += '<h3 style="margin-top:2rem;">Progreso por Ejercicio</h3>'
+    html += '<div class="ex-stats-wrap" style="margin-bottom:1.5rem;">'
+    const allWeights = db.getWeights()
+    const exMap = {}
+    for (const key of Object.keys(allWeights)) {
+      const [dStr, ...rest] = key.split('-')
+      const dayIdx = parseInt(dStr, 10)
+      if (isNaN(dayIdx)) continue
+      const exIdx = rest.join('-')
+      const day = workoutPlan.days[dayIdx]
+      if (!day) continue
+      let exName = ''
+      if (exIdx.startsWith('custom-')) {
+        const ci = parseInt(exIdx.replace('custom-', ''), 10)
+        const cex = (db.getCustomExercises()[dayIdx] || [])[ci]
+        if (cex) exName = cex.name
+      } else if (day.exercises[parseInt(exIdx, 10)]) {
+        exName = day.exercises[parseInt(exIdx, 10)].name
+      }
+      if (!exName) continue
+      if (!exMap[exName]) exMap[exName] = []
+      exMap[exName].push({ key, weight: parseFloat(allWeights[key]) || 0, date: '' })
+    }
+    const exEntries = Object.entries(exMap).sort((a, b) => a[0].localeCompare(b[0]))
+    if (exEntries.length) {
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem;">'
+      for (const [name, entries] of exEntries) {
+        const vals = entries.map(e => e.weight).filter(v => v > 0)
+        if (!vals.length) continue
+        const current = vals[vals.length - 1]
+        const maxW = Math.max(...vals)
+        const trend = vals.length >= 3 ? vals[vals.length - 1] - vals[vals.length - 3] : (vals.length >= 2 ? vals[vals.length - 1] - vals[0] : 0)
+        const trendStr = trend > 0 ? '<span style="color:var(--green);">+' + trend.toFixed(1) + '</span>' : trend < 0 ? '<span style="color:var(--primary);">' + trend.toFixed(1) + '</span>' : '<span style="color:var(--text-dim);">0</span>'
+        html += '<div style="background:var(--surface2);border-radius:var(--radius-xs);padding:0.5rem;font-size:0.8rem;">'
+        html += '<div style="font-weight:600;margin-bottom:0.25rem;">' + esc(name) + '</div>'
+        html += '<div style="color:var(--text-dim);">Actual: <strong>' + current + ' kg</strong></div>'
+        html += '<div style="color:var(--text-dim);">Max: <strong>' + maxW + ' kg</strong></div>'
+        html += '<div style="color:var(--text-dim);">Tendencia: ' + trendStr + '</div>'
+        html += '</div>'
+      }
+      html += '</div>'
+    } else {
+      html += '<p style="color:var(--text-dim);font-size:0.85rem;">Registra pesos para ver estadísticas por ejercicio.</p>'
+    }
+    html += '</div>'
+
     /* === Charts === */
     html += [
       '<h3 style="margin-top:2rem;">Volumen Semanal</h3>',

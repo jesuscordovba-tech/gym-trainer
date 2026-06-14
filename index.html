@@ -22,10 +22,16 @@
                 base-uri 'self';
                 form-action 'none';">
   <title>GYM TRAINER — Definición 21y</title>
+  <link rel="preconnect" href="https://api.github.com">
+  <link rel="preconnect" href="https://generativelanguage.googleapis.com">
+  <link rel="preconnect" href="https://api.groq.com">
+  <link rel="preconnect" href="https://world.openfoodfacts.org">
+  <link rel="preconnect" href="https://wger.de">
+  <link rel="preconnect" href="https://i.ytimg.com">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="css/style.css?v=47">
+  <link rel="stylesheet" href="css/style.css?v=48">
   <style>
     /* Lock screen */
     #lockScreen {
@@ -457,14 +463,14 @@
   <!-- Floating coach button -->
   <button id="coachFab" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;width:56px;height:56px;border-radius:50%;background:rgba(255,77,109,0.6);background-image:linear-gradient(180deg,rgba(255,255,255,0.1) 0%,transparent 40%);backdrop-filter:saturate(1.2) blur(16px);-webkit-backdrop-filter:saturate(1.2) blur(16px);color:#fff;border:1px solid rgba(255,255,255,0.1);font-size:1.5rem;cursor:pointer;box-shadow:0 8px 32px rgba(255,77,109,0.3);display:none;transition:all 0.2s;">C</button>
 
-  <script src="js/data.js?v=45"></script>
-  <script src="js/auth.js?v=45"></script>
-  <script src="js/storage.js?v=45"></script>
-  <script src="js/db.js?v=45"></script>
-  <script src="js/app.js?v=45"></script>
+  <script src="js/data.js?v=48"></script>
+  <script src="js/auth.js?v=48"></script>
+  <script src="js/storage.js?v=48"></script>
+  <script src="js/db.js?v=48"></script>
+  <script src="js/app.js?v=48"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=45').then(r => {
+      navigator.serviceWorker.register('sw.js?v=48').then(r => {
         if (r.waiting) { r.waiting.postMessage({ type: 'SKIP_WAITING' }) }
       }).catch(() => {})
     }

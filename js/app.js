@@ -264,14 +264,26 @@
   }
 
   function renderNav() {
-    const nav = document.getElementById('mainNav')
-    nav.addEventListener('click', e => {
-      const btn = e.target.closest('[data-tab]')
-      if (!btn) return
+    const switchTab = btn => {
       document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'))
       btn.classList.add('active')
       document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'))
       document.getElementById(btn.dataset.tab).classList.remove('hidden')
+    }
+    document.getElementById('mainNav').addEventListener('click', e => {
+      const btn = e.target.closest('[data-tab]')
+      if (btn) switchTab(btn)
+    })
+
+    // Keyboard shortcuts: Ctrl/Cmd + 1-7 for tabs
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '7') {
+        e.preventDefault()
+        const tabs = ['workoutTab', 'progressTab', 'dietTab', 'machinesTab', 'photosTab', 'measuresTab', 'settingsTab']
+        const idx = parseInt(e.key) - 1
+        const btn = document.querySelector(`[data-tab="${tabs[idx]}"]`)
+        if (btn) switchTab(btn)
+      }
     })
 
     // Add logout button to header

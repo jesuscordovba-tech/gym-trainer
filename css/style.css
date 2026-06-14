@@ -27,6 +27,16 @@
   --shadow-lg: 0 8px 40px rgba(0,0,0,0.6);
   --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
   --nav-height: 48px;
+  /* Glassmorphism */
+  --glass-bg: rgba(22, 22, 24, 0.55);
+  --glass-bg2: rgba(30, 30, 34, 0.5);
+  --glass-bg3: rgba(37, 37, 42, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-border-hover: rgba(255, 255, 255, 0.12);
+  --glass-blur: 20px;
+  --glass-blur-sm: 12px;
+  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --glass-shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.5);
 }
 
 html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
@@ -34,6 +44,10 @@ html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-fo
 body {
   font-family: var(--font);
   background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 0% 20%, rgba(255,77,109,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 100% 40%, rgba(90,200,250,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 50% 80%, rgba(191,90,242,0.04) 0%, transparent 50%);
   color: var(--text);
   line-height: 1.5;
   min-height: 100vh;
@@ -54,10 +68,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 /* Layout */
 .app-header {
-  background: rgba(22,22,24,0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-bottom: 1px solid var(--glass-border);
   padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
   position: sticky;
   top: 0;
@@ -124,11 +138,14 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 /* Cards */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   padding: 1.25rem;
   margin-bottom: 1rem;
+  box-shadow: var(--glass-shadow);
 }
 
 .card-title {
@@ -149,17 +166,20 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 
 .day-card {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1.5px solid var(--glass-border);
   border-radius: var(--radius-sm);
   padding: 0.7rem 0.5rem;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--glass-shadow);
 }
 
-.day-card:hover { border-color: var(--text-muted); background: var(--surface2); }
-.day-card.active { border-color: var(--primary); background: rgba(255,77,109,0.08); }
+.day-card:hover { border-color: var(--glass-border-hover); background: var(--glass-bg2); }
+.day-card.active { border-color: var(--primary); background: rgba(255,77,109,0.15); }
 .day-card .day-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
 .day-card .day-name { font-weight: 700; font-size: 0.82rem; margin: 0.2rem 0; word-break: break-word; }
 .day-card .day-focus { font-size: 0.7rem; color: var(--text-dim); font-weight: 500; }
@@ -184,15 +204,18 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 /* Exercise list */
 .exercise-item {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   padding: 0.9rem;
   margin-bottom: 0.7rem;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--glass-shadow);
 }
 
-.exercise-item:hover { border-color: var(--border-light); background: var(--surface2); }
+.exercise-item:hover { border-color: var(--glass-border-hover); background: var(--glass-bg2); }
 
 .exercise-item.completed-exercise { border-left: 3px solid var(--green); }
 
@@ -274,11 +297,11 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   color: var(--primary);
 }
 .ex-video-btn:hover {
-  background: rgba(233,69,96,0.1);
+  background: rgba(233,69,96,0.15);
   border-color: var(--primary);
 }
 .ex-video-btn:active {
-  background: rgba(233,69,96,0.2);
+  background: rgba(233,69,96,0.25);
 }
 
 .set-tracker {
@@ -325,7 +348,9 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 
 .rest-timer-btn {
-  background: rgba(255,159,10,0.08);
+  background: rgba(255,159,10,0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255,159,10,0.3);
   color: var(--orange);
   padding: 0.3rem 0.6rem;
@@ -339,7 +364,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   font-family: var(--font);
 }
 
-.rest-timer-btn:hover { background: rgba(255,159,10,0.18); }
+.rest-timer-btn:hover { background: rgba(255,159,10,0.2); }
 .rest-timer-btn:active { transform: scale(0.95); }
 .rest-timer-btn.active { animation: pulse 1s infinite; }
 
@@ -353,9 +378,9 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   z-index: 1000;
   align-items: center;
   justify-content: center;
@@ -364,14 +389,16 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 .timer-overlay.show { display: flex; }
 
 .timer-modal {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   padding: 2rem 2.5rem;
   text-align: center;
   width: 90vw;
   max-width: 340px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--glass-shadow-lg);
 }
 
 .timer-display {
@@ -395,8 +422,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 
 .timer-btn {
-  background: var(--surface2);
-  border: 1px solid var(--border);
+  background: var(--glass-bg2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
   color: var(--text);
   padding: 0.6rem 1.5rem;
   border-radius: var(--radius-sm);
@@ -407,13 +436,15 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   font-family: var(--font);
 }
 
-.timer-btn:hover { background: var(--surface3); border-color: var(--border-light); }
+.timer-btn:hover { background: var(--glass-bg3); border-color: var(--glass-border-hover); }
 .timer-btn.skip { color: var(--orange); border-color: rgba(255,159,10,0.3); background: rgba(255,159,10,0.05); }
 .timer-btn.skip:hover { background: rgba(255,159,10,0.15); }
 
 /* Cardio section */
 .cardio-card {
-  background: rgba(255,77,109,0.04);
+  background: rgba(255,77,109,0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255,77,109,0.2);
   border-radius: var(--radius-sm);
   padding: 1rem;
@@ -440,7 +471,9 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 /* Warmup / Cooldown */
 .warmup-box, .cooldown-box {
-  background: rgba(52,199,89,0.05);
+  background: rgba(52,199,89,0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(52,199,89,0.15);
   border-radius: var(--radius-sm);
   padding: 0.65rem 0.9rem;
@@ -449,7 +482,9 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 
 .cooldown-box {
-  background: rgba(90,200,250,0.05);
+  background: rgba(90,200,250,0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-color: rgba(90,200,250,0.15);
 }
 
@@ -470,8 +505,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 
 .weight-input {
-  background: var(--bg);
-  border: 1px solid var(--border-light);
+  background: rgba(13,13,15,0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid var(--glass-border);
   color: var(--text);
   padding: 0.3rem 0.45rem;
   border-radius: var(--radius-xs);
@@ -530,11 +567,14 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 
 .stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   padding: 1rem 0.75rem;
   text-align: center;
+  box-shadow: var(--glass-shadow);
 }
 
 .stat-value {
@@ -551,7 +591,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   display: flex;
   justify-content: space-between;
   padding: 0.45rem 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
   font-size: 0.85rem;
 }
 .progress-day-done .progress-day-count {
@@ -565,17 +605,22 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   padding: 0.5rem 0.75rem;
   margin-bottom: 1rem;
   font-size: 0.75rem;
+  box-shadow: var(--glass-shadow);
 }
 .week-info-bar span { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--text-dim); }
 
 .restore-banner {
   background: rgba(255,77,109,0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255,77,109,0.2);
   border-radius: var(--radius-sm);
   padding: 0.6rem 0.8rem;
@@ -603,12 +648,14 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   color: var(--text-dim);
   margin-bottom: 0.6rem;
   padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .machine-item {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-xs);
   padding: 0.6rem 0.85rem;
   font-size: 0.82rem;
@@ -618,7 +665,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   align-items: center;
 }
 
-.machine-item:hover { border-color: var(--border-light); background: var(--surface2); }
+.machine-item:hover { border-color: var(--glass-border-hover); background: var(--glass-bg2); }
 
 /* Settings section */
 .settings-profile-grid {
@@ -643,7 +690,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 .settings-divider {
   border: none;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--glass-border);
   margin: 0.75rem 0;
 }
 
@@ -654,8 +701,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 .settings-token-input {
   flex: 1;
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: rgba(13,13,15,0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.1);
   color: var(--text);
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius-sm);
@@ -718,13 +767,15 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .settings-save-btn {
   min-width: 80px;
-  background: rgba(52,199,89,0.12) !important;
+  background: rgba(52,199,89,0.1) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
   border-color: var(--green) !important;
   color: var(--green) !important;
   font-weight: 700 !important;
 }
 .settings-save-btn:hover {
-  background: rgba(52,199,89,0.25) !important;
+  background: rgba(52,199,89,0.2) !important;
 }
 .settings-sync-status {
   font-size: 0.8rem;
@@ -801,9 +852,9 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   z-index: 1000;
   align-items: center;
   justify-content: center;
@@ -814,13 +865,15 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 .video-overlay.show { display: flex; }
 
 .video-modal {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   width: 100%;
   max-width: 720px;
   overflow: hidden;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--glass-shadow-lg);
 }
 
 .video-modal-header {
@@ -828,7 +881,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   justify-content: space-between;
   align-items: center;
   padding: 0.65rem 1rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .video-modal-title {
@@ -860,6 +913,9 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   position: relative;
   width: 100%;
   padding-top: 56.25%;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .video-wrapper iframe {
@@ -892,14 +948,16 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 
 /* Calorie section */
-.calorie-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; margin-bottom: 0.6rem; }
+.calorie-section { background: var(--glass-bg); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; margin-bottom: 0.6rem; box-shadow: var(--glass-shadow); }
 .calorie-section h3 { font-size: 0.85rem; margin: 0 0 0.4rem; }
 .calorie-row { display: flex; align-items: center; gap: 0.4rem; }
 .cal-unit { font-size: 0.75rem; color: var(--text-dim); }
 
 /* Reset button */
 .reset-btn {
-  background: rgba(255,77,109,0.08);
+  background: rgba(255,77,109,0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255,77,109,0.3);
   color: var(--primary);
   padding: 0.5rem 1rem;
@@ -912,7 +970,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   font-family: var(--font);
 }
 
-.reset-btn:hover { background: rgba(255,77,109,0.18); }
+.reset-btn:hover { background: rgba(255,77,109,0.2); }
 
 .reset-day-wrap {
   margin-top: 1.25rem;
@@ -1029,7 +1087,9 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   bottom: 2rem;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
-  background: var(--surface);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
   border: 1px solid var(--green);
   color: var(--green);
   padding: 0.6rem 1.25rem;
@@ -1041,7 +1101,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   white-space: nowrap;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--glass-shadow-lg);
 }
 .week-toast.show {
   opacity: 1;
@@ -1056,11 +1116,14 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   margin-bottom: 1.5rem;
 }
 .diet-macro {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   padding: 0.85rem;
   text-align: center;
+  box-shadow: var(--glass-shadow);
 }
 .diet-macro-label {
   display: block;
@@ -1089,11 +1152,14 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   opacity: 0.7;
 }
 .diet-meal-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   padding: 1.25rem;
   margin-bottom: 1rem;
+  box-shadow: var(--glass-shadow);
 }
 .diet-meal-header {
   font-size: 1.1rem;
@@ -1124,8 +1190,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   gap: 0.5rem;
 }
 .diet-example {
-  background: var(--surface2);
-  border: 1px solid var(--border);
+  background: var(--glass-bg2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   padding: 0.75rem;
 }
@@ -1142,7 +1210,9 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .diet-food-item {
   display: inline-block;
-  background: rgba(15,52,96,0.4);
+  background: rgba(15,52,96,0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   color: #5dade2;
   font-size: 0.72rem;
   padding: 0.15rem 0.4rem;
@@ -1154,11 +1224,14 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   margin-top: 0.3rem;
 }
 .diet-refs {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   padding: 1.25rem;
   margin-top: 1.5rem;
+  box-shadow: var(--glass-shadow);
 }
 .diet-refs h3 {
   margin-bottom: 0.75rem;
@@ -1168,7 +1241,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   color: var(--text-dim);
   margin-bottom: 0.5rem;
   padding: 0.4rem 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
 }
 .diet-ref:last-child { border-bottom: none; }
 .diet-ref strong { color: var(--text); }
@@ -1180,18 +1253,21 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 /* History section */
 .history-week-list {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   overflow: hidden;
   margin-top: 1rem;
+  box-shadow: var(--glass-shadow);
 }
 .history-week-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.6rem 1rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
   font-size: 0.85rem;
 }
 .history-week-row:last-child { border-bottom: none; }
@@ -1210,8 +1286,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .add-ex-btn {
   font-size: 0.85rem;
-  border: 2px dashed var(--border) !important;
-  background: transparent !important;
+  border: 2px dashed var(--glass-border) !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--text-dim) !important;
   cursor: pointer;
   padding: 0.75rem;
@@ -1225,11 +1303,14 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 /* Charts */
 .chart-container {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   padding: 0.75rem;
   margin-bottom: 1rem;
+  box-shadow: var(--glass-shadow);
 }
 .chart-container canvas {
   display: block;
@@ -1286,11 +1367,14 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 /* === Progress Photos === */
 .photo-current-week {
-  background: var(--surface2);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   padding: 1rem;
   margin: 1rem 0;
+  box-shadow: var(--glass-shadow);
 }
 .photo-upload-row {
   display: flex;
@@ -1300,7 +1384,9 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .photo-upload-btn {
   display: inline-block;
-  background: rgba(233,69,96,0.1);
+  background: rgba(233,69,96,0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px dashed var(--primary);
   color: var(--primary);
   padding: 0.5rem 0.8rem;
@@ -1312,7 +1398,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   text-align: center;
 }
 .photo-upload-btn:hover {
-  background: rgba(233,69,96,0.2);
+  background: rgba(233,69,96,0.18);
 }
 .photo-grid {
   display: grid;
@@ -1361,11 +1447,14 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 /* === Body Measurements === */
 .measures-form {
-  background: var(--surface2);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   padding: 1rem;
   margin: 1rem 0;
+  box-shadow: var(--glass-shadow);
 }
 .measures-grid {
   display: grid;
@@ -1395,13 +1484,18 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   font-weight: 600;
   position: sticky;
   top: 0;
-  background: var(--bg);
+  background: var(--glass-bg2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .measures-table-wrap {
   max-height: 400px;
   overflow-y: auto;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 /* === Exercise History Overlay === */
@@ -1428,7 +1522,9 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   display: flex;
   justify-content: space-between;
   padding: 0.3rem 0.5rem;
-  background: var(--surface2);
+  background: var(--glass-bg2);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   border-radius: 4px;
   font-size: 0.82rem;
 }
@@ -1443,7 +1539,9 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   gap: 0.75rem;
 }
 .workout-timer-btn {
-  background: rgba(90,200,250,0.08);
+  background: rgba(90,200,250,0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(90,200,250,0.25);
   color: var(--blue);
   padding: 0.3rem 0.7rem;
@@ -1458,7 +1556,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   font-variant-numeric: tabular-nums;
 }
 .workout-timer-btn:hover {
-  background: rgba(90,200,250,0.18);
+  background: rgba(90,200,250,0.2);
 }
 .workout-timer-btn.timer-active {
   border-color: var(--green);
@@ -1469,7 +1567,9 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 /* === Plateau Detection === */
 .plateau-section {
-  background: rgba(255,159,10,0.06);
+  background: rgba(255,159,10,0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255,159,10,0.2);
   border-radius: var(--radius-sm);
   padding: 0.85rem;
@@ -1538,8 +1638,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .food-search-input {
   flex: 1;
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: rgba(13,13,15,0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.1);
   color: var(--text);
   padding: 0.6rem 0.75rem;
   border-radius: var(--radius-sm);
@@ -1549,8 +1651,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .food-search-input:focus { border-color: var(--primary); }
 .food-result {
-  background: var(--surface2);
-  border: 1px solid var(--border);
+  background: var(--glass-bg2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   padding: 0.75rem;
   margin-bottom: 0.5rem;
@@ -1564,7 +1668,9 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 .food-result-nutri { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.2rem; }
 .food-result-nutri span { margin-right: 0.5rem; }
 .food-add-btn {
-  background: rgba(46,204,113,0.15);
+  background: rgba(46,204,113,0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--green);
   color: var(--green);
   padding: 0.4rem 0.75rem;
@@ -1575,13 +1681,13 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   white-space: nowrap;
   min-height: 36px;
 }
-.food-add-btn:hover { background: rgba(46,204,113,0.25); }
+.food-add-btn:hover { background: rgba(46,204,113,0.2); }
 .food-diary-entry {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.4rem 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
   font-size: 0.82rem;
 }
 .food-diary-entry:last-child { border-bottom: none; }
@@ -1623,8 +1729,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .ex-search-input {
   flex: 1;
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: rgba(13,13,15,0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.1);
   color: var(--text);
   padding: 0.6rem 0.75rem;
   border-radius: var(--radius-sm);
@@ -1634,8 +1742,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .ex-search-input:focus { border-color: var(--primary); }
 .ex-result {
-  background: var(--surface2);
-  border: 1px solid var(--border);
+  background: var(--glass-bg2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   padding: 0.75rem;
   margin-bottom: 0.5rem;

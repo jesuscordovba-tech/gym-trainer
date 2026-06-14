@@ -1,4 +1,4 @@
-const CACHE = 'gym-trainer-v11'
+const CACHE = 'gym-trainer-v12'
 const URLS = ['/', 'index.html', 'css/style.css', 'js/data.js', 'js/auth.js', 'js/storage.js', 'js/db.js', 'js/app.js', 'manifest.json']
 
 self.addEventListener('install', e => {

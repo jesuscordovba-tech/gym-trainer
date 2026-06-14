@@ -693,7 +693,6 @@
         '</div>'
     }).join('')
   }
-  }
 
   function showVariants(e) {
     const day = parseInt(e.currentTarget.dataset.day, 10)

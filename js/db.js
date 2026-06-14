@@ -163,7 +163,7 @@
       localStorage.setItem(CURRENT_USER_KEY, u)
       localStorage.setItem(PIN_KEY, pin)
 
-      // Pull latest from Gist — ensures cross-device data is synced
+      // Pull latest from Gist — merge with local so nothing is lost
       if (token) {
         try {
           const gist = await fetchGist()
@@ -174,9 +174,23 @@
               if (gdata[u]) {
                 const fresh = await auth.decrypt(gdata[u], pin)
                 if (fresh) {
+                  const local = data || {}
                   data = fresh
-                  await store.set(userKey(u), gdata[u])
-                  // Merge local users from Gist
+                  // Local wins for editable fields
+                  if (local.progress) data.progress = local.progress
+                  if (local.weights) data.weights = local.weights
+                  if (local.trainingDates) data.trainingDates = local.trainingDates
+                  if (local.history) data.history = local.history
+                  if (local.notes) data.notes = local.notes
+                  if (local.measures) data.measures = local.measures
+                  if (local.photos) data.photos = local.photos
+                  if (local.exerciseMods) data.exerciseMods = local.exerciseMods
+                  if (local.customDays) data.customDays = local.customDays
+                  if (local.customExercises) data.customExercises = local.customExercises
+                  if (local.workoutNotes) data.workoutNotes = local.workoutNotes
+                  if (local.timer) data.timer = local.timer
+                  const encrypted = await auth.encrypt(data, _pin)
+                  await store.set(userKey(u), encrypted)
                   if (gdata.users) { localStorage.setItem(USERS_KEY, JSON.stringify(gdata.users)) }
                 }
               }
@@ -397,10 +411,23 @@
         if (!gdata || !gdata[_username]) return false
         const decrypted = await auth.decrypt(gdata[_username], _pin)
         if (!decrypted) return false
+        // Merge: local wins for editable fields so active progress is never lost
+        const local = data || {}
         data = decrypted
+        data.progress = local.progress || data.progress
+        data.weights = local.weights || data.weights
+        data.trainingDates = local.trainingDates || data.trainingDates
+        data.history = local.history || data.history
+        data.notes = local.notes || data.notes
+        data.measures = local.measures || data.measures
+        data.photos = local.photos || data.photos
+        data.exerciseMods = local.exerciseMods || data.exerciseMods
+        data.customDays = local.customDays || data.customDays
+        data.customExercises = local.customExercises || data.customExercises
+        data.workoutNotes = local.workoutNotes || data.workoutNotes
+        data.timer = local.timer || data.timer
         const encrypted = await auth.encrypt(data, _pin)
         await store.set(userKey(_username), encrypted)
-        notify()
         return true
       } catch { return false }
     }

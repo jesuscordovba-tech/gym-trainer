@@ -1845,18 +1845,12 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 @media (max-width: 640px) {
   .bottom-nav { display: flex; }
-  .main-nav { display: none; }
   .content { padding-bottom: max(4.5rem, env(safe-area-inset-bottom)); }
 }
 @media (max-width: 480px) {
   .bottom-nav .bn-label { font-size: 0.5rem; }
   .bottom-nav .bn-icon { font-size: 1.1rem; }
 }
-@media (min-width: 641px) {
-  .bottom-nav { display: none !important; }
-  .main-nav { display: flex; }
-}
-
 /* === Desktop breakpoints === */
 @media (min-width: 1280px) {
   .content { max-width: 960px; }

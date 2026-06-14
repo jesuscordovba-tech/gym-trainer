@@ -246,6 +246,22 @@
     async function setCustomExercises(ce) { if (data) { data.customExercises = ce; schedulePersist() } }
     async function setCalories(c) { if (data) { data.caloriesBurned = c; schedulePersist() } }
 
+    async function resetAllTrainingData() {
+      if (!data) return
+      data.progress = {}
+      data.weights = {}
+      data.history = {}
+      data.photos = {}
+      data.measurements = []
+      data.notes = {}
+      data.customExercises = {}
+      data.customWorkout = {}
+      data.caloriesBurned = {}
+      data.trainingDates = []
+      notify()
+      await persistNow()
+    }
+
     function showSyncIndicator() {
       const el = document.getElementById('syncIndicator')
       if (el) el.classList.add('show')
@@ -541,7 +557,7 @@
 
     return {
       getUsers, registerUser, loginUser, logoutUser, isLoggedIn, getUsername, getProfile, setProfile,
-      getProgress, getWeights, setProgress, setWeights,
+      getProgress, getWeights, setProgress, setWeights, resetAllTrainingData,
       getTrainingDates, setTrainingDates, getCustomWorkout, setCustomWorkout,
       getCustomExercises, setCustomExercises,
       getCalories, setCalories,

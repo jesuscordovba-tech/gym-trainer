@@ -1992,6 +1992,13 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<li>Token guardado solo en tu navegador</li>',
       '</ul>',
       '</div>',
+
+      /* Danger zone */
+      '<div class="card" style="border-color:var(--primary);">',
+      '<div class="card-title" style="color:var(--primary);">Zona Peligrosa</div>',
+      '<p class="settings-description">Esto borrará TODO tu progreso, pesos, historial, fotos, medidas, notas y ejercicios personalizados. No se puede deshacer.</p>',
+      '<button class="reset-btn" id="resetAllData" style="background:var(--primary);color:#fff;border-color:var(--primary);width:100%;">Borrar todos los datos de entrenamiento</button>',
+      '</div>',
     ].join('')
 
     /* Event listeners */
@@ -2122,6 +2129,21 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n')
       downloadFile(csv, 'gym-trainer-weights.csv', 'text/csv')
       showToast('Pesos exportados como CSV')
+    })
+
+    document.getElementById('resetAllData')?.addEventListener('click', async () => {
+      if (confirm('¿Estás seguro? Esto borrará TODO tu progreso, pesos, historial, fotos, medidas, notas y ejercicios personalizados. No se puede deshacer.')) {
+        if (confirm('Confirmación final: ¿Borrar todos los datos de entrenamiento?')) {
+          await db.resetAllTrainingData()
+          renderDaySelector()
+          renderWorkout(currentDay)
+          renderProgress()
+          renderPhotos()
+          renderMeasures()
+          renderSettings()
+          showToast('Todos los datos de entrenamiento borrados')
+        }
+      }
     })
 
     /* Notifications toggle */

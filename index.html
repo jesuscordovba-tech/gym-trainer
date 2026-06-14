@@ -14,12 +14,11 @@
 
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
-                script-src 'self' 'unsafe-inline' https://sdk.scdn.co;
+                script-src 'self' 'unsafe-inline';
                 style-src 'self' 'unsafe-inline';
-                 connect-src 'self' https://api.github.com https://generativelanguage.googleapis.com https://api.groq.com https://openrouter.ai https://world.openfoodfacts.org https://wger.de https://api.spotify.com https://accounts.spotify.com wss://*.spotify.com https://sdk.scdn.co;
-                 img-src 'self' data: https://wger.de https://i.scdn.co https://world.openfoodfacts.org https://sdk.scdn.co;
-                 frame-src https://www.youtube.com https://open.spotify.com https://sdk.scdn.co;
-                 media-src 'self' https://sdk.scdn.co https://*.spotify.com;
+                 connect-src 'self' https://api.github.com https://generativelanguage.googleapis.com https://api.groq.com https://openrouter.ai https://world.openfoodfacts.org https://wger.de;
+                 img-src 'self' data: https://wger.de https://world.openfoodfacts.org;
+                 frame-src https://www.youtube.com;
                 base-uri 'self';
                 form-action 'none';">
   <title>GYM TRAINER — Definición 21y</title>
@@ -286,7 +285,6 @@
         <button data-tab="machinesTab">Máquinas</button>
         <button data-tab="photosTab">Fotos</button>
         <button data-tab="measuresTab">Medidas</button>
-        <button data-tab="musicTab">Música</button>
         <button data-tab="settingsTab">Ajustes</button>
       </nav>
     </div>
@@ -319,10 +317,6 @@
 
     <div id="measuresTab" class="tab-content hidden">
       <div id="measuresContent"></div>
-    </div>
-
-    <div id="musicTab" class="tab-content hidden">
-      <div id="musicContent"></div>
     </div>
 
     <div id="settingsTab" class="tab-content hidden">

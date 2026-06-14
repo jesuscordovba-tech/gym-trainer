@@ -11,25 +11,6 @@
   let aiUrl = localStorage.getItem(LS_PREFIX + 'url') || 'https://api.groq.com/openai/v1'
   let aiModel = localStorage.getItem(LS_PREFIX + 'model') || 'llama-3.3-70b-versatile'
 
-  const SPOTIFY_PREFIX = 'gymapp_spotify_'
-  let spotifyClientId = localStorage.getItem(SPOTIFY_PREFIX + 'client_id') || ''
-  let spotifyRedirectUri = localStorage.getItem(SPOTIFY_PREFIX + 'redirect_uri') || window.location.origin + window.location.pathname
-  let spotifyToken = db.getSpotifyToken()
-  let spotifyPlayer = null
-  let spotifyDeviceId = null
-  let spotifyPlayerReady = false
-  let currentTrack = null
-  let isPlaying = false
-  let _pendingPlaylistId = null
-
-  /* Fetch client_id from backend so user doesn't need to enter it */
-  fetch('/api/config').then(r => r.json()).then(d => {
-    if (d.client_id && d.client_id !== spotifyClientId) {
-      spotifyClientId = d.client_id
-      localStorage.setItem(SPOTIFY_PREFIX + 'client_id', d.client_id)
-    }
-  }).catch(() => {})
-
   const DAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB']
 
   function getISOWeek(d) {
@@ -229,7 +210,6 @@
     renderPhotos()
     renderMeasures()
     renderDiet()
-    renderMusic()
     renderSettings()
     setupTimer()
     setupVideo()
@@ -237,9 +217,6 @@
     setupCoachChat()
     setupExHistoryOverlay()
     updatePlateauAlerts()
-
-    /* Init Spotify player early so it's ready when user visits music tab */
-    if (spotifyToken) initSpotifyPlayer()
 
     db.onUpdate(() => {
       renderDaySelector()
@@ -676,326 +653,6 @@
         showExHistory(key, name)
       })
     })
-  }
-
-  function renderMusic() {
-    const container = document.getElementById('musicContent')
-    if (!container) return
-    const connected = !!spotifyToken
-    container.innerHTML = [
-      '<div style="margin-bottom:1.5rem;">',
-      '<h2 style="font-size:1.2rem;margin-bottom:0.25rem;">🎵 Música</h2>',
-      '<p style="font-size:0.8rem;color:var(--text-dim);">Busca playlists para entrenar</p>',
-      '</div>',
-      '<div class="music-search-bar">',
-      '<input type="text" id="musicSearchInput" class="spotify-input" placeholder="Buscar playlists..." autocomplete="off">',
-      '<button class="spotify-btn" id="musicSearchBtn">Buscar</button>',
-      '<button class="spotify-btn" id="musicShuffleBtn" style="background:var(--primary);">🔀 Shuffle</button>',
-      '</div>',
-      '<div id="musicPlaylists" class="music-grid">',
-      connected ? '<p style="color:var(--text-dim);font-size:0.85rem;">Busca tus playlists favoritas para entrenar</p>' : '<p style="color:var(--text-dim);font-size:0.85rem;">Conecta Spotify en <strong>Ajustes</strong> para buscar música</p>',
-      '</div>',
-      '<div id="fallbackSection" style="display:none;margin-top:1rem;text-align:center;">',
-      '<p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.5rem;">No se pudo conectar el reproductor en el navegador.</p>',
-      '<button class="spotify-btn" id="fallbackPlayBtn" style="background:#1DB954;">📱 Enviar a mi dispositivo</button>',
-      '<div id="fallbackStatus" style="font-size:0.78rem;color:var(--text-dim);margin-top:0.5rem;"></div>',
-      '</div>',
-      '<div id="playerStatus" class="player-status" style="font-size:0.78rem;color:var(--text-dim);margin-top:0.5rem;">' +
-        (connected ? (spotifyPlayerReady ? '✅ Conectado' : '🔄 Conectando...') : '') +
-      '</div>',
-      '<div id="playerBar" class="player-bar" style="display:none;">',
-      '<div class="player-bar-track">',
-      '<div class="player-bar-img" id="playerTrackImg"></div>',
-      '<div class="player-bar-info">',
-      '<div class="player-bar-name" id="playerTrackName">—</div>',
-      '<div class="player-bar-artist" id="playerTrackArtist">—</div>',
-      '</div>',
-      '</div>',
-      '<div class="player-bar-controls">',
-      '<button class="player-bar-btn" id="playerPrevBtn">⏮</button>',
-      '<button class="player-bar-btn player-bar-play" id="playerPlayBtn">▶</button>',
-      '<button class="player-bar-btn" id="playerNextBtn">⏭</button>',
-      '</div>',
-      '</div>',
-    ].join('')
-
-    document.getElementById('musicSearchBtn')?.addEventListener('click', () => {
-      const q = document.getElementById('musicSearchInput').value.trim()
-      spotifySearchAndRender(q)
-    })
-    document.getElementById('musicSearchInput')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        const q = e.target.value.trim()
-        spotifySearchAndRender(q)
-      }
-    })
-    document.getElementById('musicShuffleBtn')?.addEventListener('click', shufflePlay)
-
-    /* Player controls */
-    document.getElementById('playerPlayBtn')?.addEventListener('click', togglePlayback)
-    document.getElementById('playerNextBtn')?.addEventListener('click', nextTrack)
-    document.getElementById('playerPrevBtn')?.addEventListener('click', prevTrack)
-
-    /* Fallback play on device */
-    document.getElementById('fallbackPlayBtn')?.addEventListener('click', () => {
-      const pid = localStorage.getItem(SPOTIFY_PREFIX + 'last_playlist')
-      if (pid) playOnDevice(pid)
-    })
-
-    updatePlayerBar()
-  }
-
-  async function spotifySearchAndRender(query) {
-    const container = document.getElementById('musicPlaylists')
-    if (!query) { container.innerHTML = ''; return }
-    container.innerHTML = '<div style="text-align:center;padding:2rem 0;"><span class="food-search-spinner"></span> Buscando playlists...</div>'
-    const playlists = await spotifySearchPlaylists(query)
-    if (!playlists.length) { container.innerHTML = '<div style="color:var(--text-dim);font-size:0.82rem;">' + (!spotifyToken ? 'Conecta Spotify en Ajustes primero' : 'Sin resultados') + '</div>'; return }
-    container.innerHTML = playlists.map(p => {
-      const img = p.images?.[0]?.url || ''
-      const id = p.id || ''
-      return '<div class="music-card">' +
-        '<div class="music-card-img" style="background-image:url(' + esc(img) + ')"></div>' +
-        '<div class="music-card-body">' +
-        '<div class="music-card-name">' + esc(p.name) + '</div>' +
-        '<div class="music-card-meta">' + (p.tracks?.total || 0) + ' canciones</div>' +
-        (id ? '<div class="music-card-actions"><button class="music-play-btn" data-id="' + id + '" title="Reproducir en Spotify">▶ Reproducir</button></div>' : '') +
-        (id ? '<div class="music-embed"><iframe src="https://open.spotify.com/embed/playlist/' + id + '" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"></iframe></div>' : '') +
-        '<a class="music-card-link" href="' + esc(p.external_urls?.spotify || '#') + '" target="_blank" rel="noopener">Abrir en Spotify →</a>' +
-        '</div>' +
-        '</div>'
-    }).join('')
-
-    /* Attach play button events */
-    container.querySelectorAll('.music-play-btn').forEach(btn => {
-      btn.addEventListener('click', function () {
-        const id = this.dataset.id
-        if (id) { localStorage.setItem(SPOTIFY_PREFIX + 'last_playlist', id); playPlaylist(id) }
-      })
-    })
-  }
-
-  /* === Web Playback SDK === */
-  async function initSpotifyPlayer() {
-    const st = document.getElementById('playerStatus')
-    if (st) st.textContent = '🔄 Actualizando token...'
-    await refreshSpotifyToken()
-    if (!spotifyToken) {
-      if (st) st.textContent = '❌ No hay token, reconecta en Ajustes'
-      return
-    }
-    if (window.Spotify) { connectPlayer(); return }
-    if (st) st.textContent = '🔄 Cargando SDK...'
-    const s = document.createElement('script')
-    s.src = 'https://sdk.scdn.co/spotify-player.js'
-    s.async = true
-    s.onload = () => { if (st) st.textContent = '🔄 SDK cargado, conectando...' }
-    s.onerror = () => { if (st) st.textContent = '❌ Error al cargar SDK Spotify' }
-    window.onSpotifyWebPlaybackSDKReady = connectPlayer
-    document.body.appendChild(s)
-    /* Timeout: if player not ready in 20s, try fallback */
-    setTimeout(() => {
-      if (!spotifyPlayerReady) {
-        const st = document.getElementById('playerStatus')
-        if (st) st.textContent = '⚠️ No se pudo conectar el reproductor en el navegador'
-        const fb = document.getElementById('fallbackSection')
-        if (fb) fb.style.display = 'block'
-        showToast('❌ No se pudo conectar el reproductor')
-      }
-    }, 20000)
-  }
-
-  function connectPlayer() {
-    if (!window.Spotify || !spotifyToken) return
-    if (spotifyPlayer) { spotifyPlayer.connect(); return }
-    spotifyPlayer = new Spotify.Player({
-      name: 'GYM TRAINER',
-      getOAuthToken: cb => { cb(spotifyToken) },
-      volume: 0.5,
-    })
-    spotifyPlayer.addListener('ready', ({ device_id }) => {
-      spotifyDeviceId = device_id
-      spotifyPlayerReady = true
-      const st = document.getElementById('playerStatus')
-      if (st) st.textContent = '✅ Conectado'
-      showToast('🎵 Reproductor conectado')
-      if (_pendingPlaylistId) {
-        const pid = _pendingPlaylistId
-        _pendingPlaylistId = null
-        setTimeout(() => playPlaylist(pid), 500)
-      }
-    })
-    spotifyPlayer.addListener('player_state_changed', state => {
-      if (state) {
-        isPlaying = !state.paused
-        currentTrack = state.track_window?.current_track || null
-    updatePlayerBar()
-  }
-
-  /* Fallback: play on any available Spotify device (phone, computer, etc.) */
-  async function playOnDevice(playlistId) {
-    const fs = document.getElementById('fallbackStatus')
-    if (fs) fs.textContent = '🔍 Buscando dispositivos...'
-    const refreshed = await refreshSpotifyToken()
-    if (!refreshed) { if (fs) fs.textContent = '❌ Token expirado, reconecta en Ajustes'; return }
-    const devicesRes = await fetch('https://api.spotify.com/v1/me/player/devices', {
-      headers: { 'Authorization': 'Bearer ' + spotifyToken }
-    })
-    if (!devicesRes.ok) { if (fs) fs.textContent = '❌ Error al buscar dispositivos'; return }
-    const devicesData = await devicesRes.json()
-    const devices = devicesData.devices || []
-    if (!devices.length) {
-      if (fs) fs.textContent = '📱 Abre Spotify en tu teléfono o computadora y presiona "Enviar a dispositivo" de nuevo'
-      showToast('Abre Spotify en tu teléfono/compu primero')
-      return
-    }
-    const device = devices[0]
-    if (fs) fs.textContent = '▶ Reproduciendo en: ' + device.name
-    showToast('▶ Reproduciendo en ' + device.name)
-    const playRes = await fetch('https://api.spotify.com/v1/me/player/play?device_id=' + device.id, {
-      method: 'PUT',
-      headers: {
-        'Authorization': 'Bearer ' + spotifyToken,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        context_uri: 'spotify:playlist:' + playlistId,
-        offset: { position: 0 },
-      }),
-    })
-    if (!playRes.ok) {
-      if (fs) fs.textContent = '❌ Error al reproducir (código ' + playRes.status + ')'
-      showToast('Error al reproducir')
-    } else {
-      if (fs) fs.textContent = '✅ Reproduciendo en ' + device.name
-      isPlaying = true
-      updatePlayerBar()
-    }
-  }
-    })
-    spotifyPlayer.addListener('initialization_error', ({ message }) => {
-      const st = document.getElementById('playerStatus')
-      if (st) st.textContent = '❌ Error: ' + message
-      showToast('Error SDK Spotify: ' + message)
-      spotifyPlayerReady = false
-    })
-    spotifyPlayer.addListener('authentication_error', () => {
-      const st = document.getElementById('playerStatus')
-      if (st) st.textContent = '❌ Token expirado'
-      showToast('Token expirado, reconecta en Ajustes')
-      spotifyPlayerReady = false
-    })
-    spotifyPlayer.addListener('account_error', () => {
-      const st = document.getElementById('playerStatus')
-      if (st) st.textContent = '❌ No tienes Premium'
-      showToast('Requiere Spotify Premium')
-      spotifyPlayerReady = false
-    })
-    spotifyPlayer.addListener('playback_error', ({ message }) => { showToast('Error reproducción: ' + message) })
-    spotifyPlayer.connect().catch(() => {
-      const st = document.getElementById('playerStatus')
-      if (st) st.textContent = '❌ Error de conexión. ¿Spotify abierto en otro dispositivo?'
-    })
-  }
-
-  function updatePlayerBar() {
-    const bar = document.getElementById('playerBar')
-    if (!bar) return
-    if (!currentTrack) { bar.style.display = 'none'; return }
-    bar.style.display = 'flex'
-    document.getElementById('playerTrackName').textContent = currentTrack.name || '—'
-    document.getElementById('playerTrackArtist').textContent = currentTrack.artists?.map(a => a.name).join(', ') || '—'
-    document.getElementById('playerTrackImg').style.backgroundImage = currentTrack.album?.images?.[0]?.url ? 'url(' + currentTrack.album.images[0].url + ')' : ''
-    document.getElementById('playerPlayBtn').textContent = isPlaying ? '⏸' : '▶'
-  }
-
-  async function playPlaylist(playlistId) {
-    localStorage.setItem(SPOTIFY_PREFIX + 'last_playlist', playlistId)
-    if (!spotifyPlayerReady || !spotifyDeviceId) {
-      _pendingPlaylistId = playlistId
-      if (!spotifyPlayer) initSpotifyPlayer()
-      else spotifyPlayer.connect()
-      showToast('Conectando reproductor Spotify...')
-      return
-    }
-    await refreshSpotifyToken()
-    const res = await fetch('https://api.spotify.com/v1/me/player/play?device_id=' + spotifyDeviceId, {
-      method: 'PUT',
-      headers: {
-        'Authorization': 'Bearer ' + spotifyToken,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        context_uri: 'spotify:playlist:' + playlistId,
-        offset: { position: 0 },
-      }),
-    })
-    if (res.status === 404) {
-      showToast('No hay dispositivo activo, intentando conectar...')
-      await fetch('https://api.spotify.com/v1/me/player', {
-        method: 'PUT',
-        headers: {
-          'Authorization': 'Bearer ' + spotifyToken,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          device_ids: [spotifyDeviceId],
-          play: true,
-        }),
-      })
-      const retry = await fetch('https://api.spotify.com/v1/me/player/play?device_id=' + spotifyDeviceId, {
-        method: 'PUT',
-        headers: {
-          'Authorization': 'Bearer ' + spotifyToken,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          context_uri: 'spotify:playlist:' + playlistId,
-          offset: { position: 0 },
-        }),
-      })
-      if (!retry.ok) {
-        showToast('No se pudo reproducir en el navegador. Abre Spotify en tu teléfono')
-        const fb = document.getElementById('fallbackSection')
-        if (fb) { fb.style.display = 'block'; fb.scrollIntoView({ behavior: 'smooth' }) }
-        return
-      }
-    }
-    if (!res.ok && res.status !== 404) { showToast('Error al reproducir'); return }
-    isPlaying = true
-    updatePlayerBar()
-  }
-
-  async function togglePlayback() {
-    if (!spotifyPlayer) return
-    const state = await spotifyPlayer.getCurrentState()
-    if (state && !state.paused) {
-      await spotifyPlayer.pause()
-      isPlaying = false
-    } else {
-      await spotifyPlayer.resume()
-      isPlaying = true
-    }
-    updatePlayerBar()
-  }
-
-  function nextTrack() { spotifyPlayer?.nextTrack() }
-  function prevTrack() { spotifyPlayer?.previousTrack() }
-
-  const SHUFFLE_TERMS = [
-    'gym', 'workout', 'hype', 'motivation', 'energy', 'beast mode',
-    'running', 'cardio', 'focus', 'power', 'epic', 'training',
-  ]
-
-  async function shufflePlay() {
-    const term = SHUFFLE_TERMS[Math.floor(Math.random() * SHUFFLE_TERMS.length)]
-    const playlists = await spotifySearchPlaylists(term)
-    if (!playlists.length) { showToast('No se encontraron playlists'); return }
-    const pick = playlists[Math.floor(Math.random() * playlists.length)]
-    if (!pick || !pick.id) { showToast('Error al seleccionar playlist'); return }
-    showToast('🔀 ' + pick.name)
-    spotifySearchAndRender(term)
-    setTimeout(() => playPlaylist(pick.id), 300)
   }
 
   function showVariants(e) {
@@ -2726,21 +2383,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<button class="reset-btn" id="testNotifBtn" style="margin-top:0.5rem;">Probar notificación</button>',
       '</div>',
 
-      /* Spotify */
-      '<div class="card">',
-      '<div class="card-title">🎵 Spotify — Música para entrenar</div>',
-      '<p class="settings-description">Conecta tu cuenta de Spotify para buscar playlists de entrenamiento.</p>',
-      '<div class="settings-edit-grid">',
-      '<label>Redirect URI <input type="text" id="spotifyRedirectUri" class="settings-token-input" value="' + esc(spotifyRedirectUri) + '" placeholder="https://tusitio.github.io/gym-trainer"></label>',
-      '</div>',
-      '<button class="spotify-btn" id="spotifyConnectBtn" style="margin-top:0.5rem;">' + (db.getSpotifyToken() ? '✅ Conectado (reconectar)' : 'Conectar con Spotify') + '</button>',
-      '<div id="spotifyStatus" class="spotify-status" style="margin-top:0.5rem;"></div>',
-      '<p style="font-size:0.7rem;color:var(--text-dim);margin-top:0.5rem;">',
-      '1. Crea una app en <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener" style="color:var(--primary)">developer.spotify.com</a>',
-      '<br>2. Añade la Redirect URI arriba en la app de Spotify',
-      '<br>3. Dale clic a Conectar',
-      '</p>',
-      '</div>',
+
       '</div>',
 
       /* Export */
@@ -2885,15 +2528,6 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const isOpenAI = this.value === 'openai'
       document.getElementById('aiUrlLabel').style.display = isOpenAI ? '' : 'none'
       document.getElementById('aiModelLabel').style.display = isOpenAI ? '' : 'none'
-    })
-
-    /* Spotify connection */
-    document.getElementById('spotifyConnectBtn')?.addEventListener('click', () => {
-      const uri = document.getElementById('spotifyRedirectUri').value.trim()
-      if (!uri) { document.getElementById('spotifyStatus').textContent = '❌ Ingresa la Redirect URI'; return }
-      localStorage.setItem(SPOTIFY_PREFIX + 'redirect_uri', uri)
-      spotifyRedirectUri = uri
-      spotifyLogin()
     })
 
     /* Export handlers */
@@ -3078,110 +2712,6 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     })
   }
 
-  /* === Spotify PKCE OAuth + Search === */
-  function spotifyLogin() {
-    const verifier = generateCodeVerifier()
-    localStorage.setItem(SPOTIFY_PREFIX + 'verifier', verifier)
-    generateCodeChallenge(verifier).then(challenge => {
-      const params = new URLSearchParams({
-        client_id: spotifyClientId,
-        response_type: 'code',
-        redirect_uri: spotifyRedirectUri,
-        code_challenge_method: 'S256',
-        code_challenge: challenge,
-        scope: 'playlist-read-private playlist-read-collaborative streaming user-read-email user-modify-playback-state user-read-playback-state',
-      })
-      window.location.href = 'https://accounts.spotify.com/authorize?' + params.toString()
-    })
-  }
-
-  function generateCodeVerifier() {
-    const arr = new Uint8Array(32)
-    crypto.getRandomValues(arr)
-    return btoa(String.fromCharCode(...arr)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-  }
-
-  async function generateCodeChallenge(verifier) {
-    const encoder = new TextEncoder()
-    const data = encoder.encode(verifier)
-    const hash = await crypto.subtle.digest('SHA-256', data)
-    return btoa(String.fromCharCode(...new Uint8Array(hash))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-  }
-
-  async function exchangeSpotifyCode(code) {
-    const verifier = localStorage.getItem(SPOTIFY_PREFIX + 'verifier')
-    if (!verifier) return false
-    try {
-      const res = await fetch('/api/spotify?action=token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code,
-          redirect_uri: spotifyRedirectUri,
-          code_verifier: verifier,
-        }),
-      })
-      if (!res.ok) return false
-      const data = await res.json()
-      db.setSpotifyToken(data.access_token)
-      if (data.refresh_token) db.setSpotifyRefreshToken(data.refresh_token)
-      spotifyToken = data.access_token
-      localStorage.removeItem(SPOTIFY_PREFIX + 'verifier')
-      return true
-    } catch { return false }
-  }
-
-  async function refreshSpotifyToken() {
-    const refresh = db.getSpotifyRefreshToken()
-    if (!refresh) return false
-    try {
-      const res = await fetch('/api/spotify?action=refresh', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: refresh }),
-      })
-      if (!res.ok) return false
-      const data = await res.json()
-      db.setSpotifyToken(data.access_token)
-      if (data.refresh_token) db.setSpotifyRefreshToken(data.refresh_token)
-      spotifyToken = data.access_token
-      return true
-    } catch { return false }
-  }
-
-  async function spotifySearchPlaylists(query) {
-    if (!spotifyToken) { if (!(await refreshSpotifyToken())) return [] }
-    try {
-      const res = await fetch('https://api.spotify.com/v1/search?q=' + encodeURIComponent(query) + '&type=playlist&limit=10', {
-        headers: { 'Authorization': 'Bearer ' + spotifyToken }
-      })
-      if (res.status === 401) {
-        if (await refreshSpotifyToken()) return spotifySearchPlaylists(query)
-        return []
-      }
-      if (!res.ok) return []
-      const data = await res.json()
-      return (data.playlists?.items || []).filter(p => p)
-    } catch { return [] }
-  }
-
-  /* Handle Spotify redirect (code exchange) */
-  async function handleSpotifyRedirect() {
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get('code')
-    if (!code) return
-    const ok = await exchangeSpotifyCode(code)
-    if (ok) {
-      showToast('🎵 Spotify conectado exitosamente')
-      // Clean URL
-      const url = new URL(window.location)
-      url.searchParams.delete('code')
-      window.history.replaceState({}, '', url)
-      // Re-render settings if visible
-      if (!document.getElementById('settingsTab').classList.contains('hidden')) renderSettings()
-    }
-  }
-
   function downloadFile(content, filename, mimeType) {
     const blob = new Blob([content], { type: mimeType })
     const url = URL.createObjectURL(blob)
@@ -3241,9 +2771,6 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     document.getElementById('calPrev')?.addEventListener('click', () => { _calMonthOffset--; renderCalendar() })
     document.getElementById('calNext')?.addEventListener('click', () => { _calMonthOffset++; renderCalendar() })
   }
-
-  /* Handle Spotify OAuth redirect before login screen */
-  handleSpotifyRedirect()
 
   /* Start with login screen */
   initLoginScreen()

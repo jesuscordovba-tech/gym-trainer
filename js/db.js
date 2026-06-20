@@ -1,7 +1,10 @@
 ;(() => {
   window.db = (function() {
     const TOKEN_KEY = 'gymapp_github_token'
+    const TOKEN_ENC_KEY = 'gymapp_github_token_enc'
     const PIN_KEY = 'gymapp_pin'
+    const AI_PREFIX = 'gymapp_ai_'
+    const PIN_HASH_KEY = 'gymapp_pin_hash'
     const USERS_KEY = 'gymapp_users'
     const CURRENT_USER_KEY = 'gymapp_current_user'
     const DATA_PREFIX = 'gymapp_data_'
@@ -10,10 +13,11 @@
     let data = null
     let _username = ''
     let _pin = ''
+    let _token = ''
     let _persistTimer = null
     let _gistTimer = null
     let _pushingGist = false
-    let token = localStorage.getItem(TOKEN_KEY) || ''
+    let _syncingGist = false
     let listeners = []
 
     function userKey(u) { return DATA_PREFIX + u.toLowerCase() }
@@ -55,7 +59,15 @@
       _pin = pin
       data = userBlob
       localStorage.setItem(CURRENT_USER_KEY, u)
-      localStorage.setItem(PIN_KEY, pin)
+      sessionStorage.setItem(PIN_KEY, pin)
+      const pinHash = await auth.hashPin(pin)
+      localStorage.setItem(PIN_HASH_KEY, pinHash)
+
+      const encToken = localStorage.getItem(TOKEN_ENC_KEY)
+      if (encToken) {
+        const decToken = await auth.decryptSecret(encToken, pin, 'github_token')
+        if (decToken) { _token = decToken }
+      }
 
       return { ok: true }
     }
@@ -88,7 +100,7 @@
       }
 
       // Fallback: try Gist if no local data (migration from old system)
-      if (!decrypted && token) {
+      if (!decrypted && _token) {
         try {
           const gist = await fetchGist()
           if (gist) {
@@ -131,9 +143,9 @@
       }
 
       if (!decrypted) {
-        if (token) {
+        if (_token) {
           try {
-            const res = await fetch(getGistUrl(), { headers: { 'Authorization': `Bearer ${token}` } })
+            const res = await fetch(getGistUrl(), { headers: { 'Authorization': `Bearer ${_token}` } })
             if (res.status === 401) return { ok: false, error: 'Token de GitHub inválido o expirado — ve a Ajustes' }
           } catch {}
         }
@@ -161,10 +173,18 @@
       _pin = pin
       data = decrypted
       localStorage.setItem(CURRENT_USER_KEY, u)
-      localStorage.setItem(PIN_KEY, pin)
+      sessionStorage.setItem(PIN_KEY, pin)
+      const pinHash = await auth.hashPin(pin)
+      localStorage.setItem(PIN_HASH_KEY, pinHash)
+
+      const encToken = localStorage.getItem(TOKEN_ENC_KEY)
+      if (encToken) {
+        const decToken = await auth.decryptSecret(encToken, pin, 'github_token')
+        if (decToken) { _token = decToken }
+      }
 
       // Pull latest from Gist — merge with local so nothing is lost
-      if (token) {
+      if (_token) {
         try {
           const gist = await fetchGist()
           if (gist) {
@@ -219,52 +239,29 @@
       data = null
       _username = ''
       _pin = ''
+      _token = ''
       localStorage.removeItem(CURRENT_USER_KEY)
-      localStorage.removeItem(PIN_KEY)
-      localStorage.removeItem('gymapp_pin')
+      sessionStorage.removeItem(PIN_KEY)
+      localStorage.removeItem(PIN_HASH_KEY)
     }
 
     function isLoggedIn() { return !!data }
     function getUsername() { return _username }
     function getProfile() { return data ? data.profile : null }
-    function getProgress() { return data ? data.progress : {} }
-    function getWeights() { return data ? data.weights : {} }
-    function getTrainingDates() { return data ? data.trainingDates : [] }
-    function getHistory() { return data ? data.history : {} }
-    function getHistoryWeek(weekId) { return data ? (data.history[weekId] || null) : null }
-    function getCustomWorkout() { return data ? (data.customWorkout || {}) : {} }
-    function getCustomExercises() { return data ? (data.customExercises || {}) : {} }
-    function getCalories() { return data ? (data.caloriesBurned || {}) : {} }
-    function getNotes() { return data ? (data.notes || {}) : {} }
     async function setNotes(n) { if (data) { data.notes = n; archiveCurrentWeek(); schedulePersist() } }
-    function getFoodDiary() { return data ? (data.foodDiary || {}) : {} }
     async function setFoodDiary(fd) { if (data) { data.foodDiary = fd; schedulePersist() } }
-    /* --- Photos --- */
-    function getPhotos() { return data ? (data.photos || {}) : {} }
     async function setPhotos(p) { if (data) { data.photos = p; schedulePersist() } }
-
-    /* --- Body Measurements --- */
-    function getMeasurements() { return data ? (data.measurements || []) : [] }
     async function setMeasurements(m) { if (data) { data.measurements = m; schedulePersist() } }
-
-    /* --- Workout Timer --- */
-    function getTimer() { return data ? (data.workoutTimer || null) : null }
     async function setTimer(t) { if (data) { data.workoutTimer = t; schedulePersist() } }
-
-    /* --- Persist (IndexedDB + localStorage) --- */
-
     async function setProgress(p) { if (data) { data.progress = p; notify(); archiveCurrentWeek(); schedulePersist() } }
     async function setWeights(w) { if (data) { data.weights = w; archiveCurrentWeek(); schedulePersist() } }
     async function setTrainingDates(d) { if (data) { data.trainingDates = d; schedulePersist() } }
     async function setProfile(p) { if (data) { data.profile = p; schedulePersist() } }
     async function setCustomWorkout(cw) { if (data) { data.customWorkout = cw; schedulePersist() } }
     async function setCustomExercises(ce) { if (data) { data.customExercises = ce; schedulePersist() } }
-    function getCustomDays() { return data ? (data.customDays || []) : [] }
     async function setCustomDays(d) { if (data) { data.customDays = d; schedulePersist() } }
-    function getExerciseMods() { return data ? (data.exerciseMods || {}) : {} }
     async function setExerciseMods(m) { if (data) { data.exerciseMods = m; schedulePersist() } }
     async function setCalories(c) { if (data) { data.caloriesBurned = c; schedulePersist() } }
-    function getWorkoutNotes() { return data ? (data.workoutNotes || {}) : {} }
     async function setWorkoutNotes(n) { if (data) { data.workoutNotes = n; schedulePersist() } }
 
     async function resetAllTrainingData() {
@@ -284,7 +281,7 @@
       data.trainingDates = []
       notify()
       await persistNow()
-      if (token) await pushToGist()
+      if (_token) await pushToGist()
     }
 
     function showSyncIndicator() {
@@ -312,7 +309,7 @@
       _persistTimer = setTimeout(async () => {
         _persistTimer = null
         await persistNow()
-        if (token) scheduleGistSync()
+        if (_token) scheduleGistSync()
       }, 400)
     }
 
@@ -322,26 +319,34 @@
       if (_gistTimer) clearTimeout(_gistTimer)
       _gistTimer = setTimeout(() => {
         _gistTimer = null
-        if (token && _username && _pin && data) pushToGist().catch(() => {})
+        if (_token && _username && _pin && data) pushToGist().catch(() => {})
       }, 5000)
     }
 
     let _autoPullTimer = null
     let _visHandler = null
+    let _autoSyncBusy = false
 
     function startAutoSync() {
       stopAutoSync()
       // Pull from Gist every 30s to get changes from other devices
-      _autoPullTimer = setInterval(async () => {
-        if (token && _username && _pin && data) {
+      async function doAutoPull() {
+        if (!_token || !_username || !_pin || !data || _autoSyncBusy) {
+          _autoPullTimer = setTimeout(doAutoPull, 30000)
+          return
+        }
+        _autoSyncBusy = true
+        try {
           const old = JSON.stringify(data)
           const ok = await syncFromGist()
           if (ok && JSON.stringify(data) !== old) notify()
-        }
-      }, 30000)
+        } finally { _autoSyncBusy = false }
+        _autoPullTimer = setTimeout(doAutoPull, 30000)
+      }
+      _autoPullTimer = setTimeout(doAutoPull, 30000)
       // Also pull when tab becomes visible
       _visHandler = () => {
-        if (!document.hidden && token && _username && _pin && data) {
+        if (!document.hidden && _token && _username && _pin && data && !_autoSyncBusy) {
           syncFromGist().then(c => { if (c) notify() }).catch(() => {})
         }
       }
@@ -349,7 +354,7 @@
     }
 
     function stopAutoSync() {
-      if (_autoPullTimer) { clearInterval(_autoPullTimer); _autoPullTimer = null }
+      if (_autoPullTimer) { clearTimeout(_autoPullTimer); _autoPullTimer = null }
       if (_visHandler) { document.removeEventListener('visibilitychange', _visHandler); _visHandler = null }
     }
 
@@ -381,20 +386,20 @@
     /* --- Gist sync (manual backup/restore) --- */
 
     async function fetchGist() {
-      if (!token) return null
+      if (!_token) return null
       const res = await fetch(getGistUrl(), {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${_token}` }
       })
       if (!res.ok) throw new Error('HTTP ' + res.status)
       return await res.json()
     }
 
     async function updateGist(content) {
-      if (!token) return
+      if (!_token) return
       await fetch(getGistUrl(), {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -434,7 +439,7 @@
     }
 
     async function pushToGist() {
-      if (!_username || !_pin || !data || !token) return false
+      if (!_username || !_pin || !data || !_token) return false
       if (_pushingGist) return true  // already in-flight
       _pushingGist = true
       try {
@@ -458,7 +463,7 @@
       const now = new Date()
       const day = now.getDay()
       const diff = now.getDate() - day + (day === 0 ? -6 : 1)
-      const monday = new Date(now.setDate(diff))
+      const monday = new Date(now.getFullYear(), now.getMonth(), diff)
       return monday.toISOString().split('T')[0]
     }
 
@@ -577,20 +582,76 @@
       return { year, weeks: weeks.length, totalSets, totalDays, setsPerWeek: weeks.length ? Math.round(totalSets / weeks.length) : 0 }
     }
 
-    function onUpdate(cb) { listeners = [cb] }
+    /* --- Immutable getters --- */
+
+    function getProgress() { return data ? JSON.parse(JSON.stringify(data.progress)) : {} }
+    function getWeights() { return data ? JSON.parse(JSON.stringify(data.weights)) : {} }
+    function getTrainingDates() { return data ? JSON.parse(JSON.stringify(data.trainingDates)) : [] }
+    function getHistory() { return data ? JSON.parse(JSON.stringify(data.history)) : {} }
+    function getHistoryWeek(weekId) { return data ? (data.history[weekId] ? JSON.parse(JSON.stringify(data.history[weekId])) : null) : null }
+    function getNotes() { return data ? JSON.parse(JSON.stringify(data.notes || {})) : {} }
+    function getFoodDiary() { return data ? JSON.parse(JSON.stringify(data.foodDiary || {})) : {} }
+    function getPhotos() { return data ? JSON.parse(JSON.stringify(data.photos || {})) : {} }
+    function getMeasurements() { return data ? JSON.parse(JSON.stringify(data.measurements || [])) : [] }
+    function getCustomDays() { return data ? JSON.parse(JSON.stringify(data.customDays || [])) : [] }
+    function getCustomWorkout() { return data ? JSON.parse(JSON.stringify(data.customWorkout || {})) : {} }
+    function getCustomExercises() { return data ? JSON.parse(JSON.stringify(data.customExercises || {})) : {} }
+    function getCalories() { return data ? JSON.parse(JSON.stringify(data.caloriesBurned || {})) : {} }
+    function getWorkoutNotes() { return data ? JSON.parse(JSON.stringify(data.workoutNotes || {})) : {} }
+    function getExerciseMods() { return data ? JSON.parse(JSON.stringify(data.exerciseMods || {})) : {} }
+    function getTimer() { return data ? (data.workoutTimer ? JSON.parse(JSON.stringify(data.workoutTimer)) : null) : null }
+
+    function onUpdate(cb) { listeners.push(cb) }
     function notify() { listeners.forEach(cb => cb(data ? data.progress : {}, data ? data.weights : {})) }
 
-    function getToken() { return token }
-    function setToken(t) { token = t; localStorage.setItem(TOKEN_KEY, t) }
-    function hasToken() { return !!token }
+    /* --- Encrypted secrets (AI keys, etc.) --- */
+    const AI_ENC_KEYS = ['key', 'provider', 'url', 'model']
+
+    async function loadAiKeys() {
+      if (!_pin) return {}
+      const result = {}
+      for (const k of AI_ENC_KEYS) {
+        const enc = localStorage.getItem(AI_PREFIX + k + '_enc')
+        if (enc) {
+          const dec = await auth.decryptSecret(enc, _pin, 'ai_' + k)
+          if (dec) { result[k] = dec; continue }
+        }
+        const legacy = localStorage.getItem(AI_PREFIX + k)
+        if (legacy) {
+          result[k] = legacy
+          const enc = await auth.encryptSecret(legacy, _pin, 'ai_' + k)
+          if (enc) { localStorage.setItem(AI_PREFIX + k + '_enc', enc); localStorage.removeItem(AI_PREFIX + k) }
+        }
+      }
+      return result
+    }
+
+    async function saveAiKey(k, value) {
+      if (_pin) {
+        const enc = await auth.encryptSecret(value, _pin, 'ai_' + k)
+        if (enc) { localStorage.setItem(AI_PREFIX + k + '_enc', enc); return }
+      }
+      localStorage.setItem(AI_PREFIX + k, value)
+    }
+
+    function getToken() { return _token }
+    async function setToken(t) {
+      _token = t
+      if (_pin) {
+        const enc = await auth.encryptSecret(t, _pin, 'github_token')
+        if (enc) { localStorage.setItem(TOKEN_ENC_KEY, enc); return }
+      }
+      localStorage.setItem(TOKEN_KEY, t)
+    }
+    function hasToken() { return !!_token }
     async function validateToken(t) {
-      const saved = token
-      token = t
+      const saved = _token
+      _token = t
       try {
         const res = await fetch(getGistUrl(), { headers: { 'Authorization': `Bearer ${t}` } })
         return res.status !== 401
       } catch { return false }
-      finally { token = saved }
+      finally { _token = saved }
     }
 
     return {
@@ -612,6 +673,7 @@
       onUpdate, syncFromGist, pushToGist,
       startAutoSync, stopAutoSync,
       getToken, setToken, hasToken, validateToken,
+      loadAiKeys, saveAiKey,
       get connected() { return hasToken() },
       get gistId() { return GIST_ID },
     }

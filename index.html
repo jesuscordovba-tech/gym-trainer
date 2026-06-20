@@ -146,14 +146,14 @@
     <div class="header-inner">
       <div class="logo"><span>GYM</span>TRAINER</div>
       <span class="sync-indicator" id="syncIndicator"><span class="spinner"></span>Guardando...</span>
-      <nav class="main-nav" id="mainNav">
-        <button data-tab="workoutTab" class="active">Entreno</button>
-        <button data-tab="progressTab">Progreso</button>
-        <button data-tab="dietTab">Dieta</button>
-        <button data-tab="machinesTab">Máquinas</button>
-        <button data-tab="photosTab">Fotos</button>
-        <button data-tab="measuresTab">Medidas</button>
-        <button data-tab="settingsTab">Ajustes</button>
+      <nav class="main-nav" id="mainNav" role="tablist" aria-label="Navegación principal">
+        <button role="tab" aria-selected="true" data-tab="workoutTab" class="active">Entreno</button>
+        <button role="tab" aria-selected="false" data-tab="progressTab">Progreso</button>
+        <button role="tab" aria-selected="false" data-tab="dietTab">Dieta</button>
+        <button role="tab" aria-selected="false" data-tab="machinesTab">Máquinas</button>
+        <button role="tab" aria-selected="false" data-tab="photosTab">Fotos</button>
+        <button role="tab" aria-selected="false" data-tab="measuresTab">Medidas</button>
+        <button role="tab" aria-selected="false" data-tab="settingsTab">Ajustes</button>
       </nav>
     </div>
   </header>

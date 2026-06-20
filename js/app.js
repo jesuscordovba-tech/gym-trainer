@@ -5,9 +5,31 @@
   let _guidedNextEx = null
   let timerInterval = null
   let audioCtx = null
+  let _focusTrapEl = null
+
+  function trapFocus(container) {
+    const focusable = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    if (!focusable.length) return
+    const first = focusable[0], last = focusable[focusable.length - 1]
+    const handler = e => {
+      if (e.key !== 'Tab') return
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
+    container.addEventListener('keydown', handler)
+    _focusTrapEl = { container, handler }
+    first.focus()
+  }
+
+  function releaseFocusTrap() {
+    if (_focusTrapEl) {
+      _focusTrapEl.container.removeEventListener('keydown', _focusTrapEl.handler)
+      _focusTrapEl = null
+    }
+  }
   const LS_PREFIX = 'gymapp_ai_'
   let aiProvider = localStorage.getItem(LS_PREFIX + 'provider') || 'gemini'
-  let aiKey = localStorage.getItem(LS_PREFIX + 'key') || ''
+  let aiKey = ''
   let aiUrl = localStorage.getItem(LS_PREFIX + 'url') || 'https://api.groq.com/openai/v1'
   let aiModel = localStorage.getItem(LS_PREFIX + 'model') || 'llama-3.3-70b-versatile'
 
@@ -134,9 +156,9 @@
       }
     }
 
-    // Auto-login if cached credentials exist — must be after onclick assignment
+    // Auto-login if cached credentials exist
     const savedUser = localStorage.getItem('gymapp_current_user')
-    const savedPin = localStorage.getItem('gymapp_pin')
+    const savedPin = sessionStorage.getItem('gymapp_pin')
     if (savedUser && savedPin) {
       usernameInput.value = savedUser
       pinInput.value = savedPin
@@ -159,6 +181,8 @@
     const t = document.createElement('div')
     t.className = 'week-toast'
     t.textContent = msg
+    t.setAttribute('role', 'status')
+    t.setAttribute('aria-live', 'polite')
     document.body.appendChild(t)
     setTimeout(() => t.classList.add('show'), 10)
     setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300) }, 4000)
@@ -181,6 +205,14 @@
     const wasReset = db.checkWeekReset()
     if (wasReset) { showToast('Nueva semana — progreso reiniciado') }
     db.archiveCurrentWeek()
+
+    // Load encrypted AI keys
+    db.loadAiKeys().then(keys => {
+      if (keys.key) aiKey = keys.key
+      if (keys.provider) aiProvider = keys.provider
+      if (keys.url) aiUrl = keys.url
+      if (keys.model) aiModel = keys.model
+    })
 
     if (localStorage.getItem('gymapp_notif_enabled') === 'true' && Notification.permission !== 'granted') {
       Notification.requestPermission()
@@ -265,8 +297,12 @@
 
   function renderNav() {
     const switchTab = btn => {
-      document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'))
+      document.querySelectorAll('[data-tab]').forEach(b => {
+        b.classList.remove('active')
+        b.setAttribute('aria-selected', 'false')
+      })
       btn.classList.add('active')
+      btn.setAttribute('aria-selected', 'true')
       document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'))
       document.getElementById(btn.dataset.tab).classList.remove('hidden')
     }
@@ -675,6 +711,9 @@
     const list = document.getElementById('variantList')
     if (!overlay || !list || !alts.length) return
 
+    overlay.setAttribute('role', 'dialog')
+    overlay.setAttribute('aria-modal', 'true')
+    overlay.setAttribute('aria-label', 'Variantes de ejercicio')
     list.innerHTML = alts.map((a, idx) => {
       const m = gymData.getMachineById(a.machine)
       return '<div class="variant-item">' +
@@ -687,6 +726,7 @@
         (a.video ? '<div class="variant-video-container" id="vv-' + idx + '"></div>' : '') +
         '</div>'
     }).join('')
+    trapFocus(overlay)
 
     list.querySelectorAll('.variant-select-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -828,7 +868,11 @@
   /* === RIR / Notes per set === */
 
   function setupTimer() {
-    document.getElementById('timerOverlay').addEventListener('click', e => {
+    const overlay = document.getElementById('timerOverlay')
+    overlay.setAttribute('role', 'dialog')
+    overlay.setAttribute('aria-modal', 'true')
+    overlay.setAttribute('aria-label', 'Temporizador de descanso')
+    overlay.addEventListener('click', e => {
       if (e.target === e.currentTarget) hideTimer()
     })
     document.getElementById('timerSkip').addEventListener('click', hideTimer)
@@ -986,20 +1030,33 @@
     const embedUrl = url.match(/^https?:\/\//) ? url : 'https://www.youtube.com/embed/' + url + '?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1'
     document.getElementById('videoModalTitle').textContent = name
     iframe.src = embedUrl
-    document.getElementById('videoOverlay').classList.add('show')
+    const overlay = document.getElementById('videoOverlay')
+    overlay.classList.add('show')
+    overlay.setAttribute('role', 'dialog')
+    overlay.setAttribute('aria-modal', 'true')
+    overlay.setAttribute('aria-label', 'Video: ' + name)
+    trapFocus(overlay)
   }
 
   function closeVideo() {
     document.getElementById('videoOverlay').classList.remove('show')
     document.getElementById('videoIframe').src = ''
+    releaseFocusTrap()
   }
 
   /* === Variant Overlay === */
   function setupVariantOverlay() {
     const overlay = document.getElementById('variantOverlay')
-    document.getElementById('variantClose')?.addEventListener('click', () => overlay.classList.remove('show'))
-    overlay?.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('show') })
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') overlay?.classList.remove('show') })
+    document.getElementById('variantClose')?.addEventListener('click', () => {
+      overlay.classList.remove('show')
+      releaseFocusTrap()
+    })
+    overlay?.addEventListener('click', e => {
+      if (e.target === overlay) { overlay.classList.remove('show'); releaseFocusTrap() }
+    })
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { overlay?.classList.remove('show'); releaseFocusTrap() }
+    })
   }
 
   /* Coach Chat Setup (called once from initApp) */
@@ -1009,13 +1066,21 @@
     const coachSend = document.getElementById('coachSend')
 
     document.getElementById('coachFab')?.addEventListener('click', () => {
-      document.getElementById('coachOverlay').classList.add('show')
+      const overlay = document.getElementById('coachOverlay')
+      overlay.classList.add('show')
+      overlay.setAttribute('role', 'dialog')
+      overlay.setAttribute('aria-modal', 'true')
+      overlay.setAttribute('aria-label', 'Coach IA')
       if (!coachMessages.children.length) addCoachMsg('Coach', '¡Hola! Soy tu coach con IA. Pregúntame sobre tu rutina, pesos, técnica, o cualquier duda de entrenamiento.')
-      coachInput.focus()
+      setTimeout(() => coachInput.focus(), 100)
+      trapFocus(overlay)
     })
-    document.getElementById('coachClose')?.addEventListener('click', () => document.getElementById('coachOverlay').classList.remove('show'))
+    document.getElementById('coachClose')?.addEventListener('click', () => {
+      document.getElementById('coachOverlay').classList.remove('show')
+      releaseFocusTrap()
+    })
     document.getElementById('coachOverlay')?.addEventListener('click', e => {
-      if (e.target === e.currentTarget) document.getElementById('coachOverlay').classList.remove('show')
+      if (e.target === e.currentTarget) { document.getElementById('coachOverlay').classList.remove('show'); releaseFocusTrap() }
     })
 
     coachSend?.addEventListener('click', () => sendCoachMsg())
@@ -2527,10 +2592,10 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       aiKey = key
       aiUrl = document.getElementById('aiUrlInput')?.value.trim() || 'https://api.groq.com/openai/v1'
       aiModel = document.getElementById('aiModelInput')?.value.trim() || 'llama-3.3-70b-versatile'
-      localStorage.setItem(LS_PREFIX + 'provider', aiProvider)
-      localStorage.setItem(LS_PREFIX + 'key', aiKey)
-      localStorage.setItem(LS_PREFIX + 'url', aiUrl)
-      localStorage.setItem(LS_PREFIX + 'model', aiModel)
+      await db.saveAiKey('key', aiKey)
+      await db.saveAiKey('provider', aiProvider)
+      await db.saveAiKey('url', aiUrl)
+      await db.saveAiKey('model', aiModel)
       st.textContent = 'Coach IA configurado'
       st.style.color = 'var(--green)'
       updateCoachFab()
@@ -2580,7 +2645,8 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
         } else continue
         rows.push([exName, day.name, weights[key], muscle, new Date().toISOString().split('T')[0]])
       }
-      const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n')
+      const sanitizeCSV = v => /^[=+\-@]/.test(String(v)) ? "'" + String(v) : String(v)
+      const csv = rows.map(r => r.map(c => '"' + sanitizeCSV(c).replace(/"/g, '""') + '"').join(',')).join('\n')
       downloadFile(csv, 'gym-trainer-weights.csv', 'text/csv')
       showToast('Pesos exportados como CSV')
     })

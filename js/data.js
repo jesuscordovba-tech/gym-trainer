@@ -7,8 +7,8 @@ function createDefaultProfile() {
     },
     get tdee() { return Math.round(this.bmr * 1.55) },
     get deficitCalories() { return this.tdee - 500 },
-    get weightKg() { return (this.weightLb * 0.453592).toFixed(1) },
-    get bmi() { return ((this.weightKg / ((this.heightCm / 100) ** 2))).toFixed(1) },
+    get weightKg() { return Math.round(this.weightLb * 0.453592 * 10) / 10 },
+    get bmi() { return ((this.weightKg / ((this.heightCm / 100) ** 2))) },
   }
 }
 

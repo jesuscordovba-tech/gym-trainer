@@ -1,50 +1,50 @@
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --bg: #0d0d0f;
-  --surface: #161618;
-  --surface2: #1e1e22;
-  --surface3: #25252a;
-  --primary: #ff4d6d;
-  --primary-dim: #cc3d58;
-  --primary-glow: rgba(255,77,109,0.25);
-  --accent: #1a1a2e;
-  --text: #f0f0f0;
-  --text-dim: #8e8e93;
-  --text-muted: #8e8e93;
-  --green: #34c759;
-  --green-dim: #2aa54a;
-  --orange: #ff9f0a;
-  --orange-dim: #cc7f08;
-  --blue: #5ac8fa;
-  --purple: #bf5af2;
-  --border: #26262b;
-  --border-light: #2c2c32;
+  --bg: #ffffff;
+  --surface: #f5f5f7;
+  --surface2: #e8e8ed;
+  --surface3: #dcdce0;
+  --primary: #059669;
+  --primary-dim: #047857;
+  --primary-glow: rgba(5,150,105,0.12);
+  --accent: #f0fdf4;
+  --text: #1c1c1e;
+  --text-dim: #6b7280;
+  --text-muted: #9ca3af;
+  --green: #10b981;
+  --green-dim: #059669;
+  --orange: #d97706;
+  --orange-dim: #b45309;
+  --blue: #0ea5e9;
+  --purple: #7c3aed;
+  --border: #e5e5ea;
+  --border-light: #d4d4d8;
   --radius: 14px;
   --radius-sm: 10px;
   --radius-xs: 6px;
-  --shadow: 0 2px 16px rgba(0,0,0,0.5);
-  --shadow-lg: 0 8px 40px rgba(0,0,0,0.6);
+  --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.1);
   --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
   --nav-height: 48px;
-  /* Liquid Glass — Apple-style */
-  --glass-bg: rgba(22, 22, 24, 0.28);
-  --glass-bg2: rgba(30, 30, 34, 0.25);
-  --glass-bg3: rgba(37, 37, 42, 0.22);
-  --glass-gloss: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 25%, transparent 45%);
-  --glass-gloss-soft: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 35%);
-  --glass-gloss-primary: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,77,109,0.03) 25%, transparent 45%);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --glass-border-hover: rgba(255, 255, 255, 0.12);
+  /* Liquid Glass — Light */
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg2: rgba(245, 245, 247, 0.45);
+  --glass-bg3: rgba(235, 235, 240, 0.4);
+  --glass-gloss: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 25%, transparent 45%);
+  --glass-gloss-soft: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 35%);
+  --glass-gloss-primary: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(5,150,105,0.04) 25%, transparent 45%);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-border-hover: rgba(0, 0, 0, 0.12);
   --glass-blur: 30px;
   --glass-blur-sm: 18px;
   --glass-blur-xs: 10px;
-  --glass-vibrancy: saturate(1.4) blur(30px);
-  --glass-vibrancy-sm: saturate(1.3) blur(20px);
-  --glass-vibrancy-xs: saturate(1.2) blur(12px);
-  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
-  --glass-shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.35);
-  --glass-glow: 0 0 40px rgba(255, 77, 109, 0.08);
+  --glass-vibrancy: saturate(1.1) blur(30px);
+  --glass-vibrancy-sm: saturate(1.05) blur(20px);
+  --glass-vibrancy-xs: saturate(1.05) blur(12px);
+  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --glass-shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.1);
+  --glass-glow: 0 0 40px rgba(5, 150, 105, 0.06);
 }
 
 html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
@@ -53,10 +53,9 @@ body {
   font-family: var(--font);
   background: var(--bg);
   background-image:
-    radial-gradient(ellipse 80% 60% at 0% 10%, rgba(255,77,109,0.25) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 100% 30%, rgba(90,200,250,0.18) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 50% 80%, rgba(191,90,242,0.12) 0%, transparent 50%),
-    radial-gradient(ellipse 40% 30% at 30% 50%, rgba(255,77,109,0.06) 0%, transparent 40%);
+    radial-gradient(ellipse 80% 60% at 0% 10%, rgba(5,150,105,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 100% 30%, rgba(14,165,233,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 50% 80%, rgba(124,58,237,0.04) 0%, transparent 50%);
   color: var(--text);
   line-height: 1.5;
   min-height: 100vh;
@@ -191,7 +190,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 
 .day-card:hover { border-color: var(--glass-border-hover); background-color: var(--glass-bg2); background-image: var(--glass-gloss); }
-.day-card.active { border-color: var(--primary); background-color: rgba(255,77,109,0.18); background-image: var(--glass-gloss-primary); }
+.day-card.active { border-color: var(--primary); background-color: rgba(5,150,105,0.18); background-image: var(--glass-gloss-primary); }
 .day-card .day-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
 .day-card .day-name { font-weight: 700; font-size: 0.82rem; margin: 0.2rem 0; word-break: break-word; }
 .day-card .day-focus { font-size: 0.7rem; color: var(--text-dim); font-weight: 500; }
@@ -275,7 +274,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 .muscle-badge {
   display: inline-block;
-  background: rgba(255,77,109,0.08);
+  background: rgba(5,150,105,0.08);
   color: var(--primary);
   font-size: 0.68rem;
   padding: 0.15rem 0.45rem;
@@ -295,7 +294,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 /* Video button — circular icon matching other control buttons */
 .ex-video-btn {
   background: none;
-  border: 1px solid rgba(233,69,96,0.3);
+  border: 1px solid rgba(5,150,105,0.3);
   border-radius: 50%;
   width: 30px;
   height: 30px;
@@ -310,11 +309,11 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   color: var(--primary);
 }
 .ex-video-btn:hover {
-  background: rgba(233,69,96,0.15);
+  background: rgba(5,150,105,0.12);
   border-color: var(--primary);
 }
 .ex-video-btn:active {
-  background: rgba(233,69,96,0.25);
+  background: rgba(5,150,105,0.18);
 }
 
 .set-tracker {
@@ -458,11 +457,11 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 /* Cardio section */
 .cardio-card {
-  background: rgba(255,77,109,0.08);
+  background: rgba(5,150,105,0.08);
   background-image: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 40%);
   backdrop-filter: saturate(1.2) blur(12px);
   -webkit-backdrop-filter: saturate(1.2) blur(12px);
-  border: 1px solid rgba(255,77,109,0.15);
+  border: 1px solid rgba(5,150,105,0.15);
   border-radius: var(--radius-sm);
   padding: 1rem;
   margin-top: 1rem;
@@ -524,10 +523,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 
 .weight-input {
-  background: rgba(13,13,15,0.5);
+  background: rgba(0,0,0,0.03);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(0,0,0,0.08);
   color: var(--text);
   padding: 0.3rem 0.45rem;
   border-radius: var(--radius-xs);
@@ -639,11 +638,11 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 .week-info-bar span { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--text-dim); }
 
 .restore-banner {
-  background: rgba(255,77,109,0.08);
+  background: rgba(5,150,105,0.08);
   background-image: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 35%);
   backdrop-filter: saturate(1.2) blur(12px);
   -webkit-backdrop-filter: saturate(1.2) blur(12px);
-  border: 1px solid rgba(255,77,109,0.2);
+  border: 1px solid rgba(5,150,105,0.2);
   border-radius: var(--radius-sm);
   padding: 0.6rem 0.8rem;
   margin-bottom: 0.75rem;
@@ -724,10 +723,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 .settings-token-input {
   flex: 1;
-  background: rgba(13,13,15,0.5);
+  background: rgba(0,0,0,0.03);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(0,0,0,0.08);
   color: var(--text);
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius-sm);
@@ -852,8 +851,8 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255,77,109,0.08);
-  border: 1px solid rgba(255,77,109,0.3);
+  background: rgba(5,150,105,0.08);
+  border: 1px solid rgba(5,150,105,0.3);
   color: var(--primary);
   width: 36px;
   height: 36px;
@@ -929,7 +928,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 
 .video-close:hover {
-  background: rgba(255,77,109,0.1);
+  background: rgba(5,150,105,0.1);
   color: var(--primary);
 }
 
@@ -979,11 +978,11 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 
 /* Reset button */
 .reset-btn {
-  background: rgba(255,77,109,0.12);
+  background: rgba(5,150,105,0.12);
   background-image: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 35%);
   backdrop-filter: saturate(1.2) blur(12px);
   -webkit-backdrop-filter: saturate(1.2) blur(12px);
-  border: 1px solid rgba(255,77,109,0.25);
+  border: 1px solid rgba(5,150,105,0.25);
   color: var(--primary);
   padding: 0.5rem 1rem;
   border-radius: var(--radius-sm);
@@ -995,7 +994,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   font-family: var(--font);
 }
 
-.reset-btn:hover { background: rgba(255,77,109,0.2); background-image: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, transparent 35%); }
+.reset-btn:hover { background: rgba(5,150,105,0.2); background-image: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, transparent 35%); }
 
 .reset-day-wrap {
   margin-top: 1.25rem;
@@ -1239,10 +1238,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .diet-food-item {
   display: inline-block;
-  background: rgba(15,52,96,0.3);
+  background: rgba(5,150,105,0.08);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  color: #5dade2;
+  color: var(--primary);
   font-size: 0.72rem;
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
@@ -1392,11 +1391,11 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   line-height: 1;
 }
 .ex-controls-row .swap-btn { color: var(--text-dim); }
-.ex-controls-row .swap-btn:hover { border-color: var(--text-dim); background: rgba(255,255,255,0.05); }
+.ex-controls-row .swap-btn:hover { border-color: var(--text-dim); background: var(--surface2); }
 .ex-controls-row .edit-ex-btn { border-color: rgba(52,199,89,0.3); color: var(--green); }
 .ex-controls-row .edit-ex-btn:hover { background: rgba(52,199,89,0.1); border-color: var(--green); }
-.ex-controls-row .remove-ex-btn { border-color: rgba(255,77,109,0.3); color: var(--primary); }
-.ex-controls-row .remove-ex-btn:hover { background: rgba(255,77,109,0.1); border-color: var(--primary); }
+.ex-controls-row .remove-ex-btn { border-color: rgba(5,150,105,0.3); color: var(--primary); }
+.ex-controls-row .remove-ex-btn:hover { background: rgba(5,150,105,0.1); border-color: var(--primary); }
 
 /* === Progress Photos === */
 .photo-current-week {
@@ -1418,7 +1417,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .photo-upload-btn {
   display: inline-block;
-  background: rgba(233,69,96,0.08);
+  background: rgba(5,150,105,0.06);
   background-image: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 35%);
   backdrop-filter: saturate(1.2) blur(10px);
   -webkit-backdrop-filter: saturate(1.2) blur(10px);
@@ -1433,7 +1432,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   text-align: center;
 }
 .photo-upload-btn:hover {
-  background: rgba(233,69,96,0.18);
+  background: rgba(5,150,105,0.12);
   background-image: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, transparent 35%);
 }
 .photo-grid {
@@ -1626,7 +1625,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   align-items: center;
   padding: 0.25rem 0;
   font-size: 0.78rem;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--glass-border);
 }
 .plateau-item:last-child { border-bottom: none; }
 .plateau-ex { font-weight: 700; color: var(--text); font-size: 0.82rem; }
@@ -1678,10 +1677,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .food-search-input {
   flex: 1;
-  background: rgba(13,13,15,0.5);
+  background: rgba(0,0,0,0.03);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(0,0,0,0.08);
   color: var(--text);
   padding: 0.6rem 0.75rem;
   border-radius: var(--radius-sm);
@@ -1771,10 +1770,10 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .ex-search-input {
   flex: 1;
-  background: rgba(13,13,15,0.5);
+  background: rgba(0,0,0,0.03);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(0,0,0,0.08);
   color: var(--text);
   padding: 0.6rem 0.75rem;
   border-radius: var(--radius-sm);
@@ -1831,11 +1830,11 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .settings-edit-grid input,
 .settings-edit-grid select {
-  background: rgba(13,13,15,0.45);
-  background-image: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 35%);
-  backdrop-filter: saturate(1.2) blur(12px);
-  -webkit-backdrop-filter: saturate(1.2) blur(12px);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.03);
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 35%);
+  backdrop-filter: saturate(1.05) blur(12px);
+  -webkit-backdrop-filter: saturate(1.05) blur(12px);
+  border: 1px solid rgba(0,0,0,0.08);
   color: var(--text);
   padding: 0.5rem;
   border-radius: var(--radius-sm);
@@ -1846,14 +1845,14 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 .settings-edit-grid input:focus,
 .settings-edit-grid select:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(255,77,109,0.15);
+  box-shadow: 0 0 0 2px rgba(5,150,105,0.15);
 }
 .swap-btn {
-  background: rgba(13,13,15,0.4);
-  background-image: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 35%);
-  backdrop-filter: saturate(1.2) blur(10px);
-  -webkit-backdrop-filter: saturate(1.2) blur(10px);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.03);
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 35%);
+  backdrop-filter: saturate(1.05) blur(10px);
+  -webkit-backdrop-filter: saturate(1.05) blur(10px);
+  border: 1px solid rgba(0,0,0,0.08);
   color: var(--text);
   width: 36px; height: 36px;
   border-radius: 50%;
@@ -1864,7 +1863,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   justify-content: center;
   transition: all 0.2s;
 }
-.swap-btn:hover { border-color: var(--primary); background: rgba(255,77,109,0.15); }
+.swap-btn:hover { border-color: var(--primary); background: rgba(5,150,105,0.15); }
 .swapped-badge {
   font-size: 0.65rem;
   background: var(--primary);
@@ -1875,11 +1874,11 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   vertical-align: middle;
 }
 .bot-card {
-  background: linear-gradient(180deg, rgba(22,22,24,0.4) 0%, rgba(30,30,34,0.35) 100%);
-  background-image: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 40%);
-  backdrop-filter: saturate(1.2) blur(16px);
-  -webkit-backdrop-filter: saturate(1.2) blur(16px);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.55);
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 40%);
+  backdrop-filter: saturate(1.05) blur(16px);
+  -webkit-backdrop-filter: saturate(1.05) blur(16px);
+  border: 1px solid rgba(0,0,0,0.04);
   border-radius: var(--radius);
   padding: 0.75rem 1rem;
   margin-bottom: 1rem;
@@ -1911,18 +1910,18 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .variant-overlay.show { opacity: 1; pointer-events: auto; }
 .variant-modal {
-  background-color: rgba(22,22,24,0.4);
-  background-image: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 25%, transparent 45%);
-  backdrop-filter: saturate(1.3) blur(30px);
-  -webkit-backdrop-filter: saturate(1.3) blur(30px);
-  border: 1px solid rgba(255,255,255,0.06);
+  background-color: rgba(255,255,255,0.6);
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 25%, transparent 45%);
+  backdrop-filter: saturate(1.1) blur(30px);
+  -webkit-backdrop-filter: saturate(1.1) blur(30px);
+  border: 1px solid rgba(0,0,0,0.06);
   border-radius: var(--radius);
   padding: 1.25rem;
   width: 380px;
   max-width: 90vw;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: 0 8px 48px rgba(0,0,0,0.35);
+  box-shadow: 0 8px 48px rgba(0,0,0,0.1);
 }
 .variant-modal-header {
   display: flex;
@@ -1930,7 +1929,7 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(0,0,0,0.07);
 }
 .variant-modal-title { font-size: 1rem; font-weight: 700; }
 .variant-close {
@@ -1943,11 +1942,11 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .variant-close:hover { opacity: 1; }
 .variant-item {
-  background: rgba(13,13,15,0.45);
-  background-image: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 35%);
-  backdrop-filter: saturate(1.2) blur(12px);
-  -webkit-backdrop-filter: saturate(1.2) blur(12px);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.02);
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 35%);
+  backdrop-filter: saturate(1.05) blur(12px);
+  -webkit-backdrop-filter: saturate(1.05) blur(12px);
+  border: 1px solid rgba(0,0,0,0.04);
   border-radius: var(--radius-sm);
   padding: 0.75rem;
   margin-bottom: 0.5rem;
@@ -1980,6 +1979,6 @@ button, .day-card, .set-dot, .machine-item, .video-btn, .video-close, .rest-time
 }
 .variant-video-btn:hover { text-decoration: underline; }
 #coachFab:hover {
-  background: rgba(255,77,109,0.75) !important;
+  background: rgba(5,150,105,0.75) !important;
   transform: scale(1.05);
 }

@@ -1375,7 +1375,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<span>Semana ' + weekNum + ' de ' + now.getFullYear() + '</span>',
       '<span>' + trainingDays + ' día' + (trainingDays !== 1 ? 's' : '') + ' entrenando</span>',
       '</div>',
-      '<div class="restore-banner" style="background:rgba(255,77,109,0.05);border-color:rgba(255,77,109,0.1);font-size:0.82rem;">Progreso: ' + Object.keys(progress).length + ' días · ' + weekId + (fallbackSource ? ' ← ' + fallbackSource : '') + ' · Historial: ' + Object.keys(db.getHistory()).length + ' semanas' + (Object.keys(db.getHistory()).length > 0 ? ' · <button id="restoreFromBanner" style="background:var(--primary);border:none;color:#fff;padding:0.15rem 0.5rem;border-radius:var(--radius-xs);cursor:pointer;font-weight:700;font-size:0.78rem;">Restaurar</button>' : '') + '</div>',
+      '<div class="restore-banner" style="background:rgba(5,150,105,0.04);border-color:rgba(5,150,105,0.08);font-size:0.82rem;">Progreso: ' + Object.keys(progress).length + ' días · ' + weekId + (fallbackSource ? ' ← ' + fallbackSource : '') + ' · Historial: ' + Object.keys(db.getHistory()).length + ' semanas' + (Object.keys(db.getHistory()).length > 0 ? ' · <button id="restoreFromBanner" style="background:var(--primary);border:none;color:#fff;padding:0.15rem 0.5rem;border-radius:var(--radius-xs);cursor:pointer;font-weight:700;font-size:0.78rem;">Restaurar</button>' : '') + '</div>',
       '<div class="progress-stats">',
       '<div class="stat-card"><div class="stat-value">' + pct + '%</div><div class="stat-label">Progreso global</div></div>',
       '<div class="stat-card"><div class="stat-value">' + totalSetsDone + '</div><div class="stat-label">Series completadas</div></div>',
@@ -1593,7 +1593,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const x = pad.left + (chartW / daySets.length) * i + (chartW / daySets.length - barW) / 2
       const barH = (val / maxVal) * chartH
       const y = pad.top + chartH - barH
-      ctx.fillStyle = val >= workoutPlan.days[i].exercises.reduce((a, ex) => a + ex.sets, 0) ? '#2ecc71' : '#e94560'
+      ctx.fillStyle = val >= workoutPlan.days[i].exercises.reduce((a, ex) => a + ex.sets, 0) ? '#2ecc71' : '#059669'
       ctx.beginPath()
       ctx.moveTo(x + 4, y)
       ctx.lineTo(x + barW - 4, y)
@@ -1607,7 +1607,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       ctx.fillStyle = '#888'
       ctx.textAlign = 'center'
       ctx.fillText(DAY_LABELS[i] || 'D' + (i + 1), x + barW / 2, h - 8)
-      ctx.fillStyle = '#f0f0f0'
+      ctx.fillStyle = '#1c1c1e'
       ctx.font = 'bold 11px system-ui'
       ctx.fillText(val, x + barW / 2, y - 6)
     })
@@ -1644,7 +1644,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const max = Math.max(...values) * 1.1
     const range = max - min || 1
 
-    ctx.strokeStyle = '#e94560'
+    ctx.strokeStyle = '#059669'
     ctx.lineWidth = 2
     ctx.beginPath()
     recent.forEach(([, v], i) => {
@@ -1657,7 +1657,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     recent.forEach(([, v], i) => {
       const x = pad.left + (chartW / (recent.length - 1 || 1)) * i
       const y = pad.top + chartH - ((parseFloat(v) - min) / range) * chartH
-      ctx.fillStyle = '#e94560'
+      ctx.fillStyle = '#059669'
       ctx.beginPath()
       ctx.arc(x, y, 4, 0, Math.PI * 2)
       ctx.fill()
@@ -1802,7 +1802,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       html += '<h3 style="margin-top:2rem;">Evolución</h3>'
       html += '<div class="chart-container"><canvas id="measuresChart" width="800" height="300"></canvas></div>'
       html += '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;margin-top:0.5rem;font-size:0.75rem;">'
-      ;['#5ac8fa','#bf5af2','#e94560','#2ecc71','#f39c12','#3498db','#ff6b35','#1abc9c'].forEach((c, i) => {
+      ;['#5ac8fa','#bf5af2','#059669','#2ecc71','#f39c12','#3498db','#ff6b35','#1abc9c'].forEach((c, i) => {
         html += '<span style="display:inline-flex;align-items:center;gap:0.25rem;"><span style="width:10px;height:10px;border-radius:2px;background:' + c + ';"></span>' + ['Cuello','Hombros','Pecho','Brazo','Cintura','Cadera','Pierna','Pantorrilla'][i] + '</span>'
       })
       html += '</div>'
@@ -1854,7 +1854,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     if (measures.length < 2) return
 
     const keys = ['neck','shoulders','chest','bicep','waist','hip','thigh','calf']
-    const colors = ['#5ac8fa','#bf5af2','#e94560','#2ecc71','#f39c12','#3498db','#ff6b35','#1abc9c']
+    const colors = ['#5ac8fa','#bf5af2','#059669','#2ecc71','#f39c12','#3498db','#ff6b35','#1abc9c']
     const labelNames = { neck:'Cuello', shoulders:'Hombros', chest:'Pecho', bicep:'Brazo', waist:'Cintura', hip:'Cadera', thigh:'Pierna', calf:'Pantorrilla' }
     const recent = measures.slice(-30)
     const allValues = recent.flatMap(m => keys.map(k => m[k] || 0))
@@ -1863,7 +1863,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const range = maxV - minV || 1
 
     ctx.clearRect(0, 0, w, h)
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)'
     ctx.lineWidth = 1
     for (let i = 0; i <= 4; i++) {
       const y = pad.top + (chartH / 4) * i
@@ -1966,7 +1966,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const maxV = Math.max(...vals) * 1.1 || 1, minV = Math.min(...vals) * 0.9 || 0
 
     ctx.clearRect(0, 0, w, h)
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)'
     for (let i = 0; i <= 3; i++) {
       const y = pad.top + (ch / 3) * i
       ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke()
@@ -1990,7 +1990,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const x = pad.left + (cw / Math.max(entries.length - 1, 1)) * i
       ctx.fillText(e.week.length > 7 ? e.week.slice(-5) : e.week, x, h - 5)
     })
-    ctx.fillStyle = '#f0f0f0'
+    ctx.fillStyle = '#1c1c1e'
     ctx.font = 'bold 9px system-ui'
     entries.forEach((e, i) => {
       const x = pad.left + (cw / Math.max(entries.length - 1, 1)) * i

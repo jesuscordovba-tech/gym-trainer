@@ -223,6 +223,7 @@
         } catch {}
       }
 
+      migrateWeights()
       setupBeforeUnload()
       startAutoSync()
       return { ok: true, data: decrypted }
@@ -592,6 +593,73 @@
 
     function getProgress() { return data ? JSON.parse(JSON.stringify(data.progress)) : {} }
     function getWeights() { return data ? JSON.parse(JSON.stringify(data.weights)) : {} }
+
+    function migrateKey(key, customEx, customWk) {
+      if (!/^\d/.test(key)) return null
+      var parts = key.split('-')
+      var dayIdx = parseInt(parts[0], 10)
+      if (isNaN(dayIdx)) return null
+      if (parts[1] === 'custom') {
+        var ci = parseInt(parts.slice(2).join('-'), 10)
+        if (!isNaN(ci)) {
+          var cex = (customEx[dayIdx] || [])[ci]
+          if (cex && cex.machine) return cex.machine
+        }
+        return null
+      }
+      var exIdx = parseInt(parts.slice(1).join('-'), 10)
+      if (!isNaN(exIdx)) {
+        var swp = customWk[key]
+        if (swp && swp.machine) return swp.machine
+        if (window.workoutPlan && window.workoutPlan.days && window.workoutPlan.days[dayIdx] && window.workoutPlan.days[dayIdx].exercises[exIdx]) {
+          return window.workoutPlan.days[dayIdx].exercises[exIdx].machine
+        }
+      }
+      return null
+    }
+
+    function migrateWeights() {
+      if (!data) return
+      var customEx = data.customExercises || {}
+      var customWk = data.customWorkout || {}
+      var changed = false
+
+      if (data.weights) {
+        var w = data.weights
+        var keys = Object.keys(w)
+        for (var i = 0; i < keys.length; i++) {
+          var key = keys[i]
+          var newKey = migrateKey(key, customEx, customWk)
+          if (newKey && newKey !== key) {
+            w[newKey] = w[key]
+            delete w[key]
+            changed = true
+          }
+        }
+      }
+
+      if (data.history) {
+        var hkeys = Object.keys(data.history)
+        for (var hi = 0; hi < hkeys.length; hi++) {
+          var hw = data.history[hkeys[hi]].weights
+          if (!hw) continue
+          var hk = Object.keys(hw)
+          for (var hj = 0; hj < hk.length; hj++) {
+            var oldKey = hk[hj]
+            var newKey = migrateKey(oldKey, customEx, customWk)
+            if (newKey && newKey !== oldKey) {
+              hw[newKey] = hw[oldKey]
+              delete hw[oldKey]
+              changed = true
+            }
+          }
+        }
+      }
+
+      if (changed) {
+        schedulePersist()
+      }
+    }
     function getTrainingDates() { return data ? JSON.parse(JSON.stringify(data.trainingDates)) : [] }
     function getHistory() { return data ? JSON.parse(JSON.stringify(data.history)) : {} }
     function getHistoryWeek(weekId) { return data ? (data.history[weekId] ? JSON.parse(JSON.stringify(data.history[weekId])) : null) : null }

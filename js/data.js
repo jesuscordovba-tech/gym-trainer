@@ -1,6 +1,8 @@
 function createDefaultProfile() {
   return {
     name: '', age: 21, heightCm: 175, weightLb: 165, gender: 'M',
+    experienceLevel: 'beginner', goal: 'muscleGain', preferredDays: 4,
+    splitPreference: 'ppl', dynamicPlansEnabled: false,
     get bmr() {
       const w = this.weightLb * 0.453592, h = this.heightCm, a = this.age
       return Math.round(10 * w + 6.25 * h - 5 * a + 5)

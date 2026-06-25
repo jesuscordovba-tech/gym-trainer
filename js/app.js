@@ -40,6 +40,11 @@
 
   const DAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB']
 
+  function getPlanDays() {
+    const plan = db.getActivePlan()
+    return plan?.days || workoutPlan.days
+  }
+
   function getISOWeek(d) {
     const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
     const dayNum = date.getUTCDay() || 7
@@ -216,7 +221,7 @@
       let target = (dayOfWeek - 1 + dayOffset) % 6
       if (target < 0) target += 6
       const customDays = db.getCustomDays()
-      const totalFixedDays = workoutPlan.days.length
+      const totalFixedDays = getPlanDays().length
       if (target < totalFixedDays) currentDay = target
     }
 
@@ -365,7 +370,7 @@
     grid.innerHTML = ''
     const progress = db.getProgress()
     const customDays = db.getCustomDays()
-    workoutPlan.days.forEach((d, i) => {
+    getPlanDays().forEach((d, i) => {
       const p = progress[i] || {}
       const completedSets = Object.values(p).reduce((a, b) => a + (b || 0), 0)
       const totalSets = d.exercises.reduce((a, ex) => a + ex.sets, 0)
@@ -482,7 +487,7 @@
 
   function renderWorkout(dayIndex) {
     const isCustom = isCustomDay(dayIndex)
-    const d = isCustom ? db.getCustomDays()[dayIndex - 100] : workoutPlan.days[dayIndex]
+    const d = isCustom ? db.getCustomDays()[dayIndex - 100] : getPlanDays()[dayIndex]
     if (!d) return
     const container = document.getElementById('workoutContent')
     const progress = db.getProgress()
@@ -501,10 +506,11 @@
         '</div>',
       ].join('')
     }
+    const planBadge = db.getActivePlan() ? '<span class="plan-badge" style="display:inline-block;font-size:var(--text-xs);color:var(--primary);background:var(--primary-glow);padding:0.15rem 0.5rem;border-radius:var(--radius-xs);margin-left:0.5rem;font-weight:600;vertical-align:middle">Plan personalizado</span>' : ''
     html += [
       '<div class="workout-header">',
       '<div class="workout-header-row">',
-      '<h2>' + esc(d.name) + '</h2>',
+      '<h2>' + esc(d.name) + planBadge + '</h2>',
       '<div style="display:flex;gap:0.35rem;align-items:center;">',
       '<button class="reset-btn" id="guidedToggleBtn" style="font-size:0.75rem;padding:0.2rem 0.5rem;' + (_guidedMode ? 'background:var(--primary);color:#fff;border-color:var(--primary);' : '') + '">' + (_guidedMode ? 'Guiado ON' : 'Modo Guiado') + '</button>',
       '<button class="workout-timer-btn" id="workoutTimerBtn" title="Temporizador de entrenamiento">⏱ ' + getTimerDisplay(_timerSeconds) + '</button>',
@@ -802,7 +808,7 @@
       ? (db.getCustomExercises()[day] || [])[parseInt(rawEx.split('-custom-')[1], 10)]
       : isCustomDay(day)
         ? (db.getCustomDays()[day - 100]?.exercises[rawEx])
-        : (workoutPlan.days[day]?.exercises[rawEx])
+        : (getPlanDays()[day]?.exercises[rawEx])
     if (!activeEx) return
     const exMods = db.getExerciseMods()
     const mod = exMods[day + '-' + rawEx] || {}
@@ -1134,7 +1140,7 @@
         const weights = db.getWeights()
         const username = db.getUsername()
         const customEx = db.getCustomExercises()
-        const fullPlan = workoutPlan.days.map((d, i) =>
+        const fullPlan = getPlanDays().map((d, i) =>
           `${d.name}:\n${d.exercises.map(e => `  - ${e.name} (${e.machine}) · ${e.sets}x${e.reps} · RIR ${e.rir} · ${e.muscle}`).join('\n')}`
         ).join('\n\n')
 
@@ -1143,7 +1149,7 @@
         for (const key of Object.keys(weights || {})) {
           const [d, ...rest] = key.split('-')
           const dayIdx = parseInt(d, 10)
-          const day = workoutPlan.days[dayIdx]
+          const day = getPlanDays()[dayIdx]
           if (!day) continue
           const exIdx = parseInt(rest.join('-'), 10)
           let exName
@@ -1161,7 +1167,7 @@
 
         /* Build progress summary */
         let totalSetsDone = 0, totalSets = 0
-        workoutPlan.days.forEach((d, i) => {
+        getPlanDays().forEach((d, i) => {
           const p = progress[i] || {}
           d.exercises.forEach((ex, exIdx) => { totalSetsDone += p[exIdx] || 0; totalSets += ex.sets })
         })
@@ -1178,7 +1184,7 @@ Contexto del usuario:
 - Déficit calórico: ${profile?.deficitCalories || '?'} kcal/día
 - Progreso semanal: ${totalSetsDone}/${totalSets} series completadas
 
-Plan de entrenamiento (${workoutPlan.days.length} días):
+Plan de entrenamiento (${getPlanDays().length} días):
 ${fullPlan}
 
 Pesos registrados por el usuario (carga que usa en cada ejercicio):
@@ -1373,7 +1379,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     let totalWorkouts = 0
     let daysCompleted = 0
 
-    workoutPlan.days.forEach((d, i) => {
+    getPlanDays().forEach((d, i) => {
       const p = progress[i] || {}
       const daySets = d.exercises.reduce((a, ex) => a + ex.sets, 0)
       let dayDone = 0
@@ -1414,7 +1420,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<div class="progress-stats">',
       '<div class="stat-card"><div class="stat-value">' + pct + '%</div><div class="stat-label">Progreso global</div></div>',
       '<div class="stat-card"><div class="stat-value">' + totalSetsDone + '</div><div class="stat-label">Series completadas</div></div>',
-      '<div class="stat-card"><div class="stat-value">' + totalWorkouts + '/' + workoutPlan.days.length + '</div><div class="stat-label">Entrenos iniciados</div></div>',
+      '<div class="stat-card"><div class="stat-value">' + totalWorkouts + '/' + getPlanDays().length + '</div><div class="stat-label">Entrenos iniciados</div></div>',
       '<div class="stat-card"><div class="stat-value">' + daysCompleted + '</div><div class="stat-label">Días completados</div></div>',
       '</div>',
       (typeof navigator.share === 'function' ? '<div style="text-align:center;margin-bottom:1rem;"><button class="reset-btn" id="shareProgressBtn" style="background:var(--surface);border-color:var(--border);color:var(--text);">Compartir Progreso</button></div>' : ''),
@@ -1423,7 +1429,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       '<h3>Detalle por día</h3>',
     ].join('')
 
-    workoutPlan.days.forEach((d, i) => {
+    getPlanDays().forEach((d, i) => {
       const p = progress[i] || {}
       const daySets = d.exercises.reduce((a, ex) => a + ex.sets, 0)
       let dayDone = 0
@@ -1461,7 +1467,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const dayIdx = parseInt(dStr, 10)
       if (isNaN(dayIdx)) continue
       const exIdx = rest.join('-')
-      const day = workoutPlan.days[dayIdx]
+      const day = getPlanDays()[dayIdx]
       if (!day) continue
       let exName = ''
       if (exIdx.startsWith('custom-')) {
@@ -1615,7 +1621,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     ctx.font = '11px system-ui'
     ctx.textAlign = 'center'
 
-    const daySets = workoutPlan.days.map((d, i) => {
+    const daySets = getPlanDays().map((d, i) => {
       const p = progress[i] || {}
       let done = 0
       d.exercises.forEach((ex, exIdx) => { done += p[exIdx] || 0 })
@@ -1628,7 +1634,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const x = pad.left + (chartW / daySets.length) * i + (chartW / daySets.length - barW) / 2
       const barH = (val / maxVal) * chartH
       const y = pad.top + chartH - barH
-      ctx.fillStyle = val >= workoutPlan.days[i].exercises.reduce((a, ex) => a + ex.sets, 0) ? cssVar('--green') : cssVar('--primary')
+      ctx.fillStyle = val >= getPlanDays()[i].exercises.reduce((a, ex) => a + ex.sets, 0) ? cssVar('--green') : cssVar('--primary')
       ctx.beginPath()
       ctx.moveTo(x + 4, y)
       ctx.lineTo(x + barW - 4, y)
@@ -2115,7 +2121,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
         const parts = key.split('-')
         const dayIdx = parseInt(parts[0], 10)
         if (isNaN(dayIdx)) continue
-        const d = workoutPlan.days[dayIdx]
+        const d = getPlanDays()[dayIdx]
         if (!d) continue
         const exIdx = parts.length > 1 ? parts[1] : null
         let exName = ''
@@ -2423,6 +2429,57 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       'Come ~' + profile.deficitCalories + ' kcal/día con alta proteína (1.6-2.2g/kg) para perder grasa sin perder músculo.</p>',
       '</div>',
 
+      /* Training Plan & Preferences */
+      (function() {
+        let h = ''
+        if (profile.dynamicPlansEnabled) {
+          const activePlan = db.getActivePlan()
+          h += '<div class="card">'
+          h += '<h3 style="margin-bottom:0.5rem">Plan de Entrenamiento</h3>'
+          if (activePlan) {
+            h += '<p style="color:var(--primary);font-weight:600;margin-bottom:0.25rem">✓ Plan personalizado activo</p>'
+            h += '<p style="color:var(--text-dim);font-size:var(--text-sm)">' + esc(activePlan.name) + '</p>'
+            h += '<p style="color:var(--text-dim);font-size:var(--text-sm)">Semana: ' + esc(activePlan.generatedForWeek) + ' — ' + activePlan.meta.totalVolume + ' series</p>'
+            h += '<button class="reset-btn" onclick="regeneratePlan()" style="margin-top:0.75rem;background:var(--primary);color:#fff;border-color:var(--primary);">Regenerar plan ahora</button>'
+          }
+          h += '</div>'
+        }
+        h += '<div class="card">'
+        h += '<div class="card-title">Preferencias de Entrenamiento</div>'
+        h += '<label style="display:block;margin-bottom:0.25rem;color:var(--text-dim);font-size:var(--text-sm)">Objetivo</label>'
+        h += '<select id="goalSelect" class="settings-input" onchange="saveTrainingPrefs()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.5rem;border-radius:var(--radius-sm);font-size:0.9rem;width:100%;margin-bottom:0.5rem">'
+        h += '<option value="muscleGain"' + (profile.goal === 'muscleGain' ? ' selected' : '') + '>Hipertrofia (ganar músculo)</option>'
+        h += '<option value="strength"' + (profile.goal === 'strength' ? ' selected' : '') + '>Fuerza</option>'
+        h += '<option value="fatLoss"' + (profile.goal === 'fatLoss' ? ' selected' : '') + '>Pérdida de grasa</option>'
+        h += '<option value="maintenance"' + (profile.goal === 'maintenance' ? ' selected' : '') + '>Mantenimiento</option>'
+        h += '</select>'
+        h += '<label style="display:block;margin-bottom:0.25rem;color:var(--text-dim);font-size:var(--text-sm)">Experiencia</label>'
+        h += '<select id="experienceSelect" class="settings-input" onchange="saveTrainingPrefs()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.5rem;border-radius:var(--radius-sm);font-size:0.9rem;width:100%;margin-bottom:0.5rem">'
+        h += '<option value="beginner"' + (profile.experienceLevel === 'beginner' ? ' selected' : '') + '>Principiante</option>'
+        h += '<option value="intermediate"' + (profile.experienceLevel === 'intermediate' ? ' selected' : '') + '>Intermedio</option>'
+        h += '<option value="advanced"' + (profile.experienceLevel === 'advanced' ? ' selected' : '') + '>Avanzado</option>'
+        h += '</select>'
+        h += '<label style="display:block;margin-bottom:0.25rem;color:var(--text-dim);font-size:var(--text-sm)">Días por semana</label>'
+        h += '<select id="daysSelect" class="settings-input" onchange="saveTrainingPrefs()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.5rem;border-radius:var(--radius-sm);font-size:0.9rem;width:100%;margin-bottom:0.5rem">'
+        for (let d = 3; d <= 6; d++) {
+          h += '<option value="' + d + '"' + (profile.preferredDays === d ? ' selected' : '') + '>' + d + ' días</option>'
+        }
+        h += '</select>'
+        if (!profile.dynamicPlansEnabled) {
+          h += '<label style="display:block;margin-bottom:0.25rem;color:var(--text-dim);font-size:var(--text-sm)">Tipo de split</label>'
+          h += '<select id="splitSelect" class="settings-input" onchange="saveTrainingPrefs()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.5rem;border-radius:var(--radius-sm);font-size:0.9rem;width:100%;margin-bottom:0.5rem">'
+          h += '<option value="ppl"' + (profile.splitPreference === 'ppl' ? ' selected' : '') + '>Push/Pull/Legs</option>'
+          h += '<option value="upperLower"' + (profile.splitPreference === 'upperLower' ? ' selected' : '') + '>Upper/Lower</option>'
+          h += '<option value="fullBody"' + (profile.splitPreference === 'fullBody' ? ' selected' : '') + '>Cuerpo completo</option>'
+          h += '<option value="pushPull"' + (profile.splitPreference === 'pushPull' ? ' selected' : '') + '>Push/Pull</option>'
+          h += '</select>'
+          h += '<button class="reset-btn" onclick="activateDynamicPlans()" style="margin-top:1rem;width:100%;background:var(--primary);color:#fff;border-color:var(--primary);">Activar Planes Semanales Personalizados</button>'
+          h += '<p style="color:var(--text-dim);font-size:var(--text-xs);margin-top:0.5rem">Al activar, se generará un plan único para ti basado en tu perfil y se actualizará cada semana según tu progreso.</p>'
+        }
+        h += '</div>'
+        return h
+      })(),
+
       /* Custom Days */
       '<div class="card">',
       '<div class="card-title">Rutinas Personalizadas</div>',
@@ -2665,7 +2722,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       for (const key of Object.keys(weights)) {
         const [d, ...rest] = key.split('-')
         const dayIdx = parseInt(d, 10)
-        const day = workoutPlan.days[dayIdx]
+        const day = getPlanDays()[dayIdx]
         if (!day) continue
         const exIdx = rest.join('-')
         let exName, muscle
@@ -2721,6 +2778,30 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     document.getElementById('notifTime')?.addEventListener('change', function () {
       localStorage.setItem('gymapp_notif_time', this.value)
     })
+  }
+
+  window.saveTrainingPrefs = function() {
+    const profile = db.getProfile()
+    profile.goal = document.getElementById('goalSelect').value
+    profile.experienceLevel = document.getElementById('experienceSelect').value
+    profile.preferredDays = parseInt(document.getElementById('daysSelect').value, 10)
+    if (document.getElementById('splitSelect')) {
+      profile.splitPreference = document.getElementById('splitSelect').value
+    }
+    db.setProfile(profile)
+  }
+
+  window.activateDynamicPlans = function() {
+    const profile = db.getProfile()
+    profile.dynamicPlansEnabled = true
+    db.setProfile(profile)
+    db.generateNewPlan()
+    renderSettings()
+  }
+
+  window.regeneratePlan = function() {
+    db.generateNewPlan()
+    renderSettings()
   }
 
   function showCustomDayForm(editIdx) {

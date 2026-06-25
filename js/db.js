@@ -48,6 +48,8 @@
         trainingDates: [],
         history: {},
         customWorkout: {},
+        activePlan: null,
+        planHistory: {},
       }
 
       const encrypted = await auth.encrypt(userBlob, pin)
@@ -209,6 +211,8 @@
                   if (local.customExercises) data.customExercises = local.customExercises
                   if (local.workoutNotes) data.workoutNotes = local.workoutNotes
                   if (local.timer) data.timer = local.timer
+                  if (local.activePlan) data.activePlan = local.activePlan
+                  if (local.planHistory) data.planHistory = local.planHistory
                   const encrypted = await auth.encrypt(data, _pin)
                   await store.set(userKey(u), encrypted)
                   if (gdata.users) { localStorage.setItem(USERS_KEY, JSON.stringify(gdata.users)) }
@@ -432,6 +436,8 @@
         data.customExercises = local.customExercises || data.customExercises
         data.workoutNotes = local.workoutNotes || data.workoutNotes
         data.timer = local.timer || data.timer
+        data.activePlan = local.activePlan || data.activePlan
+        data.planHistory = local.planHistory || data.planHistory
         const encrypted = await auth.encrypt(data, _pin)
         await store.set(userKey(_username), encrypted)
         return true
@@ -654,6 +660,46 @@
       finally { _token = saved }
     }
 
+    function getActivePlan() {
+      return data ? data.activePlan || null : null
+    }
+
+    function setActivePlan(plan) {
+      if (!data) return
+      data.activePlan = plan
+      schedulePersist()
+    }
+
+    function getPlanHistory() {
+      return data ? (data.planHistory || {}) : {}
+    }
+
+    function setPlanHistory(ph) {
+      if (!data) return
+      data.planHistory = ph
+      schedulePersist()
+    }
+
+    function generateNewPlan() {
+      if (!data || !data.profile || !data.profile.dynamicPlansEnabled) return null
+      var prevPlan = data.activePlan
+      if (prevPlan) {
+        var ph = data.planHistory || {}
+        ph[prevPlan.generatedForWeek] = prevPlan
+        data.planHistory = ph
+        var keys = Object.keys(ph).sort()
+        while (keys.length > 52) {
+          delete ph[keys.shift()]
+        }
+      }
+      var newPlan = window.planner.generateWeeklyPlan(data.profile, data.progress || {}, data.weights || {}, data.history || {})
+      if (newPlan) {
+        data.activePlan = newPlan
+        this.setPlanHistory(data.planHistory)
+      }
+      return newPlan
+    }
+
     return {
       getUsers, registerUser, loginUser, logoutUser, isLoggedIn, getUsername, getProfile, setProfile,
       getProgress, getWeights, setProgress, setWeights, resetAllTrainingData,
@@ -674,6 +720,7 @@
       startAutoSync, stopAutoSync,
       getToken, setToken, hasToken, validateToken,
       loadAiKeys, saveAiKey,
+      getActivePlan, setActivePlan, getPlanHistory, setPlanHistory, generateNewPlan,
       get connected() { return hasToken() },
       get gistId() { return GIST_ID },
     }

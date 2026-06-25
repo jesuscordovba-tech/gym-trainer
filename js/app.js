@@ -577,7 +577,8 @@
       const note = exNotes[s]
       h += '<button class="set-dot ' +
         (s < capped ? 'completed' : s === capped ? 'current' : '') +
-        '" data-day="' + dayIndex + '" data-ex="' + exKey + '" data-set="' + s + '" title="' + (note ? esc(note.rir !== undefined ? 'RIR ' + note.rir : '') : 'Serie ' + (s + 1)) + '"></button>'
+        '" data-day="' + dayIndex + '" data-ex="' + exKey + '" data-set="' + s + '" title="' + (note ? esc(note.rir !== undefined ? 'RIR ' + note.rir : '') : (s + 1)) + '">' +
+        (s + 1) + '</button>'
     }
     h += '</div>'
     h += '<div style="display:flex;align-items:center;gap:0.5rem;position:relative;">'

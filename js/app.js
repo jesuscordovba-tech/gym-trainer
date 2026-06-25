@@ -195,6 +195,16 @@
   function initApp() {
     const wasReset = db.checkWeekReset()
     if (wasReset) { showToast('Nueva semana — progreso reiniciado') }
+
+    const profile = db.getProfile()
+    if (profile?.dynamicPlansEnabled) {
+      const plan = db.getActivePlan()
+      const today = new Date()
+      const day = today.getDay()
+      const diff = today.getDate() - day + (day === 0 ? -6 : 1)
+      const currentWeek = new Date(today.getFullYear(), today.getMonth(), diff).toISOString().split('T')[0]
+      if (!plan || plan.weekStart !== currentWeek) db.generateNewPlan()
+    }
     db.archiveCurrentWeek()
 
     // Load encrypted AI keys

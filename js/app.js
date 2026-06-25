@@ -88,6 +88,13 @@
     const hint = document.getElementById('loginHint')
     let mode = 'login'
 
+    window.addEventListener('error', function (ev) {
+      setError('Error: ' + (ev.message || 'desconocido'))
+    })
+    window.addEventListener('unhandledrejection', function (ev) {
+      setError('Error: ' + (ev.reason?.message || ev.reason || 'desconocido'))
+    })
+
     function setMode(m) {
       mode = m
       if (mode === 'register') {
@@ -118,31 +125,36 @@
     }
 
     btn.onclick = async () => {
-      const username = usernameInput.value.trim().toLowerCase()
-      const pin = pinInput.value.trim()
-      const pin2 = pin2Input.value.trim()
-      if (!username || !pin) { setError('Completa todos los campos'); return }
+      try {
+        const username = usernameInput.value.trim().toLowerCase()
+        const pin = pinInput.value.trim()
+        const pin2 = pin2Input.value.trim()
+        if (!username || !pin) { setError('Completa todos los campos'); return }
 
-      btn.disabled = true
+        btn.disabled = true
 
-      if (mode === 'register') {
-        if (pin.length < 4) { setError('PIN mínimo 4 dígitos'); btn.disabled = false; return }
-        if (pin !== pin2) { setError('Los PIN no coinciden'); btn.disabled = false; return }
-        btn.textContent = 'Registrando...'
-        const r = await db.registerUser(username, pin, createDefaultProfile())
-        if (r.ok) { screen.classList.add('hidden'); showToast('Usuario registrado correctamente'); initApp(); return }
-        setError(r.error || 'Error')
-        btn.disabled = false; btn.textContent = 'Registrarse'
-      } else {
-        btn.textContent = 'Entrando...'
-        const r = await db.loginUser(username, pin)
-        if (r.ok) { screen.classList.add('hidden'); showToast('Bienvenido, ' + esc(username)); initApp(); return }
-        if (r.error === 'Usuario no registrado') {
-          setError('Usuario no existe. ¿Quieres registrarte?')
-          setMode('register')
+        if (mode === 'register') {
+          if (pin.length < 4) { setError('PIN mínimo 4 dígitos'); btn.disabled = false; return }
+          if (pin !== pin2) { setError('Los PIN no coinciden'); btn.disabled = false; return }
+          btn.textContent = 'Registrando...'
+          const r = await db.registerUser(username, pin, createDefaultProfile())
+          if (r.ok) { screen.classList.add('hidden'); showToast('Usuario registrado correctamente'); initApp(); return }
+          setError(r.error || 'Error')
+          btn.disabled = false; btn.textContent = 'Registrarse'
         } else {
-          setError(r.error)
+          btn.textContent = 'Entrando...'
+          const r = await db.loginUser(username, pin)
+          if (r.ok) { screen.classList.add('hidden'); showToast('Bienvenido, ' + esc(username)); initApp(); return }
+          if (r.error === 'Usuario no registrado') {
+            setError('Usuario no existe. ¿Quieres registrarte?')
+            setMode('register')
+          } else {
+            setError(r.error)
+          }
+          btn.disabled = false; btn.textContent = 'Entrar'
         }
+      } catch (e) {
+        setError('Error: ' + (e.message || e))
         btn.disabled = false; btn.textContent = 'Entrar'
       }
     }

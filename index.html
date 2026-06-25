@@ -22,10 +22,11 @@
                  frame-src https://www.youtube.com;
                 base-uri 'self';
                 form-action 'none';">
-  <title>GYM TRAINER — Definición 21y</title>
+  <title>GYMTRAINER — Definición 21y</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <link rel="preconnect" href="https://api.github.com">
   <link rel="preconnect" href="https://generativelanguage.googleapis.com">
   <link rel="preconnect" href="https://api.groq.com">
@@ -35,7 +36,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="css/style.css?v=53">
+  <link rel="stylesheet" href="css/style.css?v=58">
   <style>
     /* Lock screen animation guard - prevents FOUC */
     #lockScreen { display: flex; }
@@ -52,8 +53,15 @@
   <!-- Header -->
   <header class="app-header">
     <div class="header-inner">
-      <div class="logo"><span>GYM</span>TRAINER</div>
+      <div class="logo">
+        <span class="material-symbols-outlined logo-icon">fitness_center</span>
+        <span class="kinetic">GYM</span><span class="glass">TRAINER</span>
+      </div>
       <span class="sync-indicator" id="syncIndicator"><span class="spinner"></span>Guardando...</span>
+      <button class="header-profile-btn" id="profileBtn" aria-label="Perfil">
+        <span class="material-symbols-outlined">account_circle</span>
+      </button>
+    </div>
       <nav class="main-nav" id="mainNav" role="tablist" aria-label="Navegación principal">
         <div class="nav-pill" aria-hidden="true"></div>
         <button role="tab" aria-selected="true" data-tab="workoutTab" class="active">Entreno</button>
@@ -64,7 +72,6 @@
         <button role="tab" aria-selected="false" data-tab="measuresTab">Medidas</button>
         <button role="tab" aria-selected="false" data-tab="settingsTab">Ajustes</button>
       </nav>
-    </div>
   </header>
 
   <!-- Content -->
@@ -195,15 +202,15 @@
   <!-- Floating coach button -->
   <button id="coachFab" aria-label="Abrir Coach IA">C</button>
 
-  <script src="js/data.js?v=51"></script>
-  <script src="js/planner.js?v=51"></script>
-  <script src="js/auth.js?v=51"></script>
-  <script src="js/storage.js?v=51"></script>
-  <script src="js/db.js?v=51"></script>
-  <script src="js/app.js?v=51"></script>
+  <script src="js/data.js?v=55"></script>
+  <script src="js/planner.js?v=55"></script>
+  <script src="js/auth.js?v=55"></script>
+  <script src="js/storage.js?v=55"></script>
+  <script src="js/db.js?v=55"></script>
+  <script src="js/app.js?v=56"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=52').then(r => {
+      navigator.serviceWorker.register('sw.js?v=58').then(r => {
         if (r.waiting) { r.waiting.postMessage({ type: 'SKIP_WAITING' }) }
       }).catch(() => {})
     }

@@ -35,7 +35,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="css/style.css?v=52">
+  <link rel="stylesheet" href="css/style.css?v=53">
   <style>
     /* Lock screen animation guard - prevents FOUC */
     #lockScreen { display: flex; }
@@ -195,15 +195,15 @@
   <!-- Floating coach button -->
   <button id="coachFab" aria-label="Abrir Coach IA">C</button>
 
-  <script src="js/data.js?v=50"></script>
-  <script src="js/planner.js?v=50"></script>
-  <script src="js/auth.js?v=50"></script>
-  <script src="js/storage.js?v=50"></script>
-  <script src="js/db.js?v=50"></script>
-  <script src="js/app.js?v=50"></script>
+  <script src="js/data.js?v=51"></script>
+  <script src="js/planner.js?v=51"></script>
+  <script src="js/auth.js?v=51"></script>
+  <script src="js/storage.js?v=51"></script>
+  <script src="js/db.js?v=51"></script>
+  <script src="js/app.js?v=51"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=51').then(r => {
+      navigator.serviceWorker.register('sw.js?v=52').then(r => {
         if (r.waiting) { r.waiting.postMessage({ type: 'SKIP_WAITING' }) }
       }).catch(() => {})
     }

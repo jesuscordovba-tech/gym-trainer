@@ -1,4 +1,9 @@
 ;(() => {
+  /* CSS variable reader for canvas charts */
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  }
+
   let currentDay = 0
   let _calMonthOffset = 0
   let _guidedMode = false
@@ -51,51 +56,23 @@
   async function initLoginScreen() {
     const screen = document.getElementById('lockScreen')
     const box = screen.querySelector('.lock-box')
-    const hasToken = db.hasToken()
-
-    if (!hasToken) {
-      box.innerHTML = `
-        <h1><span>GYM</span>TRAINER</h1>
-        <p style="color:var(--text-dim);font-size:0.85rem;margin-bottom:1.25rem;">
-          Para usar la app necesitas un token de GitHub con scope <strong>gist</strong>.
-        </p>
-        <input type="password" id="tokenSetupInput" class="lock-input" placeholder="ghp_..." autocomplete="off" style="letter-spacing:0;font-size:0.9rem;-webkit-text-security:none;">
-        <div class="lock-error" id="lockError"></div>
-        <button class="lock-btn" id="tokenSetupBtn">Guardar Token</button>
-      `
-
-      document.getElementById('tokenSetupBtn').onclick = async () => {
-        const t = document.getElementById('tokenSetupInput').value.trim()
-        if (!t) { document.getElementById('lockError').textContent = 'Ingresa un token'; return }
-        document.getElementById('tokenSetupBtn').disabled = true
-        document.getElementById('tokenSetupBtn').textContent = 'Validando...'
-        const valid = await db.validateToken(t)
-        if (!valid) {
-          document.getElementById('lockError').textContent = 'Token inválido o expirado — genera uno nuevo en GitHub con scope gist'
-          document.getElementById('tokenSetupBtn').disabled = false
-          document.getElementById('tokenSetupBtn').textContent = 'Guardar Token'
-          return
-        }
-        db.setToken(t)
-        initLoginScreen()
-      }
-      document.getElementById('tokenSetupInput').addEventListener('keydown', e => {
-        if (e.key === 'Enter') document.getElementById('tokenSetupBtn').click()
-      })
-      document.getElementById('tokenSetupInput').focus()
-      return
-    }
 
     box.innerHTML = `
       <h1><span>GYM</span>TRAINER</h1>
       <div id="loginMode" style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1rem;">Ingresa tu usuario y PIN</div>
+      <label for="loginUsername" style="display:block;font-size:0.75rem;color:var(--text-dim);text-align:left;margin-bottom:0.25rem;">Usuario</label>
       <input type="text" id="loginUsername" class="lock-input" placeholder="Usuario" autocomplete="username" style="letter-spacing:0;font-size:1rem;-webkit-text-security:none;">
+      <label for="loginPin" style="display:block;font-size:0.75rem;color:var(--text-dim);text-align:left;margin-bottom:0.25rem;">PIN</label>
       <input type="password" id="loginPin" class="lock-input" placeholder="PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password">
+      <label for="loginPin2" style="display:block;font-size:0.75rem;color:var(--text-dim);text-align:left;margin-bottom:0.25rem;">Confirmar PIN</label>
       <input type="password" id="loginPin2" class="lock-input" placeholder="Confirmar PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password" style="display:none;">
-      <div class="lock-error" id="lockError"></div>
+      <div class="lock-error" id="lockError" role="alert"></div>
       <button class="lock-btn" id="lockBtn">Entrar</button>
       <div class="lock-hint" id="loginHint" style="margin-top:0.5rem;"></div>
-      <div style="margin-top:0.75rem;font-size:0.75rem;text-align:center;"><button id="resetTokenBtn" style="background:none;border:none;color:var(--primary);cursor:pointer;text-decoration:underline;">Cambiar token de GitHub</button></div>
+      <div style="margin-top:0.75rem;font-size:0.75rem;text-align:center;color:var(--text-dim);">
+        Los datos se guardan localmente en el navegador.
+        El respaldo en la nube se configura en Ajustes después de iniciar sesión.
+      </div>
     `
 
     const usernameInput = document.getElementById('loginUsername')
@@ -105,10 +82,6 @@
     const error = document.getElementById('lockError')
     const hint = document.getElementById('loginHint')
     let mode = 'login'
-    document.getElementById('resetTokenBtn')?.addEventListener('click', () => {
-      db.setToken('')
-      initLoginScreen()
-    })
 
     function setMode(m) {
       mode = m
@@ -126,31 +99,44 @@
     }
     setMode('login')
 
+    function shakeLockBox() {
+      const box = document.querySelector('.lock-box')
+      if (!box) return
+      box.classList.remove('shake')
+      void box.offsetWidth
+      box.classList.add('shake')
+    }
+
+    function setError(msg) {
+      error.textContent = msg
+      if (msg) shakeLockBox()
+    }
+
     btn.onclick = async () => {
       const username = usernameInput.value.trim().toLowerCase()
       const pin = pinInput.value.trim()
       const pin2 = pin2Input.value.trim()
-      if (!username || !pin) { error.textContent = 'Completa todos los campos'; return }
+      if (!username || !pin) { setError('Completa todos los campos'); return }
 
       btn.disabled = true
 
       if (mode === 'register') {
-        if (pin.length < 4) { error.textContent = 'PIN mínimo 4 dígitos'; btn.disabled = false; return }
-        if (pin !== pin2) { error.textContent = 'Los PIN no coinciden'; btn.disabled = false; return }
+        if (pin.length < 4) { setError('PIN mínimo 4 dígitos'); btn.disabled = false; return }
+        if (pin !== pin2) { setError('Los PIN no coinciden'); btn.disabled = false; return }
         btn.textContent = 'Registrando...'
         const r = await db.registerUser(username, pin, createDefaultProfile())
         if (r.ok) { screen.classList.add('hidden'); showToast('Usuario registrado correctamente'); initApp(); return }
-        error.textContent = r.error || 'Error'
+        setError(r.error || 'Error')
         btn.disabled = false; btn.textContent = 'Registrarse'
       } else {
         btn.textContent = 'Entrando...'
         const r = await db.loginUser(username, pin)
         if (r.ok) { screen.classList.add('hidden'); showToast('Bienvenido, ' + esc(username)); initApp(); return }
         if (r.error === 'Usuario no registrado') {
-          error.textContent = 'Usuario no existe. ¿Quieres registrarte?'
+          setError('Usuario no existe. ¿Quieres registrarte?')
           setMode('register')
         } else {
-          error.textContent = r.error
+          setError(r.error)
         }
         btn.disabled = false; btn.textContent = 'Entrar'
       }
@@ -295,6 +281,16 @@
     })
   }
 
+  function updateNavPill() {
+    const nav = document.getElementById('mainNav')
+    const pill = nav?.querySelector('.nav-pill')
+    const active = nav?.querySelector('button.active')
+    if (pill && active) {
+      pill.style.left = active.offsetLeft + 'px'
+      pill.style.width = active.offsetWidth + 'px'
+    }
+  }
+
   function renderNav() {
     const switchTab = btn => {
       document.querySelectorAll('[data-tab]').forEach(b => {
@@ -303,8 +299,22 @@
       })
       btn.classList.add('active')
       btn.setAttribute('aria-selected', 'true')
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'))
-      document.getElementById(btn.dataset.tab).classList.remove('hidden')
+
+      // Tab transition: animate entrance
+      document.querySelectorAll('.tab-content').forEach(t => {
+        t.classList.add('hidden')
+        t.classList.remove('tab-enter')
+      })
+      const target = document.getElementById(btn.dataset.tab)
+      requestAnimationFrame(() => {
+        target.classList.remove('hidden')
+        requestAnimationFrame(() => {
+          target.classList.add('tab-enter')
+        })
+      })
+
+      // Slide nav indicator
+      updateNavPill()
     }
     document.getElementById('mainNav').addEventListener('click', e => {
       const btn = e.target.closest('[data-tab]')
@@ -320,6 +330,16 @@
         const btn = document.querySelector(`[data-tab="${tabs[idx]}"]`)
         if (btn) switchTab(btn)
       }
+    })
+
+    // Initial pill position + tab-enter for initial visible tab
+    requestAnimationFrame(() => {
+      updateNavPill()
+      document.querySelectorAll('.tab-content:not(.hidden)').forEach(t => {
+        t.classList.remove('tab-enter')
+        void t.offsetWidth
+        t.classList.add('tab-enter')
+      })
     })
 
     // Add logout button to header
@@ -449,7 +469,7 @@
     }
     if (isCustom) {
       h += '<button class="edit-ex-btn" data-day="' + dayIndex + '" data-idx="' + exKey.replace(dayIndex + '-custom-', '') + '" title="Editar ejercicio">✎</button>'
-      h += '<button class="remove-ex-btn" data-day="' + dayIndex + '" data-idx="' + exKey.replace(dayIndex + '-custom-', '') + '" title="Eliminar ejercicio">✕</button>'
+      h += '<button class="remove-ex-btn" data-day="' + dayIndex + '" data-idx="' + exKey.replace(dayIndex + '-custom-', '') + '" aria-label="Eliminar ejercicio" title="Eliminar ejercicio">✕</button>'
     }
     if (activeEx.video) {
       h += '<button class="ex-video-btn" data-video="' + esc(activeEx.video) + '" data-name="' + esc(activeEx.name) + '" title="Ver demostración: ' + esc(activeEx.name) + '">▶</button>'
@@ -897,8 +917,22 @@
     timerInterval = setInterval(() => {
       remaining--
       updateDisplay(remaining)
+
+      // Warning intensity: pulse at ≤5s, intense at ≤2s
+      if (remaining <= 5 && remaining > 0) {
+        display.classList.add('warning')
+        if (remaining <= 2) {
+          display.classList.add('warning-intense')
+        } else {
+          display.classList.remove('warning-intense')
+        }
+      } else {
+        display.classList.remove('warning', 'warning-intense')
+      }
+
       if (remaining <= 0) {
         clearInterval(timerInterval)
+        display.classList.remove('warning', 'warning-intense')
         label.textContent = '¡Siguiente serie!'
         display.style.color = 'var(--green)'
         try {
@@ -928,6 +962,7 @@
     clearInterval(timerInterval)
     document.getElementById('timerOverlay').classList.remove('show')
     document.getElementById('timerDisplay').style.color = ''
+    document.getElementById('timerDisplay').classList.remove('warning', 'warning-intense')
   }
 
   /* === Add / Edit Custom Exercise === */
@@ -1576,7 +1611,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const chartH = h - pad.top - pad.bottom
 
     ctx.clearRect(0, 0, w, h)
-    ctx.fillStyle = '#888'
+    ctx.fillStyle = cssVar('--text-dim')
     ctx.font = '11px system-ui'
     ctx.textAlign = 'center'
 
@@ -1593,7 +1628,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const x = pad.left + (chartW / daySets.length) * i + (chartW / daySets.length - barW) / 2
       const barH = (val / maxVal) * chartH
       const y = pad.top + chartH - barH
-      ctx.fillStyle = val >= workoutPlan.days[i].exercises.reduce((a, ex) => a + ex.sets, 0) ? '#2ecc71' : '#059669'
+      ctx.fillStyle = val >= workoutPlan.days[i].exercises.reduce((a, ex) => a + ex.sets, 0) ? cssVar('--green') : cssVar('--primary')
       ctx.beginPath()
       ctx.moveTo(x + 4, y)
       ctx.lineTo(x + barW - 4, y)
@@ -1604,10 +1639,10 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       ctx.quadraticCurveTo(x, y, x + 4, y)
       ctx.closePath()
       ctx.fill()
-      ctx.fillStyle = '#888'
+      ctx.fillStyle = cssVar('--text-dim')
       ctx.textAlign = 'center'
       ctx.fillText(DAY_LABELS[i] || 'D' + (i + 1), x + barW / 2, h - 8)
-      ctx.fillStyle = '#1c1c1e'
+      ctx.fillStyle = cssVar('--text')
       ctx.font = 'bold 11px system-ui'
       ctx.fillText(val, x + barW / 2, y - 6)
     })
@@ -1631,7 +1666,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const weights = db.getWeights()
     const entries = Object.entries(weights).filter(([, v]) => v && parseFloat(v) > 0)
     if (!entries.length) {
-      ctx.fillStyle = '#888'
+      ctx.fillStyle = cssVar('--text-dim')
       ctx.font = '13px system-ui'
       ctx.textAlign = 'center'
       ctx.fillText('Registra pesos en tus entrenamientos para ver la gráfica', w / 2, h / 2)
@@ -1644,7 +1679,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const max = Math.max(...values) * 1.1
     const range = max - min || 1
 
-    ctx.strokeStyle = '#059669'
+    ctx.strokeStyle = cssVar('--primary')
     ctx.lineWidth = 2
     ctx.beginPath()
     recent.forEach(([, v], i) => {
@@ -1657,11 +1692,11 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     recent.forEach(([, v], i) => {
       const x = pad.left + (chartW / (recent.length - 1 || 1)) * i
       const y = pad.top + chartH - ((parseFloat(v) - min) / range) * chartH
-      ctx.fillStyle = '#059669'
+      ctx.fillStyle = cssVar('--primary')
       ctx.beginPath()
       ctx.arc(x, y, 4, 0, Math.PI * 2)
       ctx.fill()
-      ctx.fillStyle = '#888'
+      ctx.fillStyle = cssVar('--text-dim')
       ctx.font = '10px system-ui'
       ctx.textAlign = 'center'
       if (i % 2 === 0 || recent.length <= 6) ctx.fillText(labels[i], x, h - 8)
@@ -1863,7 +1898,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const range = maxV - minV || 1
 
     ctx.clearRect(0, 0, w, h)
-    ctx.strokeStyle = 'rgba(0,0,0,0.06)'
+    ctx.strokeStyle = cssVar('--border')
     ctx.lineWidth = 1
     for (let i = 0; i <= 4; i++) {
       const y = pad.top + (chartH / 4) * i
@@ -1891,7 +1926,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       }
     })
 
-    ctx.fillStyle = '#888'
+    ctx.fillStyle = cssVar('--text-dim')
     ctx.font = '9px system-ui'
     ctx.textAlign = 'center'
     recent.forEach((m, i) => {
@@ -1966,13 +2001,13 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const maxV = Math.max(...vals) * 1.1 || 1, minV = Math.min(...vals) * 0.9 || 0
 
     ctx.clearRect(0, 0, w, h)
-    ctx.strokeStyle = 'rgba(0,0,0,0.06)'
+    ctx.strokeStyle = cssVar('--border')
     for (let i = 0; i <= 3; i++) {
       const y = pad.top + (ch / 3) * i
       ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke()
     }
 
-    ctx.strokeStyle = '#2ecc71'
+    ctx.strokeStyle = cssVar('--green')
     ctx.lineWidth = 2
     ctx.beginPath()
     entries.forEach((e, i) => {
@@ -1982,7 +2017,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     })
     ctx.stroke()
 
-    ctx.fillStyle = '#888'
+    ctx.fillStyle = cssVar('--text-dim')
     ctx.font = '9px system-ui'
     ctx.textAlign = 'center'
     entries.forEach((e, i) => {
@@ -1990,7 +2025,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const x = pad.left + (cw / Math.max(entries.length - 1, 1)) * i
       ctx.fillText(e.week.length > 7 ? e.week.slice(-5) : e.week, x, h - 5)
     })
-    ctx.fillStyle = '#1c1c1e'
+    ctx.fillStyle = cssVar('--text')
     ctx.font = 'bold 9px system-ui'
     entries.forEach((e, i) => {
       const x = pad.left + (cw / Math.max(entries.length - 1, 1)) * i
@@ -2277,7 +2312,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     let totalKcal = 0, totalP = 0, totalC = 0, totalF = 0
     let h = entries.map((e, i) => {
       totalKcal += e.kcal || 0; totalP += e.protein || 0; totalC += e.carbs || 0; totalF += e.fat || 0
-      return '<div class="food-diary-entry"><span>' + esc(e.name) + ' — 🔥' + (e.kcal || 0) + ' kcal</span><button class="food-diary-remove" data-idx="' + i + '">✕</button></div>'
+      return '<div class="food-diary-entry"><span>' + esc(e.name) + ' — 🔥' + (e.kcal || 0) + ' kcal</span><button class="food-diary-remove" data-idx="' + i + '" aria-label="Quitar alimento">✕</button></div>'
     }).join('')
     h += '<div class="food-diary-total">🔥 Total: ' + totalKcal + ' kcal · P ' + totalP.toFixed(1) + 'g · C ' + totalC.toFixed(1) + 'g · G ' + totalF.toFixed(1) + 'g</div>'
     container.innerHTML = h
@@ -2403,10 +2438,10 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
 
       /* Sync section */
       '<div class="card">',
-      '<div class="card-title">Respaldo en la Nube</div>',
+      '<div class="card-title">Respaldo en la Nube <span style="font-size:0.65rem;color:var(--text-dim);font-weight:400;">(opcional)</span></div>',
       '<p class="settings-description">',
-      'Los datos se guardan localmente y se sincronizan automáticamente con un Gist privado de GitHub cada 15s.',
-      ' Así puedes acceder a tu información desde cualquier dispositivo con el mismo token.</p>',
+      'Los datos se guardan localmente en tu navegador. Opcionalmente puedes sincronizarlos con un Gist privado de GitHub',
+      ' para acceder desde otros dispositivos con el mismo token.</p>',
       '<div class="settings-token-section">',
       '<label class="settings-token-label">Token de GitHub (scope: gist):</label>',
       '<div class="settings-token-row">',
@@ -2818,9 +2853,9 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
     let html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">'
-    html += '<button class="reset-btn" id="calPrev" style="font-size:1.1rem;padding:0.25rem 0.6rem;">◀</button>'
+    html += '<button class="reset-btn" id="calPrev" aria-label="Mes anterior" style="font-size:1.1rem;padding:0.25rem 0.6rem;">◀</button>'
     html += '<strong style="font-size:0.95rem;">' + monthNames[mMonth] + ' ' + mYear + '</strong>'
-    html += '<button class="reset-btn" id="calNext" style="font-size:1.1rem;padding:0.25rem 0.6rem;">▶</button>'
+    html += '<button class="reset-btn" id="calNext" aria-label="Mes siguiente" style="font-size:1.1rem;padding:0.25rem 0.6rem;">▶</button>'
     html += '</div>'
 
     html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:0.75rem;">'

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0f0f0f" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0a0f" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f8fafb" media="(prefers-color-scheme: light)">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -15,13 +15,17 @@
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
                 script-src 'self' 'unsafe-inline';
-                style-src 'self' 'unsafe-inline';
+                style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
                  connect-src 'self' https://api.github.com https://generativelanguage.googleapis.com https://api.groq.com https://openrouter.ai https://world.openfoodfacts.org https://wger.de;
                  img-src 'self' data: https://wger.de https://world.openfoodfacts.org;
+                 font-src https://fonts.gstatic.com;
                  frame-src https://www.youtube.com;
                 base-uri 'self';
                 form-action 'none';">
   <title>GYM TRAINER — Definición 21y</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://api.github.com">
   <link rel="preconnect" href="https://generativelanguage.googleapis.com">
   <link rel="preconnect" href="https://api.groq.com">
@@ -31,107 +35,11 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="css/style.css?v=51">
+  <link rel="stylesheet" href="css/style.css?v=52">
   <style>
-    /* Lock screen */
-    #lockScreen {
-      position: fixed;
-      inset: 0;
-      background: var(--bg, #ffffff);
-      background-image: radial-gradient(ellipse 80% 60% at 0% 10%, rgba(5,150,105,0.06) 0%, transparent 60%),
-                        radial-gradient(ellipse 60% 50% at 100% 30%, rgba(14,165,233,0.05) 0%, transparent 50%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
+    /* Lock screen animation guard - prevents FOUC */
+    #lockScreen { display: flex; }
     #lockScreen.hidden { display: none; }
-
-    .lock-box {
-      background-color: rgba(255,255,255,0.55);
-      background-image: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 25%, transparent 45%);
-      backdrop-filter: saturate(1.1) blur(30px);
-      -webkit-backdrop-filter: saturate(1.1) blur(30px);
-      border: 1px solid rgba(0,0,0,0.06);
-      border-radius: var(--radius);
-      padding: 2rem;
-      width: 340px;
-      max-width: 90vw;
-      text-align: center;
-      box-shadow: 0 8px 48px rgba(0,0,0,0.1);
-    }
-
-    .lock-box h1 {
-      font-size: 1.4rem;
-      margin-bottom: 0.5rem;
-    }
-    .lock-box h1 span { color: var(--primary); }
-
-    .lock-box p {
-      color: var(--text-dim);
-      font-size: 0.85rem;
-      margin-bottom: 1.25rem;
-    }
-
-    .lock-input {
-      width: 100%;
-      background: rgba(0,0,0,0.03);
-      background-image: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 35%);
-      backdrop-filter: saturate(1.05) blur(12px);
-      -webkit-backdrop-filter: saturate(1.05) blur(12px);
-      border: 1px solid rgba(0,0,0,0.08);
-      color: var(--text);
-      padding: 0.75rem;
-      border-radius: var(--radius-sm);
-      font-size: 1.5rem;
-      text-align: center;
-      letter-spacing: 0.5rem;
-      margin-bottom: 1rem;
-      outline: none;
-      transition: border-color 0.2s;
-      -webkit-text-security: disc;
-    }
-    .lock-input:focus { border-color: var(--primary); }
-
-    .lock-error {
-      color: var(--primary);
-      font-size: 0.8rem;
-      min-height: 1.2rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .lock-btn {
-      width: 100%;
-      background: rgba(5,150,105,0.85);
-      background-image: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 35%);
-      backdrop-filter: saturate(1.2) blur(16px);
-      -webkit-backdrop-filter: saturate(1.2) blur(16px);
-      border: 1px solid rgba(255,255,255,0.15);
-      color: white;
-      padding: 0.75rem;
-      border-radius: var(--radius-sm);
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .lock-btn:hover { background: rgba(5,150,105,1); background-image: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 35%); }
-    .lock-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    .lock-hint {
-      font-size: 0.75rem;
-      color: var(--text-dim);
-      margin-top: 1rem;
-    }
-    .lock-hint button {
-      background: none;
-      border: none;
-      color: var(--primary);
-      cursor: pointer;
-      font-size: 0.75rem;
-      text-decoration: underline;
-    }
-
   </style>
 </head>
 <body>
@@ -147,6 +55,7 @@
       <div class="logo"><span>GYM</span>TRAINER</div>
       <span class="sync-indicator" id="syncIndicator"><span class="spinner"></span>Guardando...</span>
       <nav class="main-nav" id="mainNav" role="tablist" aria-label="Navegación principal">
+        <div class="nav-pill" aria-hidden="true"></div>
         <button role="tab" aria-selected="true" data-tab="workoutTab" class="active">Entreno</button>
         <button role="tab" aria-selected="false" data-tab="progressTab">Progreso</button>
         <button role="tab" aria-selected="false" data-tab="dietTab">Dieta</button>
@@ -198,7 +107,7 @@
     <div class="video-modal">
       <div class="video-modal-header">
         <span class="video-modal-title" id="videoModalTitle">Demostración</span>
-        <button class="video-close" id="videoClose">✕</button>
+        <button class="video-close" id="videoClose" aria-label="Cerrar video">✕</button>
       </div>
       <div class="video-wrapper">
         <iframe id="videoIframe" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
@@ -223,7 +132,7 @@
     <div class="variant-modal">
       <div class="variant-modal-header">
         <span class="variant-modal-title">Cambiar ejercicio</span>
-        <button class="variant-close" id="variantClose">✕</button>
+        <button class="variant-close" id="variantClose" aria-label="Cerrar">✕</button>
       </div>
       <div class="variant-list" id="variantList"></div>
     </div>
@@ -235,7 +144,7 @@
     <div class="variant-modal">
       <div class="variant-modal-header">
         <span class="variant-modal-title">Ejercicio personalizado</span>
-        <button class="variant-close" id="addExClose">✕</button>
+        <button class="variant-close" id="addExClose" aria-label="Cerrar">✕</button>
       </div>
       <div id="addExForm">
         <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.25rem;">Nombre del ejercicio</label>
@@ -262,12 +171,12 @@
     <div class="variant-modal" style="width:420px;max-width:92vw;height:70vh;display:flex;flex-direction:column;">
       <div class="variant-modal-header">
         <span class="variant-modal-title">Coach IA</span>
-        <button class="variant-close" id="coachClose">✕</button>
+        <button class="variant-close" id="coachClose" aria-label="Cerrar">✕</button>
       </div>
-      <div id="coachMessages" style="flex:1;overflow-y:auto;padding:0.5rem 0;font-size:0.85rem;line-height:1.4;white-space:pre-wrap;background:rgba(0,0,0,0.03);border-radius:8px;"></div>
-      <div id="coachInputWrap" style="display:flex;gap:0.5rem;margin-top:0.5rem;">
-        <input type="text" id="coachInput" placeholder="Pregúntale al coach..." style="flex:1;background:rgba(0,0,0,0.03);background-image:linear-gradient(180deg,rgba(255,255,255,0.4) 0%,transparent 35%);backdrop-filter:saturate(1.05) blur(12px);-webkit-backdrop-filter:saturate(1.05) blur(12px);border:1px solid rgba(0,0,0,0.08);color:var(--text);padding:0.6rem;border-radius:var(--radius-sm);font-size:0.85rem;">
-        <button id="coachSend" class="reset-btn" style="padding:0.6rem 1rem;background:rgba(5,150,105,0.12);background-image:linear-gradient(180deg,rgba(255,255,255,0.06) 0%,transparent 35%);backdrop-filter:saturate(1.2) blur(12px);-webkit-backdrop-filter:saturate(1.2) blur(12px);">Enviar</button>
+      <div id="coachMessages"></div>
+      <div id="coachInputWrap">
+        <input type="text" id="coachInput" placeholder="Pregúntale al coach..." style="flex:1;">
+        <button id="coachSend" class="reset-btn">Enviar</button>
       </div>
     </div>
   </div>
@@ -277,14 +186,14 @@
     <div class="variant-modal" style="width:400px;max-width:92vw;">
       <div class="variant-modal-header">
         <span class="variant-modal-title">Historial del ejercicio</span>
-        <button class="variant-close" id="exHistoryClose">✕</button>
+        <button class="variant-close" id="exHistoryClose" aria-label="Cerrar">✕</button>
       </div>
       <div id="exHistoryContent"></div>
     </div>
   </div>
 
   <!-- Floating coach button -->
-  <button id="coachFab" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;width:56px;height:56px;border-radius:50%;background:rgba(5,150,105,0.85);background-image:linear-gradient(180deg,rgba(255,255,255,0.12) 0%,transparent 40%);backdrop-filter:saturate(1.2) blur(16px);-webkit-backdrop-filter:saturate(1.2) blur(16px);color:#fff;border:1px solid rgba(255,255,255,0.15);font-size:1.5rem;cursor:pointer;box-shadow:0 8px 32px rgba(5,150,105,0.35);display:none;transition:all 0.2s;">C</button>
+  <button id="coachFab" aria-label="Abrir Coach IA">C</button>
 
   <script src="js/data.js?v=50"></script>
   <script src="js/auth.js?v=50"></script>

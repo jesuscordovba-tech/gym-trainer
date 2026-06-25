@@ -12,16 +12,6 @@
       });
     })();
 
-    var MACHINE_POS = {};
-    (function buildPos() {
-      workoutPlan.days.forEach(function(day, di) {
-        day.exercises.forEach(function(ex, ei) {
-          if (!MACHINE_POS[ex.machine]) MACHINE_POS[ex.machine] = [];
-          MACHINE_POS[ex.machine].push({ day: di, ex: ei });
-        });
-      });
-    })();
-
     var MUSCLE_KW = {
       chest: ['pectoral', 'pecho'],
       shoulders: ['deltoides', 'hombro'],
@@ -34,10 +24,6 @@
       calves: ['pantorrillas', 'gemelos', 'sóleo', 'soleo'],
       abs: ['abdominal', 'core', 'oblicuos', 'espalda baja']
     };
-
-    function average(arr) {
-      return arr.reduce(function(a, b) { return a + b; }, 0) / arr.length;
-    }
 
     function getMachineKey(exerciseName) {
       var found = POOL.find(function(ex) { return ex.name === exerciseName; });
@@ -114,6 +100,8 @@
     }
 
     function selectSplit(goal, experience, preferredDays) {
+      var pd = (typeof preferredDays === 'number' && preferredDays > 0) ? preferredDays : 3;
+      preferredDays = pd;
       if (goal === 'muscleGain' && experience === 'beginner' && preferredDays === 4) {
         return {
           type: 'upperLower',
@@ -231,26 +219,13 @@
     function getExerciseHistory(exerciseName, history) {
       var machineKey = getMachineKey(exerciseName);
       if (!machineKey || !history) return [];
-      var positions = MACHINE_POS[machineKey];
-      if (!positions) return [];
       var weeks = Object.keys(history).sort();
       var result = [];
       for (var wi = 0; wi < weeks.length; wi++) {
         var wk = history[weeks[wi]];
         if (!wk || !wk.weights) continue;
-        for (var pi = 0; pi < positions.length; pi++) {
-          var pos = positions[pi];
-          var key = pos.day + '-' + pos.ex;
-          if (wk.weights[key]) {
-            var setsCompleted = 0;
-            if (wk.progress && wk.progress[pos.day] && wk.progress[pos.day][pos.ex] !== undefined) {
-              setsCompleted = wk.progress[pos.day][pos.ex];
-            }
-            var poolEx = POOL.find(function(e) { return e.machine === machineKey; });
-            var totalSets = poolEx ? poolEx.sets : 3;
-            result.push({ week: weeks[wi], weight: parseFloat(wk.weights[key]), setsCompleted: setsCompleted, totalSets: totalSets });
-            break;
-          }
+        if (wk.weights[machineKey]) {
+          result.push({ week: weeks[wi], weight: parseFloat(wk.weights[machineKey]), setsCompleted: 0, totalSets: 0 });
         }
       }
       return result;
@@ -259,18 +234,12 @@
     function wasUsedRecently(exerciseName, history, weeks) {
       var machineKey = getMachineKey(exerciseName);
       if (!machineKey || !history) return false;
-      var positions = MACHINE_POS[machineKey];
-      if (!positions) return false;
       var weekKeys = Object.keys(history).sort();
       var recent = weekKeys.slice(-weeks);
       for (var wi = 0; wi < recent.length; wi++) {
         var wk = history[recent[wi]];
         if (!wk || !wk.weights) continue;
-        for (var pi = 0; pi < positions.length; pi++) {
-          var pos = positions[pi];
-          var key = pos.day + '-' + pos.ex;
-          if (wk.weights[key]) return true;
-        }
+        if (wk.weights[machineKey]) return true;
       }
       return false;
     }
@@ -278,18 +247,12 @@
     function getLastWeight(exerciseName, history) {
       var machineKey = getMachineKey(exerciseName);
       if (!machineKey || !history) return null;
-      var positions = MACHINE_POS[machineKey];
-      if (!positions) return null;
       var weeks = Object.keys(history).sort();
       for (var wi = weeks.length - 1; wi >= 0; wi--) {
         var wk = history[weeks[wi]];
         if (!wk || !wk.weights) continue;
-        for (var pi = 0; pi < positions.length; pi++) {
-          var pos = positions[pi];
-          var key = pos.day + '-' + pos.ex;
-          if (wk.weights[key] && parseFloat(wk.weights[key]) > 0) {
-            return parseFloat(wk.weights[key]);
-          }
+        if (wk.weights[machineKey] && parseFloat(wk.weights[machineKey]) > 0) {
+          return parseFloat(wk.weights[machineKey]);
         }
       }
       return null;
@@ -386,6 +349,7 @@
 
     function generateWeeklyPlan(profile, progress, weights, history) {
       if (!profile || !profile.dynamicPlansEnabled) return null;
+      if (!profile.goal || !profile.experienceLevel || !profile.preferredDays) return null;
 
       var now = new Date();
       var day = now.getDay();
@@ -473,8 +437,7 @@
       getRepsByGoal: getRepsByGoal,
       getRestByGoal: getRestByGoal,
       getRirByGoal: getRirByGoal,
-      getExerciseCount: getExerciseCount,
-      average: average
+      getExerciseCount: getExerciseCount
     };
   })();
 })();

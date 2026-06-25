@@ -445,7 +445,7 @@
     let h = '<div class="exercise-item' + (isCustom ? ' custom-exercise' : '') + '" data-day="' + dayIndex + '" data-ex="' + exKey + '">'
     h += '<div class="exercise-top">'
     h += '<div class="exercise-info">'
-    h += '<div class="exercise-name"><button class="ex-history-btn" data-key="' + dataKey + '" data-name="' + esc(activeEx.name) + '" title="Ver historial">Hist</button> ' + esc(activeEx.name)
+    h += '<div class="exercise-name"><button class="ex-history-btn" data-key="' + activeEx.machine + '" data-name="' + esc(activeEx.name) + '" title="Ver historial">Hist</button> ' + esc(activeEx.name)
     if (isSwapped) h += '<span class="swapped-badge">↻</span>'
     if (isCustom) h += '<span class="swapped-badge" style="background:var(--green);">✚</span>'
     h += '</div>'
@@ -461,7 +461,7 @@
     h += '</div>'
     h += '<div class="weight-input-row">'
     h += '<label class="weight-label">Carga (kg):</label>'
-    h += '<input type="number" class="weight-input" value="' + weight + '" data-key="' + dataKey + '" data-muscle="' + esc(activeEx.muscle) + '" data-exname="' + esc(activeEx.name) + '" placeholder="kg">'
+    h += '<input type="number" class="weight-input" value="' + weight + '" data-key="' + activeEx.machine + '" data-muscle="' + esc(activeEx.muscle) + '" data-exname="' + esc(activeEx.name) + '" placeholder="kg">'
     h += '<span class="wt-indicator"></span>'
     if (!weight && defaultKg) h += '<span class="weight-suggest">Inicia: ' + defaultKg + ' kg</span>'
     else if (nextW) h += '<span class="weight-rec">' + nextW + ' kg</span>'
@@ -547,7 +547,7 @@
       const targetRir = exMod.rir !== undefined ? exMod.rir : activeEx.rir
       const allDone = setsCompleted >= targetSets
       const machine = gymData.getMachineById(activeEx.machine)
-      const weight = weights[swapKey] || ''
+      const weight = weights[activeEx.machine] || ''
       const defaultKg = getDefaultKg(activeEx.machine)
       const nextW = recommendWeight({ ...activeEx, sets: targetSets, rir: targetRir }, weight, allDone)
 
@@ -560,7 +560,7 @@
       const ck = dayIndex + '-custom-' + ci
       const setsCompleted = dayProgress[ck] || 0
       const allDone = setsCompleted >= ex.sets
-      const weight = weights[ck] || ''
+      const weight = weights[ex.machine] || ''
       const defaultKg = getDefaultKg(ex.machine)
       const nextW = recommendWeight(ex, weight, allDone)
 
@@ -852,7 +852,7 @@
 
   function handleWeightChange(e) {
     const inp = e.currentTarget
-    const key = inp.dataset.key || inp.dataset.day + '-' + inp.dataset.ex
+    const key = inp.dataset.key
     const weights = db.getWeights()
     const profile = db.getProfile()
     if (inp.value) {
@@ -1156,22 +1156,34 @@
 
         /* Build weight log string */
         const weightLines = []
+        const usedDays = getPlanDays()
         for (const key of Object.keys(weights || {})) {
-          const [d, ...rest] = key.split('-')
-          const dayIdx = parseInt(d, 10)
-          const day = getPlanDays()[dayIdx]
-          if (!day) continue
-          const exIdx = parseInt(rest.join('-'), 10)
-          let exName
-          if (rest.join('-').startsWith('custom-')) {
-            const ci = parseInt(rest.join('-').replace('custom-', ''), 10)
-            const cex = (customEx[dayIdx] || [])[ci]
-            if (!cex) continue
-            exName = cex.name + ' ✚'
-          } else if (day.exercises[exIdx]) {
-            exName = day.exercises[exIdx].name
-          } else continue
-          weightLines.push(`  - Día ${dayIdx + 1} (${day.name}): ${exName} → ${weights[key]} kg`)
+          let found = false
+          for (let di = 0; di < usedDays.length && !found; di++) {
+            const day = usedDays[di]
+            for (let ei = 0; ei < day.exercises.length && !found; ei++) {
+              const ex = day.exercises[ei]
+              if (ex.machine === key) {
+                weightLines.push(`  - Día ${di + 1} (${day.name}): ${ex.name} → ${weights[key]} kg`)
+                found = true
+              }
+            }
+          }
+          if (!found) {
+            for (const dayIdx of Object.keys(customEx)) {
+              for (const ex of customEx[dayIdx]) {
+                if (ex.machine === key) {
+                  weightLines.push(`  - Día ${parseInt(dayIdx) + 1}: ${ex.name} ✚ → ${weights[key]} kg`)
+                  found = true; break
+                }
+              }
+              if (found) break
+            }
+          }
+          if (!found) {
+            const m = gymData.getMachineById(key)
+            weightLines.push(`  - ${m ? m.name : key}: ${weights[key]} kg`)
+          }
         }
         const weightStr = weightLines.length ? weightLines.join('\n') : '  (sin pesos registrados aún)'
 
@@ -1473,23 +1485,11 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     const allWeights = db.getWeights()
     const exMap = {}
     for (const key of Object.keys(allWeights)) {
-      const [dStr, ...rest] = key.split('-')
-      const dayIdx = parseInt(dStr, 10)
-      if (isNaN(dayIdx)) continue
-      const exIdx = rest.join('-')
-      const day = getPlanDays()[dayIdx]
-      if (!day) continue
-      let exName = ''
-      if (exIdx.startsWith('custom-')) {
-        const ci = parseInt(exIdx.replace('custom-', ''), 10)
-        const cex = (db.getCustomExercises()[dayIdx] || [])[ci]
-        if (cex) exName = cex.name
-      } else if (day.exercises[parseInt(exIdx, 10)]) {
-        exName = day.exercises[parseInt(exIdx, 10)].name
-      }
-      if (!exName) continue
-      if (!exMap[exName]) exMap[exName] = []
-      exMap[exName].push({ key, weight: parseFloat(allWeights[key]) || 0, date: '' })
+      const machineData = gymData.getMachineById(key)
+      if (!machineData) continue
+      const displayName = machineData.name
+      if (!exMap[displayName]) exMap[displayName] = []
+      exMap[displayName].push({ key, weight: parseFloat(allWeights[key]) || 0, date: '' })
     }
     const exEntries = Object.entries(exMap).sort((a, b) => a[0].localeCompare(b[0]))
     if (exEntries.length) {
@@ -1690,7 +1690,7 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     }
     const recent = entries.slice(-10)
     const values = recent.map(([, v]) => parseFloat(v))
-    const labels = recent.map(([k]) => { const p = k.split('-'); return 'E' + p[0] + '-' + p[1] })
+    const labels = recent.map(([k]) => { const md = gymData.getMachineById(k); return md ? md.name.substring(0, 15) : k.substring(0, 15) })
     const min = Math.min(...values) * 0.9
     const max = Math.max(...values) * 1.1
     const range = max - min || 1
@@ -2125,23 +2125,19 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const entries = exWeightHistory[key]
       if (entries.length < 3) continue
       const last3 = entries.slice(-3)
-      const weights = last3.map(e => parseFloat(e.weight))
-      if (weights.some(w => isNaN(w))) continue
-      if (weights[0] > 0 && weights.every(w => w === weights[0])) {
-        const parts = key.split('-')
-        const dayIdx = parseInt(parts[0], 10)
-        if (isNaN(dayIdx)) continue
-        const d = getPlanDays()[dayIdx]
-        if (!d) continue
-        const exIdx = parts.length > 1 ? parts[1] : null
-        let exName = ''
-        if (exIdx !== null) {
-          const ex = d.exercises[parseInt(exIdx, 10)]
-          if (ex) exName = ex.name
+      const latestWeights = last3.map(e => parseFloat(e.weight))
+      if (latestWeights.some(w => isNaN(w))) continue
+      if (latestWeights[0] > 0 && latestWeights.every(w => w === latestWeights[0])) {
+        const machineData = gymData.getMachineById(key)
+        if (!machineData) continue
+        let dayLabel = ''
+        for (let di = 0; di < getPlanDays().length; di++) {
+          const d = getPlanDays()[di]
+          if (d.exercises.some(e => e.machine === key)) {
+            dayLabel = DAY_LABELS[di] || 'Día ' + (di + 1); break
+          }
         }
-        if (exName) {
-          stalling.push({ exName, day: DAY_LABELS[dayIdx] || 'Día ' + (dayIdx + 1), weight: weights[0] })
-        }
+        stalling.push({ exName: machineData.name, day: dayLabel, weight: latestWeights[0] })
       }
     }
 
@@ -2730,22 +2726,9 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
       const profile = db.getProfile()
       const rows = [['Ejercicio', 'Día', 'Peso (kg)', 'Músculo', 'Fecha de exportación']]
       for (const key of Object.keys(weights)) {
-        const [d, ...rest] = key.split('-')
-        const dayIdx = parseInt(d, 10)
-        const day = getPlanDays()[dayIdx]
-        if (!day) continue
-        const exIdx = rest.join('-')
-        let exName, muscle
-        if (exIdx.startsWith('custom-')) {
-          const ci = parseInt(exIdx.replace('custom-', ''), 10)
-          const cex = (db.getCustomExercises()[dayIdx] || [])[ci]
-          if (!cex) continue
-          exName = cex.name; muscle = cex.muscle
-        } else if (day.exercises[parseInt(exIdx, 10)]) {
-          const ex = day.exercises[parseInt(exIdx, 10)]
-          exName = ex.name; muscle = ex.muscle
-        } else continue
-        rows.push([exName, day.name, weights[key], muscle, new Date().toISOString().split('T')[0]])
+        const machineData = gymData.getMachineById(key)
+        if (!machineData) continue
+        rows.push([machineData.name, '', weights[key], '', new Date().toISOString().split('T')[0]])
       }
       const sanitizeCSV = v => /^[=+\-@]/.test(String(v)) ? "'" + String(v) : String(v)
       const csv = rows.map(r => r.map(c => '"' + sanitizeCSV(c).replace(/"/g, '""') + '"').join(',')).join('\n')

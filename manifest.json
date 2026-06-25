@@ -1,10 +1,10 @@
 {
-  "name": "GYMTRAINER",
+  "name": "GYM TRAINER",
   "short_name": "GYM",
   "description": "App de entrenamiento personal — rutinas, progreso y dieta",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#0a0a0f",
   "theme_color": "#f97316",
   "icons": [

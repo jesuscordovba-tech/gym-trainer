@@ -61,214 +61,121 @@
   async function initLoginScreen() {
     const screen = document.getElementById('lockScreen')
     const box = screen.querySelector('.lock-box')
-    let currentPin = ''
+
+    box.innerHTML = `
+      <h1><span>GYM</span>TRAINER</h1>
+      <div id="loginMode" style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1rem;">Ingresa tu usuario y PIN</div>
+      <label for="loginUsername" style="display:block;font-size:0.75rem;color:var(--text-dim);text-align:left;margin-bottom:0.25rem;">Usuario</label>
+      <input type="text" id="loginUsername" class="lock-input" placeholder="Usuario" autocomplete="username" style="letter-spacing:0;font-size:1rem;-webkit-text-security:none;">
+      <label for="loginPin" style="display:block;font-size:0.75rem;color:var(--text-dim);text-align:left;margin-bottom:0.25rem;">PIN</label>
+      <input type="password" id="loginPin" class="lock-input" placeholder="PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password">
+      <label for="loginPin2" style="display:block;font-size:0.75rem;color:var(--text-dim);text-align:left;margin-bottom:0.25rem;">Confirmar PIN</label>
+      <input type="password" id="loginPin2" class="lock-input" placeholder="Confirmar PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password" style="display:none;">
+      <div class="lock-error" id="lockError" role="alert"></div>
+      <button class="lock-btn" id="lockBtn">Entrar</button>
+      <div class="lock-hint" id="loginHint" style="margin-top:0.5rem;"></div>
+      <div style="margin-top:0.75rem;font-size:0.75rem;text-align:center;color:var(--text-dim);">
+        Los datos se guardan localmente en el navegador.
+        El respaldo en la nube se configura en Ajustes después de iniciar sesión.
+      </div>
+    `
+
+    const usernameInput = document.getElementById('loginUsername')
+    const pinInput = document.getElementById('loginPin')
+    const pin2Input = document.getElementById('loginPin2')
+    const btn = document.getElementById('lockBtn')
+    const error = document.getElementById('lockError')
+    const hint = document.getElementById('loginHint')
     let mode = 'login'
-    let currentUsername = localStorage.getItem('gymapp_current_user') || ''
-
-    function renderLock() {
-      const users = db.listUsers ? db.listUsers() : []
-      const userOptions = users.map(u =>
-        `<option value="${esc(u)}" ${u === currentUsername ? 'selected' : ''}>${esc(u)}</option>`
-      ).join('')
-
-      box.innerHTML = `
-<div class="lock-inner">
-  <div class="lock-logo">
-    <span class="material-symbols-outlined lock-icon">fitness_center</span>
-    <h1 class="lock-title">GYM <span class="lock-title-accent">TRAINER</span></h1>
-    <p class="lock-subtitle">${mode === 'register' ? 'CREA TU CUENTA' : 'INGRESA TU PIN DE ENTRENAMIENTO'}</p>
-  </div>
-  ${users.length > 1 || mode === 'register' ? `
-  <select id="lockUsername" class="lock-user-select">
-    ${mode === 'register' ? '<option value="">— Nuevo usuario —</option>' : ''}
-    ${userOptions}
-  </select>` : ''}
-  <div class="pin-dots" id="pinDots">
-    <div class="pin-dot${currentPin.length > 0 ? ' active' : ''}"></div>
-    <div class="pin-dot${currentPin.length > 1 ? ' active' : ''}"></div>
-    <div class="pin-dot${currentPin.length > 2 ? ' active' : ''}"></div>
-    <div class="pin-dot${currentPin.length > 3 ? ' active' : ''}"></div>
-  </div>
-  <div class="lock-error" id="lockError" role="alert"></div>
-  ${mode === 'register' ? `
-  <div class="lock-register-fields">
-    <input type="text" id="regUsername" class="lock-input" placeholder="Nombre de usuario" value="${esc(currentUsername)}" style="letter-spacing:0;font-size:1rem;-webkit-text-security:none;display:${mode === 'register' ? 'block' : 'none'};">
-    <input type="password" id="regPin2" class="lock-input" placeholder="Confirmar PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" style="display:${mode === 'register' ? 'block' : 'none'};">
-  </div>` : ''}
-  <div class="numpad-grid">
-    <button class="numpad-btn" data-n="1">1</button>
-    <button class="numpad-btn" data-n="2">2</button>
-    <button class="numpad-btn" data-n="3">3</button>
-    <button class="numpad-btn" data-n="4">4</button>
-    <button class="numpad-btn" data-n="5">5</button>
-    <button class="numpad-btn" data-n="6">6</button>
-    <button class="numpad-btn" data-n="7">7</button>
-    <button class="numpad-btn" data-n="8">8</button>
-    <button class="numpad-btn" data-n="9">9</button>
-    <div></div>
-    <button class="numpad-btn" data-n="0">0</button>
-    <button class="numpad-btn numpad-back" id="numpadBack">
-      <span class="material-symbols-outlined" style="font-size:1.5rem;">backspace</span>
-    </button>
-  </div>
-  <button class="lock-btn" id="lockBtn">${mode === 'register' ? 'REGISTRARSE' : 'ENTRAR'}</button>
-  <div class="lock-hint" id="loginHint"></div>
-</div>`
-
-      const hint = document.getElementById('loginHint')
-      const btn = document.getElementById('lockBtn')
-      if (mode === 'register') {
-        hint.innerHTML = '¿Ya tienes cuenta? <button id="switchLoginBtn" class="lock-link">Inicia sesión</button>'
-        document.getElementById('switchLoginBtn')?.addEventListener('click', () => { mode = 'login'; currentPin = ''; renderLock(); attachLockEvents() })
-      } else {
-        hint.innerHTML = '¿Primera vez? <button id="switchRegisterBtn" class="lock-link">Regístrate</button>'
-        document.getElementById('switchRegisterBtn')?.addEventListener('click', () => { mode = 'register'; currentPin = ''; renderLock(); attachLockEvents() })
-      }
-
-      const userSelect = document.getElementById('lockUsername')
-      if (userSelect) {
-        userSelect.addEventListener('change', () => { currentUsername = userSelect.value })
-      }
-    }
-
-    function attachLockEvents() {
-      const pinDots = document.querySelectorAll('.pin-dot')
-      const error = document.getElementById('lockError')
-
-      document.querySelectorAll('.numpad-btn[data-n]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (currentPin.length < 4) {
-            currentPin += btn.dataset.n
-            updateDots()
-          }
-        })
-      })
-
-      document.getElementById('numpadBack')?.addEventListener('click', () => {
-        if (currentPin.length > 0) {
-          currentPin = currentPin.slice(0, -1)
-          updateDots()
-        }
-      })
-
-      function updateDots() {
-        pinDots.forEach((dot, i) => {
-          dot.classList.toggle('active', i < currentPin.length)
-        })
-      }
-
-      function setError(msg) {
-        error.textContent = msg
-        if (msg) {
-          const card = box.querySelector('.lock-inner')
-          card?.classList.remove('shake')
-          void card?.offsetWidth
-          card?.classList.add('shake')
-          pinDots.forEach(d => d.style.borderColor = 'rgba(255, 180, 171, 0.5)')
-          setTimeout(() => pinDots.forEach(d => d.style.borderColor = ''), 500)
-        }
-      }
-
-      document.getElementById('lockBtn').onclick = async () => {
-        try {
-          const pin = currentPin
-          const username = mode === 'register'
-            ? (document.getElementById('regUsername')?.value || '').trim().toLowerCase()
-            : (document.getElementById('lockUsername')?.value || currentUsername || '')
-
-          if (!username) { setError('Selecciona o ingresa un usuario'); return }
-          if (!pin || pin.length < 4) { setError('PIN debe tener 4 dígitos'); return }
-
-          const btn = document.getElementById('lockBtn')
-          btn.disabled = true
-
-          if (mode === 'register') {
-            const pin2 = document.getElementById('regPin2')?.value || ''
-            if (pin !== pin2) { setError('Los PIN no coinciden'); btn.disabled = false; return }
-            btn.textContent = 'REGISTRANDO...'
-            const r = await db.registerUser(username, pin, createDefaultProfile())
-            if (r.ok) {
-              currentUsername = username
-              localStorage.setItem('gymapp_current_user', username)
-              sessionStorage.setItem('gymapp_pin', pin)
-              screen.classList.add('hidden')
-              document.removeEventListener('keydown', lockKeyHandler)
-              showToast('Usuario registrado correctamente')
-              initApp()
-              return
-            }
-            setError(r.error || 'Error')
-            btn.disabled = false
-            btn.textContent = 'REGISTRARSE'
-          } else {
-            btn.textContent = 'ENTRANDO...'
-            const r = await db.loginUser(username, pin)
-            if (r.ok) {
-              currentUsername = username
-              localStorage.setItem('gymapp_current_user', username)
-              sessionStorage.setItem('gymapp_pin', pin)
-              screen.classList.add('hidden')
-              document.removeEventListener('keydown', lockKeyHandler)
-              showToast('Bienvenido, ' + esc(username))
-              initApp()
-              return
-            }
-            if (r.error === 'Usuario no registrado') {
-              setError('Usuario no existe. Regístrate.')
-            } else {
-              setError(r.error)
-            }
-            btn.disabled = false
-            btn.textContent = 'ENTRAR'
-          }
-        } catch (e) {
-          setError('Error: ' + (e.message || e))
-          document.getElementById('lockBtn').disabled = false
-        }
-      }
-    }
 
     window.addEventListener('error', function (ev) {
-      const e = document.getElementById('lockError')
-      if (e) e.textContent = 'Error: ' + (ev.message || 'desconocido')
+      setError('Error: ' + (ev.message || 'desconocido'))
     })
     window.addEventListener('unhandledrejection', function (ev) {
-      const e = document.getElementById('lockError')
-      if (e) e.textContent = 'Error: ' + (ev.reason?.message || ev.reason || 'desconocido')
+      setError('Error: ' + (ev.reason?.message || ev.reason || 'desconocido'))
     })
 
-    let lockKeyHandler
-    renderLock()
-    attachLockEvents()
-
-    document.addEventListener('keydown', lockKeyHandler = (e) => {
-      const s = document.getElementById('lockScreen')
-      if (s?.classList.contains('hidden')) return
-      if (e.key >= '0' && e.key <= '9' && currentPin.length < 4) {
-        currentPin += e.key
-        const dots = document.querySelectorAll('.pin-dot')
-        dots.forEach((dot, i) => dot.classList.toggle('active', i < currentPin.length))
-      } else if (e.key === 'Backspace') {
-        currentPin = currentPin.slice(0, -1)
-        const dots = document.querySelectorAll('.pin-dot')
-        dots.forEach((dot, i) => dot.classList.toggle('active', i < currentPin.length))
-      } else if (e.key === 'Enter') {
-        document.getElementById('lockBtn')?.click()
+    function setMode(m) {
+      mode = m
+      if (mode === 'register') {
+        pin2Input.style.display = ''
+        btn.textContent = 'Registrarse'
+        hint.innerHTML = '¿Ya tienes cuenta? <button id="switchLoginBtn" style="background:none;border:none;color:var(--primary);cursor:pointer;text-decoration:underline;font-size:0.75rem;">Inicia sesión</button>'
+        document.getElementById('switchLoginBtn')?.addEventListener('click', () => setMode('login'))
+      } else {
+        pin2Input.style.display = 'none'
+        btn.textContent = 'Entrar'
+        hint.innerHTML = '¿Primera vez? <button id="switchRegisterBtn" style="background:none;border:none;color:var(--primary);cursor:pointer;text-decoration:underline;font-size:0.75rem;">Regístrate</button>'
+        document.getElementById('switchRegisterBtn')?.addEventListener('click', () => setMode('register'))
       }
-    })
+    }
+    setMode('login')
 
-    // Auto-login
+    function shakeLockBox() {
+      const box = document.querySelector('.lock-box')
+      if (!box) return
+      box.classList.remove('shake')
+      void box.offsetWidth
+      box.classList.add('shake')
+    }
+
+    function setError(msg) {
+      error.textContent = msg
+      if (msg) shakeLockBox()
+    }
+
+    btn.onclick = async () => {
+      try {
+        const username = usernameInput.value.trim().toLowerCase()
+        const pin = pinInput.value.trim()
+        const pin2 = pin2Input.value.trim()
+        if (!username || !pin) { setError('Completa todos los campos'); return }
+
+        btn.disabled = true
+
+        if (mode === 'register') {
+          if (pin.length < 4) { setError('PIN mínimo 4 dígitos'); btn.disabled = false; return }
+          if (pin !== pin2) { setError('Los PIN no coinciden'); btn.disabled = false; return }
+          btn.textContent = 'Registrando...'
+          const r = await db.registerUser(username, pin, createDefaultProfile())
+          if (r.ok) { screen.classList.add('hidden'); showToast('Usuario registrado correctamente'); initApp(); return }
+          setError(r.error || 'Error')
+          btn.disabled = false; btn.textContent = 'Registrarse'
+        } else {
+          btn.textContent = 'Entrando...'
+          const r = await db.loginUser(username, pin)
+          if (r.ok) { screen.classList.add('hidden'); showToast('Bienvenido, ' + esc(username)); initApp(); return }
+          if (r.error === 'Usuario no registrado') {
+            setError('Usuario no existe. ¿Quieres registrarte?')
+            setMode('register')
+          } else {
+            setError(r.error)
+          }
+          btn.disabled = false; btn.textContent = 'Entrar'
+        }
+      } catch (e) {
+        setError('Error: ' + (e.message || e))
+        btn.disabled = false; btn.textContent = 'Entrar'
+      }
+    }
+
+    // Auto-login if cached credentials exist
     const savedUser = localStorage.getItem('gymapp_current_user')
     const savedPin = sessionStorage.getItem('gymapp_pin')
     if (savedUser && savedPin) {
-      const r = await db.loginUser(savedUser, savedPin)
-      if (r.ok) {
-        screen.classList.add('hidden')
-        showToast('Bienvenido, ' + esc(savedUser))
-        initApp()
-        return
-      }
+      usernameInput.value = savedUser
+      pinInput.value = savedPin
+      btn.click()
+      return
     }
+
+    usernameInput.focus()
+
+    pinInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { if (mode === 'register') pin2Input.focus(); else btn.click() }
+    })
+    pin2Input.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click() })
+    usernameInput.addEventListener('keydown', e => { if (e.key === 'Enter') pinInput.focus() })
   }
 
   function showToast(msg) {
@@ -380,7 +287,7 @@
       const target = new Date(); target.setHours(h, m, 0, 0)
       if (now >= target) {
         localStorage.setItem('gymapp_notif_last', today)
-        new Notification('Kinetic Glass', { body: 'Hora de entrenar! Tu rutina te espera.', icon: '/icon.svg' })
+        new Notification('GYM TRAINER', { body: 'Hora de entrenar! Tu rutina te espera.', icon: '/icon.svg' })
       }
     }
     if (_notifInterval) clearInterval(_notifInterval)
@@ -489,13 +396,12 @@
       const p = progress[i] || {}
       const completedSets = Object.values(p).reduce((a, b) => a + (b || 0), 0)
       const totalSets = d.exercises.reduce((a, ex) => a + ex.sets, 0)
-      const card = document.createElement('button')
-      card.className = `day-card${i === currentDay ? ' active' : ''}`
+      const card = document.createElement('div')
+      card.className = `day-card ${i === currentDay ? 'active' : ''}`
       card.innerHTML = `
         <div class="day-label">${DAY_LABELS[i] || 'DÍA ' + (i + 1)}</div>
-        <div class="day-name">${esc(d.name.split(' — ')[0])}</div>
-        <div class="day-focus">${esc(d.focus)}</div>
-        ${completedSets > 0 ? '<div class="day-progress-bar"></div>' : ''}
+        <div class="day-name">${d.name.split(' — ')[0]}</div>
+        <div class="day-focus">${completedSets}/${totalSets} series</div>
       `
       card.addEventListener('click', () => {
         currentDay = i
@@ -509,13 +415,12 @@
       const p = progress[idx] || {}
       const completedSets = Object.values(p).reduce((a, b) => a + (b || 0), 0)
       const totalSets = cd.exercises.reduce((a, ex) => a + ex.sets, 0)
-      const card = document.createElement('button')
-      card.className = `day-card${idx === currentDay ? ' active' : ''}`
+      const card = document.createElement('div')
+      card.className = `day-card ${idx === currentDay ? 'active' : ''}`
       card.innerHTML = `
         <div class="day-label">CUSTOM</div>
         <div class="day-name">${esc(cd.name)}</div>
         <div class="day-focus">${completedSets}/${totalSets} series</div>
-        ${completedSets > 0 ? '<div class="day-progress-bar"></div>' : ''}
       `
       card.addEventListener('click', () => {
         currentDay = idx
@@ -549,53 +454,54 @@
     const exReps = mod.reps || activeEx.reps
     const exRest = mod.rest || activeEx.rest
     const exRir = mod.rir !== undefined ? mod.rir : activeEx.rir
-    const allDone = setsCompleted >= exSets
-    let h = '<div class="exercise-item' + (isCustom ? ' custom-exercise' : '') + (allDone ? ' completed-exercise' : '') + '" data-day="' + dayIndex + '" data-ex="' + exKey + '">'
+    let h = '<div class="exercise-item' + (isCustom ? ' custom-exercise' : '') + '" data-day="' + dayIndex + '" data-ex="' + exKey + '">'
     h += '<div class="exercise-top">'
     h += '<div class="exercise-info">'
-    h += '<div class="ex-badge-row">'
+    h += '<div class="exercise-name"><button class="ex-history-btn" data-key="' + activeEx.machine + '" data-name="' + esc(activeEx.name) + '" title="Ver historial">Hist</button> ' + esc(activeEx.name)
+    if (isSwapped) h += '<span class="swapped-badge">↻</span>'
+    if (isCustom) h += '<span class="swapped-badge" style="background:var(--green);">✚</span>'
+    h += '</div>'
+    h += '<div class="exercise-meta">'
+    h += '<span>' + exSets + '×' + esc(exReps) + '</span>'
+    h += '<span>' + exRest + 's</span>'
+    h += '<span>RIR ' + exRir + '</span>'
+    h += '<button class="ex-edit-meta-btn" data-key="' + dataKey + '" data-sets="' + exSets + '" data-reps="' + esc(exReps) + '" data-rest="' + exRest + '" data-rir="' + exRir + '" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:0 0.25rem;font-size:0.75rem;" title="Editar series/reps">✎</button>'
+    h += '</div>'
+    h += '<div>'
     h += '<span class="machine-badge">' + esc(machine ? machine.name : activeEx.machine) + '</span>'
     h += '<span class="muscle-badge">' + esc(activeEx.muscle) + '</span>'
-    if (isSwapped) h += '<span class="swapped-badge">↻</span>'
-    if (isCustom) h += '<span class="swapped-badge" style="background:var(--green);color:#022c22;">✚</span>'
-    h += '</div>'
-    h += '<div class="exercise-name">' + esc(activeEx.name) + '</div>'
-    h += '<div class="exercise-meta">' + exSets + ' series x ' + esc(exReps) + ' repeticiones</div>'
-    h += '</div>'
-    h += '<div class="exercise-controls">'
-    if (activeEx.video) {
-      h += '<button class="ex-video-btn" data-video="' + esc(activeEx.video) + '" data-name="' + esc(activeEx.name) + '" title="Ver demostración"><span class="material-symbols-outlined">smart_display</span></button>'
-    }
-    h += '<button class="ex-history-btn" data-key="' + activeEx.machine + '" data-name="' + esc(activeEx.name) + '" title="Ver historial"><span class="material-symbols-outlined">history</span></button>'
-    h += '<button class="ex-edit-meta-btn reset-btn" data-key="' + dataKey + '" data-sets="' + exSets + '" data-reps="' + esc(exReps) + '" data-rest="' + exRest + '" data-rir="' + exRir + '" title="Editar series/reps"><span class="material-symbols-outlined">edit</span></button>'
-    h += '</div>'
     h += '</div>'
     h += '<div class="weight-input-row">'
+    h += '<label class="weight-label">Carga (kg):</label>'
+    h += '<input type="number" class="weight-input" value="' + weight + '" data-key="' + activeEx.machine + '" data-muscle="' + esc(activeEx.muscle) + '" data-exname="' + esc(activeEx.name) + '" placeholder="kg">'
+    h += '<span class="wt-indicator"></span>'
+    if (!weight && defaultKg) h += '<span class="weight-suggest">Inicia: ' + defaultKg + ' kg</span>'
+    else if (nextW) h += '<span class="weight-rec">' + nextW + ' kg</span>'
+    h += '</div></div>'
+    h += '<div class="exercise-controls">'
     h += '<div class="set-tracker">'
     const capped = Math.min(setsCompleted, exSets)
     for (let s = 0; s < exSets; s++) {
       const note = exNotes[s]
       h += '<button class="set-dot ' +
         (s < capped ? 'completed' : s === capped ? 'current' : '') +
-        '" data-day="' + dayIndex + '" data-ex="' + exKey + '" data-set="' + s + '" title="' + (note ? esc(note.rir !== undefined ? 'RIR ' + note.rir : '') : (s + 1)) + '">' +
+        '" data-day="' + dayIndex + '" data-ex="' + exKey + '" data-set="' + s + '" title="' + (note ? esc(note.rir !== undefined ? 'RIR ' + note.rir : '') : '') + '">' +
         (s + 1) + '</button>'
     }
     h += '</div>'
-    h += '<div style="display:flex;align-items:center;gap:0.5rem;position:relative;">'
-    h += '<input type="number" class="weight-input" value="' + weight + '" data-key="' + activeEx.machine + '" data-muscle="' + esc(activeEx.muscle) + '" data-exname="' + esc(activeEx.name) + '" placeholder="kg">'
-    h += '<span class="weight-label">Peso (kg)</span>'
-    if (!weight && defaultKg) h += '<span class="weight-suggest">Inicia: ' + defaultKg + ' kg</span>'
-    else if (nextW) h += '<span class="weight-rec">⬆ ' + nextW + ' kg</span>'
-    h += '</div>'
-    h += '<button class="rest-timer-btn" data-rest="' + exRest + '" title="Descanso ' + exRest + 's"><span class="material-symbols-outlined">timer</span></button>'
+    h += '<div class="ex-controls-row">'
+    h += '<button class="rest-timer-btn" data-rest="' + exRest + '">⏱ ' + exRest + 's</button>'
     if (!isCustom) {
-      h += '<button class="swap-btn" data-day="' + dayIndex + '" data-ex="' + exKey + '" title="Cambiar ejercicio"><span class="material-symbols-outlined">swap_horiz</span></button>'
+      h += '<button class="swap-btn" data-day="' + dayIndex + '" data-ex="' + exKey + '" title="Cambiar ejercicio">↻</button>'
     }
     if (isCustom) {
-      h += '<button class="edit-ex-btn" data-day="' + dayIndex + '" data-idx="' + exKey.replace(dayIndex + '-custom-', '') + '" title="Editar ejercicio"><span class="material-symbols-outlined">edit</span></button>'
-      h += '<button class="remove-ex-btn" data-day="' + dayIndex + '" data-idx="' + exKey.replace(dayIndex + '-custom-', '') + '" title="Eliminar"><span class="material-symbols-outlined">close</span></button>'
+      h += '<button class="edit-ex-btn" data-day="' + dayIndex + '" data-idx="' + exKey.replace(dayIndex + '-custom-', '') + '" title="Editar ejercicio">✎</button>'
+      h += '<button class="remove-ex-btn" data-day="' + dayIndex + '" data-idx="' + exKey.replace(dayIndex + '-custom-', '') + '" aria-label="Eliminar ejercicio" title="Eliminar ejercicio">✕</button>'
     }
-    h += '</div></div>'
+    if (activeEx.video) {
+      h += '<button class="ex-video-btn" data-video="' + esc(activeEx.video) + '" data-name="' + esc(activeEx.name) + '" title="Ver demostración: ' + esc(activeEx.name) + '">▶</button>'
+    }
+    h += '</div></div></div></div>'
     return h
   }
 
@@ -2867,10 +2773,10 @@ Responde en ESPAÑOL, sé directo y práctico. Puedes aconsejar sobre técnica, 
     })
     document.getElementById('testNotifBtn')?.addEventListener('click', () => {
       if (Notification.permission === 'granted') {
-        new Notification('Kinetic Glass', { body: 'Recordatorio configurado correctamente', icon: '/icon.svg' })
+        new Notification('GYM TRAINER', { body: 'Recordatorio configurado correctamente', icon: '/icon.svg' })
       } else {
         Notification.requestPermission().then(p => {
-          if (p === 'granted') new Notification('Kinetic Glass', { body: 'Notificaciones activadas', icon: '/icon.svg' })
+          if (p === 'granted') new Notification('GYM TRAINER', { body: 'Notificaciones activadas', icon: '/icon.svg' })
         })
       }
     })
